@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Navigation from "@/components/Navigation";
 
 interface Camera {
   id: string;
@@ -68,8 +69,10 @@ const Cameras = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient pt-24 pb-12 px-4">
-      <div className="container mx-auto max-w-7xl">
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-gradient pt-24 pb-12 px-4">
+        <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -170,38 +173,39 @@ const Cameras = () => {
         </Card>
       </div>
 
-      {/* Fullscreen Dialog */}
-      <Dialog open={!!selectedCamera} onOpenChange={() => setSelectedCamera(null)}>
-        <DialogContent className="max-w-6xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <div>
-                <span className="text-xl">{selectedCamera?.name}</span>
-                <span className="text-sm text-muted-foreground ml-3">
-                  {selectedCamera?.location}
-                </span>
+        {/* Fullscreen Dialog */}
+        <Dialog open={!!selectedCamera} onOpenChange={() => setSelectedCamera(null)}>
+          <DialogContent className="max-w-6xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <div>
+                  <span className="text-xl">{selectedCamera?.name}</span>
+                  <span className="text-sm text-muted-foreground ml-3">
+                    {selectedCamera?.location}
+                  </span>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => selectedCamera && refreshCamera(selectedCamera.id)}
+                >
+                  <RefreshCw className="h-5 w-5" />
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            {selectedCamera && (
+              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                <img
+                  src={`${selectedCamera.url}?t=${refreshKeys[selectedCamera.id] || Date.now()}`}
+                  alt={selectedCamera.name}
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => selectedCamera && refreshCamera(selectedCamera.id)}
-              >
-                <RefreshCw className="h-5 w-5" />
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-          {selectedCamera && (
-            <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-              <img
-                src={`${selectedCamera.url}?t=${refreshKeys[selectedCamera.id] || Date.now()}`}
-                alt={selectedCamera.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 };
 

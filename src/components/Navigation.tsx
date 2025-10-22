@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Camera, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo.png";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,10 +20,8 @@ const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-full bg-gradient flex items-center justify-center">
-              <span className="text-white font-bold text-lg">K</span>
-            </div>
+          <Link to="/" className="flex items-center space-x-3">
+            <img src={logo} alt="Ski Kohútka" className="h-12 w-auto" />
             <span className="font-bold text-xl hidden sm:inline">Ski Kohútka</span>
           </Link>
 
