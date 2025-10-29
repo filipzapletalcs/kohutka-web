@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Camera, Home } from "lucide-react";
+import { Menu, X, Camera, Home, DollarSign, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 
@@ -11,6 +11,8 @@ const Navigation = () => {
   const navItems = [
     { name: "Úvod", path: "/", icon: Home },
     { name: "Webkamery", path: "/kamery", icon: Camera },
+    { name: "Ceník", path: "/cenik", icon: DollarSign },
+    { name: "Kontakt", path: "/kontakt", icon: Mail },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -33,8 +35,8 @@ const Navigation = () => {
                   variant="ghost"
                   className={
                     isActive(item.path)
-                      ? "bg-white/20 text-primary-foreground"
-                      : "text-foreground hover:bg-white/10"
+                      ? "bg-primary/90 text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                      : "text-foreground hover:bg-primary/90 hover:text-primary-foreground"
                   }
                 >
                   <item.icon className="mr-2 h-4 w-4" />
@@ -71,8 +73,8 @@ const Navigation = () => {
                   variant="ghost"
                   className={`w-full justify-start ${
                     isActive(item.path)
-                      ? "bg-white/20 text-primary-foreground"
-                      : "text-foreground"
+                      ? "bg-primary/90 text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                      : "text-foreground hover:bg-primary/90 hover:text-primary-foreground"
                   }`}
                 >
                   <item.icon className="mr-2 h-4 w-4" />

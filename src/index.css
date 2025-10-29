@@ -138,8 +138,55 @@ All colors MUST be HSL.
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .bg-gradient {
     background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
+  }
+
+  /* Infinite scroll animations for partners carousel */
+  @keyframes scroll-left {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-33.333%);
+    }
+  }
+
+  @keyframes scroll-right {
+    0% {
+      transform: translateX(-33.333%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  /* Mobile: faster animation (20s) */
+  .animate-scroll-left {
+    animation: scroll-left 20s linear infinite;
+  }
+
+  .animate-scroll-right {
+    animation: scroll-right 20s linear infinite;
+  }
+
+  /* Desktop: slower animation (40s) */
+  @media (min-width: 768px) {
+    .animate-scroll-left-slow {
+      animation: scroll-left 40s linear infinite;
+    }
+
+    .animate-scroll-right-slow {
+      animation: scroll-right 40s linear infinite;
+    }
+  }
+
+  /* Pause animation on hover */
+  .animate-scroll-left:hover,
+  .animate-scroll-right:hover,
+  .animate-scroll-left-slow:hover,
+  .animate-scroll-right-slow:hover {
+    animation-play-state: paused;
   }
 }
