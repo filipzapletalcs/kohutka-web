@@ -39,7 +39,7 @@ const Weather = () => {
           <div className="bg-white px-4 py-3 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-gray-900 text-sm md:text-base">Nový Hrozenkov 241</h3>
+                <h3 className="font-bold text-gray-900 text-sm md:text-base">Kohútka</h3>
                 <p className="text-xs text-gray-600">49.99°S 18.05°V 245m. n. m.</p>
               </div>
             </div>
