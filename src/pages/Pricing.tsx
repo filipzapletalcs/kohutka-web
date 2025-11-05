@@ -1,7 +1,9 @@
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
 import { Info, Clock, Calendar, Ticket, Award, Coins, Package, FileText, Percent } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type PricingTab = "denni" | "casove" | "sezonni" | "jednotlive" | "bodove" | "ostatni" | "informace" | "slevy";
 
@@ -413,28 +415,28 @@ const Pricing = () => {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-gradient pt-24 pb-12 px-4">
-        <div className="container mx-auto max-w-7xl">
+      <div className="min-h-screen bg-gradient pt-24 pb-12 scroll-smooth">
+        <div className="container mx-auto max-w-7xl px-4">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-primary-foreground mb-2">
+          <div className="mb-8 md:mb-10">
+            <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
               Ceník skipasů
             </h1>
-            <p className="text-primary-foreground/80">
+            <p className="text-base md:text-lg text-primary-foreground/80">
               Sezóna 2024/2025
             </p>
           </div>
 
-          {/* Tabs */}
-          <div className="mb-8 overflow-x-auto">
-            <div className="flex gap-2 min-w-max glass rounded-lg p-2">
+          {/* Tabs - Desktop */}
+          <div className="mb-8 hidden md:block overflow-x-auto">
+            <div className="flex gap-2 flex-wrap glass rounded-lg p-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-6 py-3 rounded-md font-semibold text-sm transition-all flex items-center gap-2 ${
+                    className={`px-4 lg:px-6 py-3 rounded-md font-semibold text-sm transition-all flex items-center gap-2 ${
                       activeTab === tab.id
                         ? "bg-accent text-accent-foreground shadow-lg scale-105"
                         : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10"
@@ -448,148 +450,299 @@ const Pricing = () => {
             </div>
           </div>
 
+          {/* Dropdown - Mobile */}
+          <div className="mb-8 md:hidden">
+            <Select value={activeTab} onValueChange={(value) => setActiveTab(value as PricingTab)}>
+              <SelectTrigger className="w-full bg-white/95 text-gray-900 border-2 border-primary/30 h-14 text-lg shadow-lg hover:bg-white hover:border-primary/50 transition-all">
+                <SelectValue>
+                  {(() => {
+                    const currentTab = tabs.find(t => t.id === activeTab);
+                    const Icon = currentTab?.icon || Info;
+                    return (
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5 text-primary" />
+                        <span className="font-bold">{currentTab?.label}</span>
+                      </div>
+                    );
+                  })()}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-white border-2 border-primary/30">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <SelectItem key={tab.id} value={tab.id} className="text-base py-3 cursor-pointer hover:bg-primary/10">
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-4 w-4 text-primary" />
+                        <span className="font-semibold">{tab.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Content */}
           {activeTab === "informace" ? (
             renderInformaceTab()
           ) : activeTab === "slevy" ? (
             renderSlevyTab()
           ) : data.length > 0 ? (
-            <Card className="glass overflow-hidden border-0 shadow-2xl">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-b border-white/20">
-                      <th className="text-left p-5 font-bold text-lg">Typ jízdenky</th>
-                      {data[0]?.all !== undefined ? (
-                        <th className="text-right p-5 font-bold">
-                          <span className="text-lg">Všechny kategorie</span>
-                        </th>
-                      ) : (
-                        <>
+            <>
+              {/* Desktop Table View */}
+              <Card className="glass overflow-hidden border-0 shadow-2xl hidden md:block">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-b border-white/20">
+                        <th className="text-left p-5 font-bold text-lg">Typ jízdenky</th>
+                        {data[0]?.all !== undefined ? (
                           <th className="text-right p-5 font-bold">
-                            <div className="flex flex-col items-end">
-                              <span className="text-lg">Dospělí</span>
-                              <span className="text-xs font-normal opacity-70">(1961-2007)</span>
-                            </div>
+                            <span className="text-lg">Všechny kategorie</span>
                           </th>
-                          <th className="text-right p-5 font-bold">
-                            <div className="flex flex-col items-end">
-                              <span className="text-lg">Děti</span>
-                              <span className="text-xs font-normal opacity-70">(2015 a mladší)</span>
-                            </div>
-                          </th>
-                          <th className="text-right p-5 font-bold">
-                            <div className="flex flex-col items-end">
-                              <span className="text-lg">Junioři</span>
-                              <span className="text-xs font-normal opacity-70">(2006-2014)</span>
-                            </div>
-                          </th>
-                          <th className="text-right p-5 font-bold">
-                            <div className="flex flex-col items-end">
-                              <span className="text-lg">Senioři</span>
-                              <span className="text-xs font-normal opacity-70">(1960 a starší)</span>
-                            </div>
-                          </th>
-                        </>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white/95 backdrop-blur-sm">
-                    {data.map((row, index) => (
-                      <>
-                        <tr
-                          key={index}
-                          className={
-                            row.isHeader
-                              ? "bg-blue-100 border-l-4 border-blue-600"
-                              : "border-b border-gray-100 hover:bg-blue-50 transition-colors"
-                          }
-                        >
-                          <td className={`p-4 ${row.isHeader ? "font-bold text-gray-900 text-lg" : "font-medium text-gray-700"}`}>
-                            {row.name}
-                          </td>
-                          {row.all !== undefined ? (
-                            <td className="text-right p-4 font-semibold text-gray-900">
-                              {row.isHeader ? "" : (
-                                typeof row.all === "number" ? (
-                                  <span className="inline-flex items-center gap-1">
-                                    <span className="text-lg">{row.all}</span>
-                                    <span className="text-xs text-gray-500">Kč</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-sm">{row.all}</span>
-                                )
-                              )}
-                            </td>
-                          ) : (
-                            <>
-                              <td className="text-right p-4 font-semibold text-gray-900">
-                                {row.isHeader ? "" : (
-                                  typeof row.adult === "number" ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      <span className="text-lg">{row.adult}</span>
-                                      <span className="text-xs text-gray-500">Kč</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-sm">{row.adult}</span>
-                                  )
-                                )}
-                              </td>
-                              <td className="text-right p-4 font-semibold text-gray-900">
-                                {row.isHeader ? "" : (
-                                  typeof row.child === "number" ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      <span className="text-lg">{row.child}</span>
-                                      <span className="text-xs text-gray-500">Kč</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-sm">{row.child}</span>
-                                  )
-                                )}
-                              </td>
-                              <td className="text-right p-4 font-semibold text-gray-900">
-                                {row.isHeader ? "" : (
-                                  typeof row.junior === "number" ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      <span className="text-lg">{row.junior}</span>
-                                      <span className="text-xs text-gray-500">Kč</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-sm">{row.junior}</span>
-                                  )
-                                )}
-                              </td>
-                              <td className="text-right p-4 font-semibold text-gray-900">
-                                {row.isHeader ? "" : (
-                                  typeof row.senior === "number" ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      <span className="text-lg">{row.senior}</span>
-                                      <span className="text-xs text-gray-500">Kč</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-sm">{row.senior}</span>
-                                  )
-                                )}
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                        {row.note && (
-                          <tr>
-                            <td colSpan={5} className="px-4 py-2 bg-blue-50 border-b border-gray-100">
-                              <p className="text-xs text-blue-700 italic flex items-center gap-2">
-                                <Info className="h-3 w-3" />
-                                {row.note}
-                              </p>
-                            </td>
-                          </tr>
+                        ) : (
+                          <>
+                            <th className="text-right p-5 font-bold">
+                              <div className="flex flex-col items-end">
+                                <span className="text-lg">Dospělí</span>
+                                <span className="text-xs font-normal opacity-70">(1961-2007)</span>
+                              </div>
+                            </th>
+                            <th className="text-right p-5 font-bold">
+                              <div className="flex flex-col items-end">
+                                <span className="text-lg">Děti</span>
+                                <span className="text-xs font-normal opacity-70">(2015 a mladší)</span>
+                              </div>
+                            </th>
+                            <th className="text-right p-5 font-bold">
+                              <div className="flex flex-col items-end">
+                                <span className="text-lg">Junioři</span>
+                                <span className="text-xs font-normal opacity-70">(2006-2014)</span>
+                              </div>
+                            </th>
+                            <th className="text-right p-5 font-bold">
+                              <div className="flex flex-col items-end">
+                                <span className="text-lg">Senioři</span>
+                                <span className="text-xs font-normal opacity-70">(1960 a starší)</span>
+                              </div>
+                            </th>
+                          </>
                         )}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white/95 backdrop-blur-sm">
+                      {data.map((row, index) => (
+                        <>
+                          <tr
+                            key={index}
+                            className={
+                              row.isHeader
+                                ? "bg-blue-100 border-l-4 border-blue-600"
+                                : "border-b border-gray-100 hover:bg-blue-50 transition-colors"
+                            }
+                          >
+                            <td className={`p-4 ${row.isHeader ? "font-bold text-gray-900 text-lg" : "font-medium text-gray-700"}`}>
+                              {row.name}
+                            </td>
+                            {row.all !== undefined ? (
+                              <td className="text-right p-4 font-semibold text-gray-900">
+                                {row.isHeader ? "" : (
+                                  typeof row.all === "number" ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      <span className="text-lg">{row.all}</span>
+                                      <span className="text-xs text-gray-500">Kč</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-sm">{row.all}</span>
+                                  )
+                                )}
+                              </td>
+                            ) : (
+                              <>
+                                <td className="text-right p-4 font-semibold text-gray-900">
+                                  {row.isHeader ? "" : (
+                                    typeof row.adult === "number" ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="text-lg">{row.adult}</span>
+                                        <span className="text-xs text-gray-500">Kč</span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-sm">{row.adult}</span>
+                                    )
+                                  )}
+                                </td>
+                                <td className="text-right p-4 font-semibold text-gray-900">
+                                  {row.isHeader ? "" : (
+                                    typeof row.child === "number" ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="text-lg">{row.child}</span>
+                                        <span className="text-xs text-gray-500">Kč</span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-sm">{row.child}</span>
+                                    )
+                                  )}
+                                </td>
+                                <td className="text-right p-4 font-semibold text-gray-900">
+                                  {row.isHeader ? "" : (
+                                    typeof row.junior === "number" ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="text-lg">{row.junior}</span>
+                                        <span className="text-xs text-gray-500">Kč</span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-sm">{row.junior}</span>
+                                    )
+                                  )}
+                                </td>
+                                <td className="text-right p-4 font-semibold text-gray-900">
+                                  {row.isHeader ? "" : (
+                                    typeof row.senior === "number" ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <span className="text-lg">{row.senior}</span>
+                                        <span className="text-xs text-gray-500">Kč</span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-sm">{row.senior}</span>
+                                    )
+                                  )}
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                          {row.note && (
+                            <tr>
+                              <td colSpan={5} className="px-4 py-2 bg-blue-50 border-b border-gray-100">
+                                <p className="text-xs text-blue-700 italic flex items-center gap-2">
+                                  <Info className="h-3 w-3" />
+                                  {row.note}
+                                </p>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-2">
+                {data.map((row, index) => (
+                  <div key={index}>
+                    {row.isHeader ? (
+                      <div className="glass p-3 border-l-4 border-primary shadow-lg rounded-lg">
+                        <h3 className="font-bold text-base text-gray-900">
+                          {row.name}
+                        </h3>
+                      </div>
+                    ) : (
+                      <Card className="bg-white/95 border-0 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                        <div className="p-3">
+                          <h4 className="font-semibold text-base text-gray-900 mb-2.5 leading-snug">
+                            {row.name}
+                          </h4>
+
+                          {row.all !== undefined ? (
+                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-2.5 rounded-lg">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-700">Všechny kategorie</span>
+                                <span className="text-2xl font-bold text-primary">
+                                  {typeof row.all === "number" ? (
+                                    <>
+                                      {row.all} <span className="text-sm text-gray-600">Kč</span>
+                                    </>
+                                  ) : (
+                                    row.all
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-700">Dospělí</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(1961-2007)</p>
+                                </div>
+                                <span className="text-xl font-bold text-gray-900">
+                                  {typeof row.adult === "number" ? (
+                                    <>
+                                      {row.adult} <span className="text-xs text-gray-500">Kč</span>
+                                    </>
+                                  ) : (
+                                    row.adult
+                                  )}
+                                </span>
+                              </div>
+
+                              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-700">Děti</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(2015 a mladší)</p>
+                                </div>
+                                <span className="text-xl font-bold text-gray-900">
+                                  {typeof row.child === "number" ? (
+                                    <>
+                                      {row.child} <span className="text-xs text-gray-500">Kč</span>
+                                    </>
+                                  ) : (
+                                    row.child
+                                  )}
+                                </span>
+                              </div>
+
+                              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-700">Junioři</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(2006-2014)</p>
+                                </div>
+                                <span className="text-xl font-bold text-gray-900">
+                                  {typeof row.junior === "number" ? (
+                                    <>
+                                      {row.junior} <span className="text-xs text-gray-500">Kč</span>
+                                    </>
+                                  ) : (
+                                    row.junior
+                                  )}
+                                </span>
+                              </div>
+
+                              <div className="flex justify-between items-center py-3">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-700">Senioři</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(1960 a starší)</p>
+                                </div>
+                                <span className="text-xl font-bold text-gray-900">
+                                  {typeof row.senior === "number" ? (
+                                    <>
+                                      {row.senior} <span className="text-xs text-gray-500">Kč</span>
+                                    </>
+                                  ) : (
+                                    row.senior
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {row.note && (
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-2 border-blue-400">
+                              <p className="text-xs text-blue-700 flex items-start gap-2">
+                                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                <span className="leading-relaxed">{row.note}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    )}
+                  </div>
+                ))}
               </div>
-            </Card>
+            </>
           ) : (
             <Card className="glass p-12">
               <div className="text-center text-primary-foreground/70">
@@ -601,17 +754,17 @@ const Pricing = () => {
 
           {/* Info Card - Show for tabs with pricing tables */}
           {!["informace", "slevy"].includes(activeTab) && (
-            <div className="mt-8">
-              <Card className="bg-blue-50 p-6 border-0 shadow-lg border-l-4 border-primary">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Info className="h-6 w-6 text-primary" />
+            <div className="mt-6 md:mt-8">
+              <Card className="bg-blue-50 p-5 md:p-6 border-0 shadow-lg border-l-4 border-primary">
+                <div className="flex items-start gap-3 md:gap-4">
+                  <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                    <Info className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-xl mb-3 text-gray-900">
+                    <h3 className="font-semibold text-lg md:text-xl mb-2 md:mb-3 text-gray-900">
                       SKIREGION VALAŠSKO
                     </h3>
-                    <p className="text-gray-800 leading-relaxed font-medium">
+                    <p className="text-sm md:text-base text-gray-800 leading-relaxed font-medium">
                       Jízdenky platí pro: <span className="font-bold">Kohútka, Kyčerka, Horal, Karolinka, Jezerné, Bílá a Mezivodí</span>
                     </p>
                   </div>
@@ -621,6 +774,9 @@ const Pricing = () => {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </>
   );
 };

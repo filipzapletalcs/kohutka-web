@@ -53,8 +53,8 @@ const SlopesAndLifts = () => {
 
   if (isLoading) {
     return (
-      <section className="pt-8 pb-20 px-2 md:px-4">
-        <div className="container mx-auto max-w-7xl">
+      <section className="pt-8 pb-20">
+        <div className="container mx-auto max-w-7xl px-4">
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
           </div>
@@ -65,8 +65,8 @@ const SlopesAndLifts = () => {
 
   if (error || !data) {
     return (
-      <section className="pt-8 pb-20 px-2 md:px-4">
-        <div className="container mx-auto max-w-7xl">
+      <section className="pt-8 pb-20">
+        <div className="container mx-auto max-w-7xl px-4">
           <Card className="glass p-8 text-center rounded-lg">
             <p className="text-muted-foreground">
               Nepodařilo se načíst data o sjezdovkách a lanovkách
@@ -94,8 +94,8 @@ const SlopesAndLifts = () => {
   const maxRows = Math.max(slopesDetailed.length, liftsDetailed.length);
 
   return (
-    <section className="pt-4 pb-20 px-2 md:px-4 bg-muted/20">
-      <div className="container mx-auto max-w-7xl">
+    <section className="pt-4 pb-20 bg-muted/20">
+      <div className="container mx-auto max-w-7xl px-4">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -134,12 +134,12 @@ const SlopesAndLifts = () => {
                   {[...Array(maxRows)].map((_, index) => {
                     const slope = slopesDetailed[index];
 
-                    // Empty row for alignment
+                    // Empty row for alignment (hidden on mobile, visible on desktop)
                     if (!slope) {
                       return (
                         <tr
                           key={`empty-${index}`}
-                          className={index % 2 === 0 ? "bg-blue-500/5" : ""}
+                          className={`hidden lg:table-row ${index % 2 === 0 ? "bg-blue-500/5" : ""}`}
                         >
                           <td className="px-1.5 py-2 md:p-3" colSpan={7}>&nbsp;</td>
                         </tr>
@@ -232,12 +232,12 @@ const SlopesAndLifts = () => {
                   {[...Array(maxRows)].map((_, index) => {
                     const lift = liftsDetailed[index];
 
-                    // Empty row for alignment
+                    // Empty row for alignment (hidden on mobile, visible on desktop)
                     if (!lift) {
                       return (
                         <tr
                           key={`empty-lift-${index}`}
-                          className={index % 2 === 0 ? "bg-blue-500/5" : ""}
+                          className={`hidden lg:table-row ${index % 2 === 0 ? "bg-blue-500/5" : ""}`}
                         >
                           <td className="px-1.5 py-2 md:p-3" colSpan={7}>&nbsp;</td>
                         </tr>

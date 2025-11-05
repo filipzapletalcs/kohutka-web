@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Maximize2, RefreshCw, AlertCircle, Thermometer, Clock, Video } from "lucide-react";
+import Hls from "hls.js";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -12,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
 import { Camera as CameraType } from "@/types/holidayInfo";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 const Cameras = () => {
   const [selectedCamera, setSelectedCamera] = useState<CameraType | null>(null);
   const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Fetch camera data with auto-refresh every 5 minutes
   const { data, isLoading, error, refetch } = useQuery({
@@ -29,6 +32,42 @@ const Cameras = () => {
   });
 
   const cameras = data?.cameras || [];
+
+  // Initialize HLS.js for live stream cameras
+  useEffect(() => {
+    if (selectedCamera?.hasLiveStream && selectedCamera?.liveStreamUrl && videoRef.current) {
+      const video = videoRef.current;
+
+      // Check if browser supports HLS natively (Safari)
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = selectedCamera.liveStreamUrl;
+      }
+      // Use HLS.js for other browsers
+      else if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+        });
+
+        hls.loadSource(selectedCamera.liveStreamUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(err => console.log('Autoplay prevented:', err));
+        });
+
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          console.error('HLS error:', data);
+        });
+
+        return () => {
+          hls.destroy();
+        };
+      } else {
+        console.error('HLS is not supported in this browser');
+      }
+    }
+  }, [selectedCamera]);
 
   const refreshCamera = (cameraId: string) => {
     setRefreshKeys(prev => ({
@@ -49,8 +88,8 @@ const Cameras = () => {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-gradient pt-24 pb-12 px-4">
-        <div className="container mx-auto max-w-7xl">
+      <div className="min-h-screen bg-gradient pt-24 pb-12">
+        <div className="container mx-auto max-w-7xl px-4">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -113,7 +152,7 @@ const Cameras = () => {
                 >
                   <div className="relative aspect-video bg-muted">
                     <img
-                      src={`${camera.media.last_image.url}&t=${refreshKeys[camera.id] || Date.now()}`}
+                      src={`${camera.media.last_image.url}${camera.media.last_image.url.includes('?') ? '&' : '?'}t=${refreshKeys[camera.id] || Date.now()}`}
                       alt={camera.name}
                       className="w-full h-full object-cover"
                       onError={() => {
@@ -150,10 +189,10 @@ const Cameras = () => {
                         <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                         LIVE
                       </div>
-                      {camera.hasVideo && (
+                      {(camera.hasVideo || camera.hasLiveStream) && (
                         <Badge variant="secondary" className="bg-blue-500 text-white">
                           <Video className="h-3 w-3 mr-1" />
-                          VIDEO
+                          {camera.hasLiveStream ? 'STREAM' : 'VIDEO'}
                         </Badge>
                       )}
                     </div>
@@ -221,91 +260,102 @@ const Cameras = () => {
       </div>
 
         {/* Fullscreen Dialog */}
-        <Dialog open={!!selectedCamera} onOpenChange={() => setSelectedCamera(null)}>
-          <DialogContent className="max-w-6xl" aria-describedby="camera-description">
-            <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <div>
-                  <span className="text-xl">{selectedCamera?.name}</span>
-                  <span className="text-sm text-muted-foreground ml-3">
-                    {selectedCamera?.description || selectedCamera?.location}
-                  </span>
-                  {selectedCamera?.hasVideo && (
-                    <Badge variant="secondary" className="ml-2 bg-blue-500 text-white">
-                      <Video className="h-3 w-3 mr-1" />
-                      LIVE STREAM
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  {selectedCamera?.media.last_image.temp && (
-                    <Badge variant="secondary">
-                      <Thermometer className="h-4 w-4 mr-1" />
-                      {selectedCamera.media.last_image.temp}°C
-                    </Badge>
-                  )}
-                  {!selectedCamera?.hasVideo && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => selectedCamera && refreshCamera(selectedCamera.id)}
-                      title="Obnovit obrázek"
-                    >
-                      <RefreshCw className="h-5 w-5" />
-                    </Button>
-                  )}
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            {selectedCamera && (
-              <>
-                <p id="camera-description" className="sr-only">
-                  Zobrazení live kamery {selectedCamera.name}
-                </p>
-                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                  {selectedCamera.hasVideo && selectedCamera.media.last_video ? (
-                    <video
-                      controls
-                      autoPlay
-                      muted
-                      playsInline
-                      className="w-full h-full object-contain"
-                      key={selectedCamera.id}
-                      onError={(e) => {
-                        console.error('Video load error:', selectedCamera.media.last_video?.url);
-                        console.error('Error event:', e);
-                      }}
-                      onLoadedData={() => {
-                        console.log('Video loaded successfully:', selectedCamera.media.last_video?.url);
-                      }}
-                    >
-                      <source
-                        src={selectedCamera.media.last_video.url}
-                        type="video/mp4"
-                      />
-                      Váš prohlížeč nepodporuje video tag.
-                    </video>
-                  ) : (
-                    <img
-                      src={`${selectedCamera.media.last_image.url}&t=${refreshKeys[selectedCamera.id] || Date.now()}`}
-                      alt={selectedCamera.name}
-                      className="w-full h-full object-contain"
-                    />
-                  )}
-                  {!selectedCamera.hasVideo && selectedCamera.media.last_image.time && (
-                    <div className="absolute bottom-4 right-4">
-                      <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                        <Clock className="h-4 w-4 mr-1" />
-                        Aktualizováno: {selectedCamera.media.last_image.time}
+        {selectedCamera && (
+          <Dialog open={true} onOpenChange={() => setSelectedCamera(null)}>
+            <DialogContent className="max-w-6xl" aria-describedby="camera-description">
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xl">{selectedCamera.name}</span>
+                    <span className="text-sm text-muted-foreground ml-3">
+                      {selectedCamera.description || selectedCamera.location}
+                    </span>
+                    {(selectedCamera.hasVideo || selectedCamera.hasLiveStream) && (
+                      <Badge variant="secondary" className="ml-2 bg-blue-500 text-white">
+                        <Video className="h-3 w-3 mr-1" />
+                        LIVE STREAM
                       </Badge>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {selectedCamera.media.last_image.temp && (
+                      <Badge variant="secondary">
+                        <Thermometer className="h-4 w-4 mr-1" />
+                        {selectedCamera.media.last_image.temp}°C
+                      </Badge>
+                    )}
+                    {!selectedCamera.hasVideo && !selectedCamera.hasLiveStream && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => refreshCamera(selectedCamera.id)}
+                        title="Obnovit obrázek"
+                      >
+                        <RefreshCw className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+              <p id="camera-description" className="sr-only">
+                Zobrazení live kamery {selectedCamera.name}
+              </p>
+              <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                {selectedCamera.hasLiveStream && selectedCamera.liveStreamUrl ? (
+                  <video
+                    ref={videoRef}
+                    controls
+                    muted
+                    playsInline
+                    className="w-full h-full object-contain"
+                  >
+                    Váš prohlížeč nepodporuje HLS live stream.
+                  </video>
+                ) : selectedCamera.hasVideo && selectedCamera.media.last_video ? (
+                  <video
+                    controls
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-contain"
+                    key={selectedCamera.id}
+                    onError={(e) => {
+                      console.error('Video load error:', selectedCamera.media.last_video?.url);
+                      console.error('Error event:', e);
+                    }}
+                    onLoadedData={() => {
+                      console.log('Video loaded successfully:', selectedCamera.media.last_video?.url);
+                    }}
+                  >
+                    <source
+                      src={selectedCamera.media.last_video.url}
+                      type="video/mp4"
+                    />
+                    Váš prohlížeč nepodporuje video tag.
+                  </video>
+                ) : (
+                  <img
+                    src={`${selectedCamera.media.last_image.url}${selectedCamera.media.last_image.url.includes('?') ? '&' : '?'}t=${refreshKeys[selectedCamera.id] || Date.now()}`}
+                    alt={selectedCamera.name}
+                    className="w-full h-full object-contain"
+                  />
+                )}
+                {!selectedCamera.hasVideo && !selectedCamera.hasLiveStream && selectedCamera.media.last_image.time && (
+                  <div className="absolute bottom-4 right-4">
+                    <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
+                      <Clock className="h-4 w-4 mr-1" />
+                      Aktualizováno: {selectedCamera.media.last_image.time}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
+
+      {/* Footer */}
+      <Footer />
     </>
   );
 };

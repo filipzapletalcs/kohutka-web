@@ -3,15 +3,15 @@ import aboutImage from "@/assets/lanovka-zima_1000x750.jpg";
 
 const AboutUs = () => {
   return (
-    <section className="pt-8 pb-20 px-0 md:px-4">
-      <div className="container mx-auto max-w-7xl">
-        <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center px-4">
+    <section className="pt-8 pb-20">
+      <div className="container mx-auto max-w-7xl px-4">
+        <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
           O nás
         </h2>
 
-        <div className="grid lg:grid-cols-2 gap-0 md:gap-8 items-center">
+        <div className="grid lg:grid-cols-2 gap-4 md:gap-8 items-center">
           {/* Text Content - LEFT */}
-          <Card className="glass py-8 px-6 md:p-10 border-white/20 rounded-none md:rounded-lg">
+          <Card className="glass py-8 px-6 md:p-10 border-white/20 rounded-lg">
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
                 Vítejte v Ski Centru Kohútka – místě, kde si zima podává ruku s pohodou a zážitky!
@@ -37,7 +37,7 @@ const AboutUs = () => {
 
           {/* Image - RIGHT */}
           <div className="order-first lg:order-last">
-            <Card className="glass overflow-hidden border-white/20 rounded-none md:rounded-lg">
+            <Card className="glass overflow-hidden border-white/20 rounded-lg">
               <img
                 src={aboutImage}
                 alt="Lanovka v zimě - Ski Centrum Kohútka"

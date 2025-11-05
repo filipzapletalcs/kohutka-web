@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import DirectionsInfo from "@/components/DirectionsInfo";
 import CompanyDetails from "@/components/CompanyDetails";
+import Footer from "@/components/Footer";
 
 const Contact = () => {
   const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2602.3!2d18.230488!3d49.2951606!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47147f3bee77ddc5%3A0x5153436e011669ee!2sSKI%20CENTRUM%20KOH%C3%9ATKA%2C%20a.s.!5e0!3m2!1scs!2scz!4v1234567890123!5m2!1scs!2scz`;
@@ -13,8 +14,8 @@ const Contact = () => {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="pt-24 pb-8 px-4">
-        <div className="container mx-auto max-w-7xl text-center">
+      <section className="pt-24 pb-8">
+        <div className="container mx-auto max-w-7xl px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Kontakt</h1>
           <p className="text-lg text-muted-foreground">
             SKI CENTRUM KOHÚTKA, a.s.
@@ -23,8 +24,8 @@ const Contact = () => {
       </section>
 
       {/* Main Contact Section - Contact Info + Map */}
-      <section className="py-8 px-2 md:px-4">
-        <div className="container mx-auto max-w-7xl">
+      <section className="py-8">
+        <div className="container mx-auto max-w-7xl px-4">
           <div className="grid lg:grid-cols-[1fr,1.5fr] gap-4 md:gap-8">
             {/* Contact Information - LEFT */}
             <div className="space-y-4 md:space-y-6">
@@ -146,7 +147,7 @@ const Contact = () => {
 
             {/* Map - RIGHT */}
             <Card className="glass overflow-hidden border-white/20 rounded-lg">
-              <div className="relative w-full h-[500px] lg:h-full min-h-[500px]">
+              <div className="relative w-full h-[300px] md:h-[500px] lg:h-full lg:min-h-[500px]">
                 <iframe
                   src={mapUrl}
                   width="100%"
@@ -181,13 +182,7 @@ const Contact = () => {
       <CompanyDetails />
 
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground py-8 px-4 mt-12">
-        <div className="container mx-auto max-w-6xl text-center">
-          <p className="text-sm opacity-80">
-            © 2025 Ski Centrum Kohútka - Lyžařské středisko v srdci Valašska
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

@@ -31,9 +31,9 @@ const CompanyDetails = () => {
   ];
 
   return (
-    <section className="py-12 px-2 md:px-4">
-      <div className="container mx-auto max-w-7xl">
-        <div className="text-center mb-8 px-4">
+    <section className="py-12">
+      <div className="container mx-auto max-w-7xl px-4">
+        <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">O společnosti</h2>
         </div>
 

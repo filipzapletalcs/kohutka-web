@@ -162,13 +162,13 @@ All colors MUST be HSL.
     }
   }
 
-  /* Mobile: faster animation (20s) */
+  /* Mobile: faster animation (12s) */
   .animate-scroll-left {
-    animation: scroll-left 20s linear infinite;
+    animation: scroll-left 12s linear infinite;
   }
 
   .animate-scroll-right {
-    animation: scroll-right 20s linear infinite;
+    animation: scroll-right 12s linear infinite;
   }
 
   /* Desktop: slower animation (40s) */

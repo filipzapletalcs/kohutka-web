@@ -6,6 +6,8 @@ export interface Camera {
   description: string;
   location: string;
   hasVideo?: boolean;
+  hasLiveStream?: boolean;
+  liveStreamUrl?: string;
   media: {
     last_image: {
       url: string;

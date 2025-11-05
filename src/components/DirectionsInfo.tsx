@@ -3,9 +3,9 @@ import { Card } from "@/components/ui/card";
 
 const DirectionsInfo = () => {
   return (
-    <section className="py-12 px-2 md:px-4 bg-muted/20">
-      <div className="container mx-auto max-w-7xl">
-        <div className="text-center mb-8 px-4">
+    <section className="py-12 bg-muted/20">
+      <div className="container mx-auto max-w-7xl px-4">
+        <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Kudy k nám</h2>
           <p className="text-lg text-muted-foreground">
             Důležité informace pro vaši cestu

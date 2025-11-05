@@ -9,9 +9,11 @@ import Location from "@/components/Location";
 import Weather from "@/components/Weather";
 import AboutUs from "@/components/AboutUs";
 import SlopesAndLifts from "@/components/SlopesAndLifts";
+import FacebookFeed from "@/components/FacebookFeed";
+import Footer from "@/components/Footer";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.png";
 import heroImage2 from "@/assets/P01Slider-Slide01.jpg";
 import heroImage3 from "@/assets/P01Slider-Slide02.jpg";
@@ -22,6 +24,9 @@ const heroImages = [heroImage1, heroImage2, heroImage3];
 const Index = () => {
   const [panoramaProgress, setPanoramaProgress] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHeroVisible, setIsHeroVisible] = useState(true);
+  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([false, false, false]);
+  const heroRef = useRef<HTMLDivElement>(null);
 
   // Fetch data with auto-refresh every 5 minutes
   const { data, isLoading } = useQuery({
@@ -35,6 +40,37 @@ const Index = () => {
   const lifts = data?.lifts;
   const slopes = data?.slopes;
 
+  // Preload hero images
+  useEffect(() => {
+    heroImages.forEach((src, index) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        setImagesLoaded(prev => {
+          const newLoaded = [...prev];
+          newLoaded[index] = true;
+          return newLoaded;
+        });
+      };
+    });
+  }, []);
+
+  // Intersection Observer for hero visibility
+  useEffect(() => {
+    if (!heroRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsHeroVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(heroRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
   // Auto-rotate hero images every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -44,10 +80,12 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-animate panoramic scroll effect
+  // Auto-animate panoramic scroll effect - only when hero is visible
   useEffect(() => {
+    if (!isHeroVisible) return;
+
     let animationFrame: number;
-    let progress = 0;
+    let progress = panoramaProgress;
     let direction = 1; // 1 for right, -1 for left
 
     const animate = () => {
@@ -69,14 +107,19 @@ const Index = () => {
     animationFrame = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(animationFrame);
-  }, []);
+  }, [isHeroVisible, panoramaProgress]);
 
   return (
     <div className="min-h-screen">
       <Navigation />
 
       {/* Hero Section */}
-      <div className="relative h-screen overflow-hidden">
+      <div ref={heroRef} className="relative min-h-[70vh] md:h-screen overflow-hidden">
+        {/* Loading skeleton */}
+        {!imagesLoaded[currentImageIndex] && (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 animate-pulse" />
+        )}
+
         {/* Panoramic Images with Automatic Horizontal Movement and Rotation */}
         {heroImages.map((image, index) => (
           <div
@@ -87,8 +130,13 @@ const Index = () => {
               backgroundSize: 'auto 100%',
               backgroundPosition: `${panoramaProgress * 100}% center`,
               backgroundRepeat: 'no-repeat',
-              opacity: currentImageIndex === index ? 1 : 0,
+              opacity: currentImageIndex === index && imagesLoaded[index] ? 1 : 0,
               zIndex: currentImageIndex === index ? 1 : 0,
+            }}
+            onLoad={() => {
+              const newLoaded = [...imagesLoaded];
+              newLoaded[index] = true;
+              setImagesLoaded(newLoaded);
             }}
           />
         ))}
@@ -102,7 +150,7 @@ const Index = () => {
                 <img
                   src={logo}
                   alt="Kohútka Logo"
-                  className="h-24 md:h-60 w-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+                  className="h-32 md:h-60 w-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
                 />
               </div>
 
@@ -139,10 +187,10 @@ const Index = () => {
       </div>
 
       {/* Status Widgets */}
-      <section className="py-12 px-4 -mt-20 relative z-20">
-        <div className="container mx-auto max-w-6xl">
+      <section className="py-12 -mt-20 relative z-20">
+        <div className="container mx-auto max-w-7xl px-4">
           {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 md:gap-4">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="glass p-4 rounded-lg">
                   <Skeleton className="h-8 w-8 mx-auto mb-2" />
@@ -152,7 +200,7 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 md:gap-4">
               <StatusWidget
                 icon={Mountain}
                 label="Skiareál"
@@ -210,8 +258,8 @@ const Index = () => {
       <SlopesAndLifts />
 
       {/* Camera Preview Section */}
-      <section className="pt-8 pb-20 px-2 md:px-4 bg-muted/30">
-        <div className="container mx-auto max-w-7xl">
+      <section className="pt-8 pb-20 bg-muted/30">
+        <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Sledujte areál naživo
@@ -272,14 +320,11 @@ const Index = () => {
       {/* Partners Section */}
       <Partners />
 
+      {/* Facebook Feed Section */}
+      <FacebookFeed />
+
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground py-8 px-4">
-        <div className="container mx-auto max-w-6xl text-center">
-          <p className="text-sm opacity-80">
-            © 2025 Ski Centrum Kohútka - Lyžařské středisko v srdci Valašska
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

@@ -22,9 +22,9 @@ const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <img src={logo} alt="Ski Kohútka" className="h-12 w-auto" />
-            <span className="font-bold text-xl hidden sm:inline">Ski Kohútka</span>
+          <Link to="/" className="flex items-center space-x-3" aria-label="Přejít na úvodní stránku">
+            <img src={logo} alt="Ski Kohútka logo" className="h-16 md:h-12 w-auto" />
+            <span className="font-bold text-xl hidden sm:inline" aria-hidden="true">Ski Kohútka</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -38,14 +38,18 @@ const Navigation = () => {
                       ? "bg-primary/90 text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                       : "text-foreground hover:bg-primary/90 hover:text-primary-foreground"
                   }
+                  aria-label={`Přejít na ${item.name}`}
+                  aria-current={isActive(item.path) ? "page" : undefined}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}
                 </Button>
               </Link>
             ))}
-            <Button className="ml-4 bg-accent hover:bg-accent/90 text-accent-foreground">
-              Skipas Online
+            <Button asChild className="ml-4 bg-accent hover:bg-accent/90 text-accent-foreground">
+              <a href="https://valassko.ski/shop-kohutka" target="_blank" rel="noopener noreferrer">
+                Skipas Online
+              </a>
             </Button>
           </div>
 
@@ -55,6 +59,8 @@ const Navigation = () => {
             size="icon"
             className="md:hidden"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Zavřít menu" : "Otevřít menu"}
+            aria-expanded={isOpen}
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
@@ -76,14 +82,18 @@ const Navigation = () => {
                       ? "bg-primary/90 text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                       : "text-foreground hover:bg-primary/90 hover:text-primary-foreground"
                   }`}
+                  aria-label={`Přejít na ${item.name}`}
+                  aria-current={isActive(item.path) ? "page" : undefined}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}
                 </Button>
               </Link>
             ))}
-            <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-              Skipas Online
+            <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+              <a href="https://valassko.ski/shop-kohutka" target="_blank" rel="noopener noreferrer">
+                Skipas Online
+              </a>
             </Button>
           </div>
         )}

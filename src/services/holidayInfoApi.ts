@@ -97,7 +97,13 @@ export function parseCameras(xmlDoc: Document): Camera[] {
   camElements.forEach((camEl) => {
     const id = camEl.getAttribute('id') || '';
     const hasVideo = camEl.getAttribute('hasvideo') === '1';
-    const name = getXMLText(camEl, 'name');
+    let name = getXMLText(camEl, 'name');
+
+    // Change "Kohútka" to "Chata Kohútka"
+    if (name === 'Kohútka') {
+      name = 'Chata Kohútka';
+    }
+
     const sealevel = getXMLText(camEl, 'sealevel');
 
     const lastImage = camEl.querySelector('media > last_image');
@@ -170,6 +176,43 @@ export function parseCameras(xmlDoc: Document): Camera[] {
         },
       });
     }
+  });
+
+  // Add custom live stream cameras with direct HLS URLs
+  cameras.push({
+    id: 'live-kohutka',
+    name: 'Kohútka',
+    description: 'Live stream',
+    location: 'Areál Kohútka',
+    hasLiveStream: true,
+    liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka01_.m3u8',
+    media: {
+      last_image: {
+        url: 'http://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
+        temp: '',
+        date: '',
+        time: '',
+      },
+    },
+  });
+
+  cameras.push({
+    id: 'live-mala-kohutka',
+    name: 'Malá Kohútka',
+    description: 'Live stream',
+    location: 'Areál Malá Kohútka',
+    hasLiveStream: true,
+    liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka03_.m3u8',
+    media: {
+      last_image: {
+        url: 'http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
+        temp: '',
+        date: '',
+        time: '',
+      },
+    },
   });
 
   // If no cameras found in API, use fallback
