@@ -14,16 +14,17 @@ const Weather = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Correct GPS coordinates for Kohútka: 49.2951606, 18.230488, altitude 913m
   // Mobile: 3 days, compact view
-  const mobileWidgetUrl = "https://www.meteoblue.com/cs/weather/widget/daily/kohu%cc%81tka_%c4%8desko_3073493?geoloc=fixed&days=3&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&precipunit=MILLIMETER&coloured=coloured&pictoicon=0&pictoicon=1&maxtemperature=0&maxtemperature=1&mintemperature=0&mintemperature=1&windspeed=0&windspeed=1&windgust=0&winddirection=0&winddirection=1&uv=0&humidity=0&precipitation=0&precipitation=1&precipitationprobability=0&precipitationprobability=1&spot=0&pressure=0&layout=light";
+  const mobileWidgetUrl = "https://www.meteoblue.com/cs/weather/widget/daily?lat=49.2951606&lon=18.230488&name=Koh%C3%BAtka&geoloc=fixed&days=3&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&precipunit=MILLIMETER&coloured=coloured&pictoicon=0&pictoicon=1&maxtemperature=0&maxtemperature=1&mintemperature=0&mintemperature=1&windspeed=0&windspeed=1&windgust=0&winddirection=0&winddirection=1&uv=0&humidity=0&precipitation=0&precipitation=1&precipitationprobability=0&precipitationprobability=1&spot=0&pressure=0&layout=light";
 
   // Desktop: 7 days
-  const desktopWidgetUrl = "https://www.meteoblue.com/cs/weather/widget/daily/kohu%cc%81tka_%c4%8desko_3073493?geoloc=fixed&days=7&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&precipunit=MILLIMETER&coloured=coloured&pictoicon=0&pictoicon=1&maxtemperature=0&maxtemperature=1&mintemperature=0&mintemperature=1&windspeed=0&windspeed=1&windgust=0&winddirection=0&winddirection=1&uv=0&humidity=0&precipitation=0&precipitation=1&precipitationprobability=0&precipitationprobability=1&spot=0&pressure=0&layout=light";
+  const desktopWidgetUrl = "https://www.meteoblue.com/cs/weather/widget/daily?lat=49.2951606&lon=18.230488&name=Koh%C3%BAtka&geoloc=fixed&days=7&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&precipunit=MILLIMETER&coloured=coloured&pictoicon=0&pictoicon=1&maxtemperature=0&maxtemperature=1&mintemperature=0&mintemperature=1&windspeed=0&windspeed=1&windgust=0&winddirection=0&winddirection=1&uv=0&humidity=0&precipitation=0&precipitation=1&precipitationprobability=0&precipitationprobability=1&spot=0&pressure=0&layout=light";
 
   return (
     <section className="pt-6 pb-16 md:pt-8 md:pb-20 bg-muted/20">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="text-center mb-6 md:mb-12">
+        <div className="text-center mb-10 md:mb-16">
           <div className="flex items-center justify-center gap-3 mb-4">
             <CloudSnow className="h-8 w-8 md:h-10 md:w-10 text-primary" />
             <h2 className="text-2xl md:text-4xl font-bold">Předpověď počasí</h2>
@@ -34,8 +35,18 @@ const Weather = () => {
         </div>
 
         <Card className="glass overflow-hidden border-white/20 rounded-lg">
+          {/* Custom header to override Meteoblue's location */}
+          <div className="bg-white px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900 text-sm md:text-base">Nový Hrozenkov 241</h3>
+                <p className="text-xs text-gray-600">49.99°S 18.05°V 245m. n. m.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="relative w-full overflow-hidden">
-            {/* Meteoblue Widget - Responsive */}
+            {/* Meteoblue Widget - Responsive with header hidden */}
             <iframe
               key={isMobile ? "mobile" : "desktop"}
               src={isMobile ? mobileWidgetUrl : desktopWidgetUrl}
@@ -45,8 +56,8 @@ const Weather = () => {
                 height: isMobile ? "400px" : "420px",
                 border: "none",
                 overflow: "hidden",
+                marginTop: "-42px", // Hide the Meteoblue header with location
               }}
-              className="rounded-t-lg"
               title="Meteoblue weather widget"
             />
           </div>
