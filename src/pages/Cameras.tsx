@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Maximize2, RefreshCw, AlertCircle, Thermometer, Clock, Video } from "lucide-react";
+import { Maximize2, RefreshCw, AlertCircle, Thermometer, Clock, Video, History } from "lucide-react";
 import Hls from "hls.js";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,7 +21,37 @@ import { useQuery } from "@tanstack/react-query";
 const Cameras = () => {
   const [selectedCamera, setSelectedCamera] = useState<CameraType | null>(null);
   const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
+  const [selectedTime, setSelectedTime] = useState<string>("current");
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const timeOptions = [
+    { value: "current", label: "Aktuální", hour: null },
+    { value: "06:00", label: "6:00", hour: "06" },
+    { value: "09:00", label: "9:00", hour: "09" },
+    { value: "12:00", label: "12:00", hour: "12" },
+    { value: "15:00", label: "15:00", hour: "15" },
+    { value: "18:00", label: "18:00", hour: "18" },
+  ];
+
+  // Helper function to get camera URL based on selected time
+  const getCameraUrl = (baseUrl: string, time: string) => {
+    const selectedOption = timeOptions.find(opt => opt.value === time);
+
+    if (!selectedOption || !selectedOption.hour) {
+      // Current time - use regular URL with cache buster
+      return `${baseUrl}?t=${Date.now()}`;
+    }
+
+    // Historical time - convert URL pattern
+    // From: http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg
+    // To:   http://data.kohutka.ski/snimky/kamera_HOD09_P1_snimek.jpg
+    const urlParts = baseUrl.split('/');
+    const filename = urlParts[urlParts.length - 1];
+    const newFilename = filename.replace('kamera_P', `kamera_HOD${selectedOption.hour}_P`);
+    urlParts[urlParts.length - 1] = newFilename;
+
+    return urlParts.join('/');
+  };
 
   // Fetch camera data with auto-refresh every 5 minutes
   const { data, isLoading, error, refetch } = useQuery({
@@ -228,6 +258,81 @@ const Cameras = () => {
             )}
           </div>
         )}
+
+        {/* Time-based Camera Gallery */}
+        <Card className="glass mt-12 p-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <History className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold">Archiv snímků</h2>
+              </div>
+              <p className="text-muted-foreground">
+                Prohlédněte si snímky z kamer z různých časů během dne
+              </p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {timeOptions.map((time) => (
+                <Button
+                  key={time.value}
+                  variant={selectedTime === time.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedTime(time.value)}
+                  className={selectedTime === time.value ? "bg-accent" : ""}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  {time.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {cameras
+              .filter((camera: CameraType) =>
+                camera.media.last_image.url.includes('data.kohutka.ski') &&
+                camera.media.last_image.url.includes('kamera_P')
+              )
+              .map((camera: CameraType) => (
+                <Card
+                  key={`archive-${camera.id}-${selectedTime}`}
+                  className="overflow-hidden group cursor-pointer hover:shadow-lg transition-all"
+                  onClick={() => setSelectedCamera(camera)}
+                >
+                  <div className="relative aspect-video bg-muted">
+                    <img
+                      src={getCameraUrl(camera.media.last_image.url, selectedTime)}
+                      alt={`${camera.name} - ${timeOptions.find(t => t.value === selectedTime)?.label}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.style.opacity = '0.3';
+                        img.alt = 'Snímek nedostupný';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-100">
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <p className="text-white text-xs font-semibold truncate">
+                          {camera.name}
+                        </p>
+                        {selectedTime !== 'current' && (
+                          <p className="text-white/80 text-[10px]">
+                            {timeOptions.find(t => t.value === selectedTime)?.label}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+          </div>
+
+          <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+            <p className="text-sm text-muted-foreground text-center">
+              💡 Tip: Klikněte na libovolný snímek pro zobrazení ve větším rozlišení
+            </p>
+          </div>
+        </Card>
 
         {/* Info Box */}
         <Card className="glass mt-8 p-6">

@@ -178,6 +178,23 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     }
   });
 
+  // Add custom camera P0
+  cameras.push({
+    id: 'kohutka-p0',
+    name: 'Velká sjezdovka',
+    description: 'Náhled na Velkou sjezdovku z horní stanice',
+    location: 'Horní stanice',
+    media: {
+      last_image: {
+        url: 'http://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
+        temp: '',
+        date: '',
+        time: '',
+      },
+    },
+  });
+
   // Add custom live stream cameras with direct HLS URLs
   cameras.push({
     id: 'live-kohutka',

@@ -9,9 +9,9 @@ const AboutUs = () => {
           O nás
         </h2>
 
-        <div className="grid lg:grid-cols-2 gap-4 md:gap-8 items-center">
+        <div className="grid lg:grid-cols-2 gap-4 md:gap-8 items-stretch">
           {/* Text Content - LEFT */}
-          <Card className="glass py-8 px-6 md:p-10 border-white/20 rounded-lg">
+          <Card className="glass py-8 px-6 md:p-10 border-white/20 rounded-lg h-full flex flex-col">
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
                 Vítejte v Ski Centru Kohútka – místě, kde si zima podává ruku s pohodou a zážitky!
@@ -36,12 +36,12 @@ const AboutUs = () => {
           </Card>
 
           {/* Image - RIGHT */}
-          <div className="order-first lg:order-last">
-            <Card className="glass overflow-hidden border-white/20 rounded-lg">
+          <div className="order-first lg:order-last h-full">
+            <Card className="glass overflow-hidden border-white/20 rounded-lg h-full">
               <img
                 src={aboutImage}
                 alt="Lanovka v zimě - Ski Centrum Kohútka"
-                className="w-full h-auto object-cover"
+                className="w-full h-full object-cover object-center"
                 loading="lazy"
               />
             </Card>

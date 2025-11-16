@@ -9,6 +9,7 @@ import Location from "@/components/Location";
 import Weather from "@/components/Weather";
 import AboutUs from "@/components/AboutUs";
 import SlopesAndLifts from "@/components/SlopesAndLifts";
+import InteractiveMap from "@/components/InteractiveMap";
 import FacebookFeed from "@/components/FacebookFeed";
 import Footer from "@/components/Footer";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
@@ -16,16 +17,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, useRef } from "react";
 import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.png";
 import heroImage2 from "@/assets/P01Slider-Slide01.jpg";
-import heroImage3 from "@/assets/P01Slider-Slide02.jpg";
 import logo from "@/assets/logo.png";
 
-const heroImages = [heroImage1, heroImage2, heroImage3];
+const heroImages = [heroImage1, heroImage2];
 
 const Index = () => {
   const [panoramaProgress, setPanoramaProgress] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHeroVisible, setIsHeroVisible] = useState(true);
-  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([false, false, false]);
+  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([false, false]);
   const heroRef = useRef<HTMLDivElement>(null);
 
   // Fetch data with auto-refresh every 5 minutes
@@ -150,7 +150,7 @@ const Index = () => {
                 <img
                   src={logo}
                   alt="Kohútka Logo"
-                  className="h-32 md:h-60 w-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+                  className="h-48 md:h-96 w-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
                 />
               </div>
 
@@ -247,8 +247,11 @@ const Index = () => {
       {/* Slopes and Lifts Section */}
       <SlopesAndLifts />
 
-      {/* Camera Preview Section */}
-      <section className="pt-8 pb-20 bg-muted/30">
+      {/* Interactive Map Section */}
+      <InteractiveMap />
+
+      {/* Camera Preview Section - COMMENTED OUT */}
+      {/* <section className="pt-8 pb-20 bg-muted/30">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -302,7 +305,7 @@ const Index = () => {
             </Button>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Location Section */}
       <Location />

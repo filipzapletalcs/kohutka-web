@@ -8,6 +8,8 @@ export interface Camera {
   hasVideo?: boolean;
   hasLiveStream?: boolean;
   liveStreamUrl?: string;
+  hasPanorama?: boolean;
+  panoramaUrl?: string;
   media: {
     last_image: {
       url: string;

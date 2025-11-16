@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
@@ -180,7 +180,6 @@ const Pricing = () => {
       child: 13490,
       junior: 14990,
       senior: 13490,
-      note: "Věkové kategorie: Dospělí 18-62 let, Děti 6-11 let, Junioři 12-17 let, Senioři 63+ let",
     },
   ];
 
@@ -305,21 +304,21 @@ const Pricing = () => {
           Věkové kategorie
         </h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-blue-50 p-5 rounded-lg border-l-4 border-primary shadow-sm">
-            <p className="font-bold text-lg text-primary mb-1">Dospělí</p>
-            <p className="text-gray-900 font-medium">Narození 1961-2007</p>
+          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
+            <p className="font-bold text-xl text-primary-foreground mb-2">Dospělí</p>
+            <p className="text-primary-foreground/80 font-semibold text-base">Narození 1961-2007</p>
           </div>
-          <div className="bg-blue-50 p-5 rounded-lg border-l-4 border-primary shadow-sm">
-            <p className="font-bold text-lg text-primary mb-1">Děti</p>
-            <p className="text-gray-900 font-medium">Narození 2015 a mladší</p>
+          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
+            <p className="font-bold text-xl text-primary-foreground mb-2">Děti</p>
+            <p className="text-primary-foreground/80 font-semibold text-base">Narození 2015 a mladší</p>
           </div>
-          <div className="bg-blue-50 p-5 rounded-lg border-l-4 border-primary shadow-sm">
-            <p className="font-bold text-lg text-primary mb-1">Junioři</p>
-            <p className="text-gray-900 font-medium">Narození 2006-2014</p>
+          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
+            <p className="font-bold text-xl text-primary-foreground mb-2">Junioři</p>
+            <p className="text-primary-foreground/80 font-semibold text-base">Narození 2006-2014</p>
           </div>
-          <div className="bg-blue-50 p-5 rounded-lg border-l-4 border-primary shadow-sm">
-            <p className="font-bold text-lg text-primary mb-1">Senioři</p>
-            <p className="text-gray-900 font-medium">Narození 1960 a starší</p>
+          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
+            <p className="font-bold text-xl text-primary-foreground mb-2">Senioři</p>
+            <p className="text-primary-foreground/80 font-semibold text-base">Narození 1960 a starší</p>
           </div>
         </div>
       </Card>
@@ -332,31 +331,31 @@ const Pricing = () => {
         <div className="bg-gray-50 p-5 rounded-lg">
           <ul className="space-y-3 text-gray-900">
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Záloha za čipovou kartu je 100 Kč, vratná pouze do 20 minut po zavření provozu při odevzdání nepoškozené karty</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Jízdenky jsou nepřenosné</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Nevyužité body a čas nelze vrátit</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Bodové jízdenky mají časový zámek zamezující současnému použití více osobami (s výjimkou kurzovních jízdenek)</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Večerní lyžování provozováno pouze v sobotu při příznivých podmínkách</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Fotografie pořízená na turniketu je dočasná; po vrácení karty automaticky vymazána</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Pro ověření věku nutný občanský průkaz, pas nebo kartička sociálního pojištění</span>
             </li>
           </ul>
@@ -375,35 +374,35 @@ const Pricing = () => {
         <div className="bg-gray-50 p-5 rounded-lg">
           <ul className="space-y-3 text-gray-900">
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Slevy se nesčítají</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Děti do 11 let obdrží sníženou dětskou sazbu (kromě bodových jízdenek)</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Junioři 11-17 let obdrží juniorskou sazbu (kromě bodových jízdenek)</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Senioři 65+ obdrží sníženou sazbu (kromě bodových jízdenek)</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Studentské slevy dostupné pouze při online nákupu</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Držitelé průkazů TP/ZTP/ZTP/P obdrží slevy pouze na časové jízdenky</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Skupinová sleva: při nákupu 15+ stejných jízdenek jeden kus stejného typu zdarma</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-primary mt-1 font-bold text-xl">•</span>
+              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
               <span className="leading-relaxed font-medium">Speciální kurzovní ceny: 4-5 dní 1 300 Kč; 5 dní 1 400 Kč (platné 23.12.-17.3.)</span>
             </li>
           </ul>
@@ -419,17 +418,17 @@ const Pricing = () => {
         <div className="container mx-auto max-w-7xl px-4">
           {/* Header */}
           <div className="mb-8 md:mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
               Ceník skipasů
             </h1>
-            <p className="text-base md:text-lg text-primary-foreground/80">
+            <p className="text-base md:text-lg text-white drop-shadow-md">
               Sezóna 2024/2025
             </p>
           </div>
 
           {/* Tabs - Desktop */}
           <div className="mb-8 hidden md:block overflow-x-auto">
-            <div className="flex gap-2 flex-wrap glass rounded-lg p-2">
+            <div className="flex gap-2 flex-wrap bg-white/95 backdrop-blur-sm rounded-lg p-2 shadow-lg">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -439,7 +438,7 @@ const Pricing = () => {
                     className={`px-4 lg:px-6 py-3 rounded-md font-semibold text-sm transition-all flex items-center gap-2 ${
                       activeTab === tab.id
                         ? "bg-accent text-accent-foreground shadow-lg scale-105"
-                        : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10"
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -533,9 +532,8 @@ const Pricing = () => {
                     </thead>
                     <tbody className="bg-white/95 backdrop-blur-sm">
                       {data.map((row, index) => (
-                        <>
+                        <Fragment key={`price-row-${index}-${row.name}`}>
                           <tr
-                            key={index}
                             className={
                               row.isHeader
                                 ? "bg-blue-100 border-l-4 border-blue-600"
@@ -621,7 +619,7 @@ const Pricing = () => {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>
@@ -631,9 +629,9 @@ const Pricing = () => {
               {/* Mobile Card View */}
               <div className="md:hidden space-y-2">
                 {data.map((row, index) => (
-                  <div key={index}>
+                  <div key={`mobile-price-${index}-${row.name}`}>
                     {row.isHeader ? (
-                      <div className="glass p-3 border-l-4 border-primary shadow-lg rounded-lg">
+                      <div className="bg-white/95 backdrop-blur-sm p-3 border-l-4 border-primary shadow-lg rounded-lg">
                         <h3 className="font-bold text-base text-gray-900">
                           {row.name}
                         </h3>

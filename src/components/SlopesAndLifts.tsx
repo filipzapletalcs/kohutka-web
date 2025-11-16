@@ -126,7 +126,6 @@ const SlopesAndLifts = () => {
                     <th className="text-center px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Obtížnost</th>
                     <th className="text-right px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Převýšení</th>
                     <th className="text-right px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Délka</th>
-                    <th className="text-center px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Věč.Lyž.</th>
                     <th className="text-center px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Stav</th>
                   </tr>
                 </thead>
@@ -141,14 +140,13 @@ const SlopesAndLifts = () => {
                           key={`empty-${index}`}
                           className={`hidden lg:table-row ${index % 2 === 0 ? "bg-blue-500/5" : ""}`}
                         >
-                          <td className="px-1.5 py-2 md:p-3" colSpan={7}>&nbsp;</td>
+                          <td className="px-1.5 py-2 md:p-3" colSpan={6}>&nbsp;</td>
                         </tr>
                       );
                     }
 
                     const status = getStatusInfo(slope.status_code, slope.status_text);
                     const StatusIcon = status.icon;
-                    const hasNightSkiing = slope.nightskiing_code === 1;
 
                     return (
                       <tr
@@ -170,13 +168,6 @@ const SlopesAndLifts = () => {
                         <td className="px-1.5 py-2 md:p-3 text-right whitespace-nowrap">
                           <span className="text-xs md:text-sm">{slope.length} m</span>
                         </td>
-                        <td className="px-1.5 py-2 md:p-3 text-center">
-                          {hasNightSkiing ? (
-                            <CircleCheck className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500 mx-auto" />
-                          ) : (
-                            <CircleX className="h-3.5 w-3.5 md:h-4 md:w-4 text-red-500 mx-auto" />
-                          )}
-                        </td>
                         <td className="px-1.5 py-2 md:p-3">
                           <div className="flex items-center justify-center gap-2">
                             <div className={`rounded-full p-0.5 ${status.bgColor}`}>
@@ -196,7 +187,6 @@ const SlopesAndLifts = () => {
                     <td className="px-1.5 py-2 md:p-3 text-center text-xs md:text-sm">-</td>
                     <td className="px-1.5 py-2 md:p-3 text-right text-xs md:text-sm whitespace-nowrap">{totalSlopesExceed} m</td>
                     <td className="px-1.5 py-2 md:p-3 text-right text-xs md:text-sm whitespace-nowrap">{totalSlopesLength} m</td>
-                    <td className="px-1.5 py-2 md:p-3 text-center text-xs md:text-sm">-</td>
                     <td className="px-1.5 py-2 md:p-3 text-center text-xs md:text-sm whitespace-nowrap">
                       {openSlopes} / {totalSlopes}
                     </td>
@@ -224,7 +214,6 @@ const SlopesAndLifts = () => {
                     <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Typ</th>
                     <th className="text-right px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Kapacita</th>
                     <th className="text-right px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Délka</th>
-                    <th className="text-center px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Věč.Lyž.</th>
                     <th className="text-center px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold">Stav</th>
                   </tr>
                 </thead>
@@ -239,14 +228,13 @@ const SlopesAndLifts = () => {
                           key={`empty-lift-${index}`}
                           className={`hidden lg:table-row ${index % 2 === 0 ? "bg-blue-500/5" : ""}`}
                         >
-                          <td className="px-1.5 py-2 md:p-3" colSpan={7}>&nbsp;</td>
+                          <td className="px-1.5 py-2 md:p-3" colSpan={6}>&nbsp;</td>
                         </tr>
                       );
                     }
 
                     const status = getStatusInfo(lift.status_code, lift.status_text);
                     const StatusIcon = status.icon;
-                    const hasNightSkiing = lift.nightskiing_code === 1;
 
                     return (
                       <tr
@@ -263,13 +251,6 @@ const SlopesAndLifts = () => {
                         </td>
                         <td className="px-1.5 py-2 md:p-3 text-right whitespace-nowrap">
                           <span className="text-xs md:text-sm">{lift.length} m</span>
-                        </td>
-                        <td className="px-1.5 py-2 md:p-3 text-center">
-                          {hasNightSkiing ? (
-                            <CircleCheck className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-500 mx-auto" />
-                          ) : (
-                            <CircleX className="h-3.5 w-3.5 md:h-4 md:w-4 text-red-500 mx-auto" />
-                          )}
                         </td>
                         <td className="px-1.5 py-2 md:p-3">
                           <div className="flex items-center justify-center gap-2">
@@ -290,7 +271,6 @@ const SlopesAndLifts = () => {
                     <td className="px-1.5 py-2 md:p-3 text-xs md:text-sm">-</td>
                     <td className="px-1.5 py-2 md:p-3 text-right text-xs md:text-sm whitespace-nowrap">{totalCapacity} os/h</td>
                     <td className="px-1.5 py-2 md:p-3 text-right text-xs md:text-sm whitespace-nowrap">{totalLiftsLength} m</td>
-                    <td className="px-1.5 py-2 md:p-3 text-center text-xs md:text-sm">-</td>
                     <td className="px-1.5 py-2 md:p-3 text-center text-xs md:text-sm whitespace-nowrap">
                       {openLifts} / {totalLifts}
                     </td>

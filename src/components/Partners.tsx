@@ -59,61 +59,63 @@ const Partners = () => {
         </div>
       </div>
 
-      {/* Infinite Scroll Carousel - Row 1 (Left to Right) */}
-      <div className="relative mb-6 overflow-hidden">
-        <div className="flex animate-scroll-left md:animate-scroll-left-slow">
-          {/* Duplicate array 3 times for seamless loop */}
-          {[...rowOne, ...rowOne, ...rowOne].map((partner, index) => (
-            <div
-              key={`row1-${partner.id}-${index}`}
-              className="flex-shrink-0 mx-2 md:mx-3"
-            >
-              <div className="glass rounded-lg p-2 md:p-4 w-40 h-20 md:w-64 md:h-32 flex items-center justify-center border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer group">
-                <img
-                  src={partner.logo}
-                  alt={partner.name}
-                  className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <div className="container mx-auto max-w-7xl px-4">
+        {/* Infinite Scroll Carousel - Row 1 (Left to Right) */}
+        <div className="relative mb-6 overflow-hidden -mx-4">
+          {/* Left gradient fade */}
+          <div className="absolute left-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
+               style={{background: 'linear-gradient(to right, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
 
-      {/* Infinite Scroll Carousel - Row 2 (Right to Left) */}
-      <div className="relative mb-12 overflow-hidden">
-        <div className="flex animate-scroll-right md:animate-scroll-right-slow">
-          {/* Duplicate array 3 times for seamless loop */}
-          {[...rowTwo, ...rowTwo, ...rowTwo].map((partner, index) => (
-            <div
-              key={`row2-${partner.id}-${index}`}
-              className="flex-shrink-0 mx-2 md:mx-3"
-            >
-              <div className="glass rounded-lg p-2 md:p-4 w-40 h-20 md:w-64 md:h-32 flex items-center justify-center border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer group">
-                <img
-                  src={partner.logo}
-                  alt={partner.name}
-                  className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+          {/* Right gradient fade */}
+          <div className="absolute right-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
+               style={{background: 'linear-gradient(to left, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
 
-      {/* Call to Action */}
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="glass rounded-2xl p-8 text-center">
-          <h3 className="text-2xl font-bold mb-4">Chcete se stát naším partnerem?</h3>
-          <p className="text-muted-foreground mb-6">
-            Spojte se s námi a podpořte rozvoj lyžařského střediska Kohútka
-          </p>
-          <a
-            href="mailto:info@kohutka.cz"
-            className="inline-block bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-3 rounded-lg font-semibold transition-colors duration-300"
-          >
-            Kontaktujte nás
-          </a>
+          <div className="flex animate-scroll-left">
+            {/* Duplicate array 3 times for seamless loop */}
+            {[...rowOne, ...rowOne, ...rowOne].map((partner, index) => (
+              <div
+                key={`row1-${partner.id}-${index}`}
+                className="flex-shrink-0 mx-3 md:mx-4"
+              >
+                <div className="glass rounded-lg p-2 md:p-4 w-40 h-20 md:w-64 md:h-32 flex items-center justify-center border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer group">
+                  <img
+                    src={partner.logo}
+                    alt={partner.name}
+                    className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Infinite Scroll Carousel - Row 2 (Right to Left) */}
+        <div className="relative mb-12 overflow-hidden -mx-4">
+          {/* Left gradient fade */}
+          <div className="absolute left-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
+               style={{background: 'linear-gradient(to right, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
+
+          {/* Right gradient fade */}
+          <div className="absolute right-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
+               style={{background: 'linear-gradient(to left, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
+
+          <div className="flex animate-scroll-right">
+            {/* Duplicate array 3 times for seamless loop */}
+            {[...rowTwo, ...rowTwo, ...rowTwo].map((partner, index) => (
+              <div
+                key={`row2-${partner.id}-${index}`}
+                className="flex-shrink-0 mx-3 md:mx-4"
+              >
+                <div className="glass rounded-lg p-2 md:p-4 w-40 h-20 md:w-64 md:h-32 flex items-center justify-center border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer group">
+                  <img
+                    src={partner.logo}
+                    alt={partner.name}
+                    className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
