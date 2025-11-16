@@ -47,8 +47,8 @@ const rowTwo = allPartners.slice(8, 16);
 
 const Partners = () => {
   return (
-    <section className="py-20 overflow-hidden bg-muted/20">
-      <div className="container mx-auto px-4 max-w-7xl mb-12">
+    <section className="pb-20 overflow-hidden bg-muted/20">
+      <div className="container mx-auto max-w-7xl px-4 mb-12">
         <div className="text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Naši partneři a sponzoři
@@ -61,7 +61,7 @@ const Partners = () => {
 
       <div className="container mx-auto max-w-7xl px-4">
         {/* Infinite Scroll Carousel - Row 1 (Left to Right) */}
-        <div className="relative mb-6 overflow-hidden -mx-4">
+        <div className="relative mb-6 overflow-hidden">
           {/* Left gradient fade */}
           <div className="absolute left-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
                style={{background: 'linear-gradient(to right, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
@@ -90,7 +90,7 @@ const Partners = () => {
         </div>
 
         {/* Infinite Scroll Carousel - Row 2 (Right to Left) */}
-        <div className="relative mb-12 overflow-hidden -mx-4">
+        <div className="relative mb-12 overflow-hidden">
           {/* Left gradient fade */}
           <div className="absolute left-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
                style={{background: 'linear-gradient(to right, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />

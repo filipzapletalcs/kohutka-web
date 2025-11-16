@@ -307,14 +307,14 @@ const Index = () => {
         </div>
       </section> */}
 
-      {/* Location Section */}
-      <Location />
-
       {/* Partners Section */}
       <Partners />
 
       {/* Facebook Feed Section */}
       <FacebookFeed />
+
+      {/* Location Section */}
+      <Location />
 
       {/* Footer */}
       <Footer />
