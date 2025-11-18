@@ -62,13 +62,23 @@ const Partners = () => {
       <div className="container mx-auto max-w-7xl px-4">
         {/* Infinite Scroll Carousel - Row 1 (Left to Right) */}
         <div className="relative mb-6 overflow-hidden">
-          {/* Left gradient fade */}
-          <div className="absolute left-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
-               style={{background: 'linear-gradient(to right, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
+          {/* Levý gradient – karty mizí do barvy pozadí */}
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 w-16 md:w-24 lg:w-32 z-10"
+            style={{
+              background:
+                "linear-gradient(to right, hsl(var(--muted) / 0.2), transparent)",
+            }}
+          />
 
-          {/* Right gradient fade */}
-          <div className="absolute right-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
-               style={{background: 'linear-gradient(to left, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
+          {/* Pravý gradient – karty mizí do barvy pozadí */}
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 w-16 md:w-24 lg:w-32 z-10"
+            style={{
+              background:
+                "linear-gradient(to left, hsl(var(--muted) / 0.2), transparent)",
+            }}
+          />
 
           <div className="flex animate-scroll-left">
             {/* Duplicate array 3 times for seamless loop */}
@@ -91,13 +101,23 @@ const Partners = () => {
 
         {/* Infinite Scroll Carousel - Row 2 (Right to Left) */}
         <div className="relative mb-12 overflow-hidden">
-          {/* Left gradient fade */}
-          <div className="absolute left-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
-               style={{background: 'linear-gradient(to right, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
+          {/* Levý gradient – karty mizí do barvy pozadí */}
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 w-16 md:w-24 lg:w-32 z-10"
+            style={{
+              background:
+                "linear-gradient(to right, hsl(var(--muted) / 0.2), transparent)",
+            }}
+          />
 
-          {/* Right gradient fade */}
-          <div className="absolute right-0 top-0 bottom-0 w-80 md:w-[35rem] z-10 pointer-events-none"
-               style={{background: 'linear-gradient(to left, hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.1), hsl(var(--muted) / 0.05), transparent)'}} />
+          {/* Pravý gradient – karty mizí do barvy pozadí */}
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 w-16 md:w-24 lg:w-32 z-10"
+            style={{
+              background:
+                "linear-gradient(to left, hsl(var(--muted) / 0.2), transparent)",
+            }}
+          />
 
           <div className="flex animate-scroll-right">
             {/* Duplicate array 3 times for seamless loop */}

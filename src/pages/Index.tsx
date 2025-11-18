@@ -1,5 +1,13 @@
 import { Link } from "react-router-dom";
-import { Camera, CloudSnow, Mountain, TrendingUp, MapPin, Calendar } from "lucide-react";
+import {
+  CableCar,
+  Camera,
+  CloudSun,
+  Mountain,
+  MountainSnow,
+  Snowflake,
+} from "lucide-react";
+import { GiSnowboard } from "react-icons/gi";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusWidget } from "@/components/StatusWidget";
@@ -114,7 +122,7 @@ const Index = () => {
       <Navigation />
 
       {/* Hero Section */}
-      <div ref={heroRef} className="relative min-h-[70vh] md:h-screen overflow-hidden">
+      <div ref={heroRef} className="relative min-h-[80vh] md:h-[110vh] overflow-hidden">
         {/* Loading skeleton */}
         {!imagesLoaded[currentImageIndex] && (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 animate-pulse" />
@@ -198,7 +206,7 @@ const Index = () => {
                 status={operation?.isOpen ? "open" : "closed"}
               />
               <StatusWidget
-                icon={TrendingUp}
+                icon={CableCar}
                 label="Vleky a lanovky"
                 value={`${lifts?.openCount || 0} z ${lifts?.totalCount || 0}`}
                 status={
@@ -208,7 +216,7 @@ const Index = () => {
                 }
               />
               <StatusWidget
-                icon={MapPin}
+                icon={MountainSnow}
                 label="Sjezdovky"
                 value={`${slopes?.openCount || 0} z ${slopes?.totalCount || 0}`}
                 status={
@@ -218,18 +226,18 @@ const Index = () => {
                 }
               />
               <StatusWidget
-                icon={CloudSnow}
+                icon={CloudSun}
                 label="Počasí"
                 value={operation?.temperature ? `${operation.temperature}°C` : "N/A"}
               />
               <StatusWidget
-                icon={Mountain}
+                icon={(props) => <GiSnowboard {...props} />}
                 label="Skipark"
                 value={lifts?.skiParkOpen ? "otevřen" : "zavřen"}
                 status={lifts?.skiParkOpen ? "open" : "closed"}
               />
               <StatusWidget
-                icon={Calendar}
+                icon={Snowflake}
                 label="Sníh"
                 value={operation?.snowHeight || "N/A"}
               />

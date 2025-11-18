@@ -4,20 +4,10 @@ import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
 import { Info, Clock, Calendar, Ticket, Award, Coins, Package, FileText, Percent } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPricingFromGoogleSheets, fetchAgeCategoriesFromGoogleSheets, PricingCategory, PriceRow, AgeCategoriesData } from "@/services/pricingService";
 
 type PricingTab = "denni" | "casove" | "sezonni" | "jednotlive" | "bodove" | "ostatni" | "informace" | "slevy";
-
-interface PriceRow {
-  name: string;
-  adult?: number | string;
-  child?: number | string;
-  junior?: number | string;
-  senior?: number | string;
-  all?: number | string;
-  isHeader?: boolean;
-  isSubheader?: boolean;
-  note?: string;
-}
 
 const Pricing = () => {
   const [activeTab, setActiveTab] = useState<PricingTab>("denni");
@@ -294,7 +284,52 @@ const Pricing = () => {
     }
   };
 
-  const data = getCurrentData();
+  // Fetch data z Google Sheets pomocí React Query (pouze pro ceníky, ne info/slevy)
+  const shouldFetchFromSheets = !['informace', 'slevy'].includes(activeTab);
+
+  const { data: sheetData, isLoading: isLoadingSheets, error } = useQuery({
+    queryKey: ['pricing', activeTab],
+    queryFn: () => fetchPricingFromGoogleSheets(activeTab as PricingCategory),
+    enabled: shouldFetchFromSheets, // Fetchuj pouze pro ceníky
+    staleTime: 5 * 60 * 1000, // 5 minut cache
+    retry: 1, // Zkus znovu jen jednou při chybě
+  });
+
+  // Fetch věkových kategorií z Google Sheets
+  const { data: ageCategoriesData, error: ageCategoriesError } = useQuery({
+    queryKey: ['ageCategories'],
+    queryFn: fetchAgeCategoriesFromGoogleSheets,
+    staleTime: 10 * 60 * 1000, // 10 minut cache (mění se zřídka)
+    retry: 1,
+  });
+
+  // Fallback věkové kategorie pokud Google Sheets selže
+  const ageCategories: AgeCategoriesData = ageCategoriesError || !ageCategoriesData
+    ? {
+        adult: { category: 'adult', name: 'Dospělí', birthYears: '1961-2007' },
+        child: { category: 'child', name: 'Děti', birthYears: '2015 a mladší' },
+        junior: { category: 'junior', name: 'Junioři', birthYears: '2006-2014' },
+        senior: { category: 'senior', name: 'Senioři', birthYears: '1960 a starší' },
+      }
+    : ageCategoriesData;
+
+  // Použij data z Google Sheets, nebo fallback na hardcodovaná data
+  const data = (error || !sheetData) ? getCurrentData() : sheetData;
+
+  // Log pro debugging (můžeš smazat po otestování)
+  if (shouldFetchFromSheets) {
+    if (error) {
+      console.warn(`Google Sheets nedostupný pro "${activeTab}", používám lokální data`, error);
+    } else if (sheetData) {
+      console.log(`✅ Data pro "${activeTab}" načtena z Google Sheets (${sheetData.length} položek)`);
+    }
+  }
+
+  if (ageCategoriesError) {
+    console.warn('Google Sheets nedostupný pro věkové kategorie, používám lokální data', ageCategoriesError);
+  } else if (ageCategoriesData) {
+    console.log('✅ Věkové kategorie načteny z Google Sheets');
+  }
 
   const renderInformaceTab = () => (
     <div className="space-y-6">
@@ -304,22 +339,12 @@ const Pricing = () => {
           Věkové kategorie
         </h3>
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
-            <p className="font-bold text-xl text-primary-foreground mb-2">Dospělí</p>
-            <p className="text-primary-foreground/80 font-semibold text-base">Narození 1961-2007</p>
-          </div>
-          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
-            <p className="font-bold text-xl text-primary-foreground mb-2">Děti</p>
-            <p className="text-primary-foreground/80 font-semibold text-base">Narození 2015 a mladší</p>
-          </div>
-          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
-            <p className="font-bold text-xl text-primary-foreground mb-2">Junioři</p>
-            <p className="text-primary-foreground/80 font-semibold text-base">Narození 2006-2014</p>
-          </div>
-          <div className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
-            <p className="font-bold text-xl text-primary-foreground mb-2">Senioři</p>
-            <p className="text-primary-foreground/80 font-semibold text-base">Narození 1960 a starší</p>
-          </div>
+          {Object.values(ageCategories).map((cat) => (
+            <div key={cat.category} className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
+              <p className="font-bold text-xl text-primary-foreground mb-2">{cat.name}</p>
+              <p className="text-primary-foreground/80 font-semibold text-base">Narození {cat.birthYears}</p>
+            </div>
+          ))}
         </div>
       </Card>
 
@@ -483,7 +508,22 @@ const Pricing = () => {
           </div>
 
           {/* Content */}
-          {activeTab === "informace" ? (
+          {isLoadingSheets ? (
+            /* Loading skeleton při načítání z Google Sheets */
+            <Card className="glass p-12 border-0 shadow-2xl">
+              <div className="animate-pulse space-y-6">
+                <div className="h-8 bg-primary/20 rounded w-3/4 mx-auto"></div>
+                <div className="space-y-3">
+                  <div className="h-6 bg-primary/10 rounded w-full"></div>
+                  <div className="h-6 bg-primary/10 rounded w-5/6"></div>
+                  <div className="h-6 bg-primary/10 rounded w-4/5"></div>
+                  <div className="h-6 bg-primary/10 rounded w-full"></div>
+                  <div className="h-6 bg-primary/10 rounded w-3/4"></div>
+                </div>
+                <p className="text-center text-primary/70 text-sm mt-4">Načítám ceník z Google Sheets...</p>
+              </div>
+            </Card>
+          ) : activeTab === "informace" ? (
             renderInformaceTab()
           ) : activeTab === "slevy" ? (
             renderSlevyTab()
@@ -504,26 +544,26 @@ const Pricing = () => {
                           <>
                             <th className="text-right p-5 font-bold">
                               <div className="flex flex-col items-end">
-                                <span className="text-lg">Dospělí</span>
-                                <span className="text-xs font-normal opacity-70">(1961-2007)</span>
+                                <span className="text-lg">{ageCategories.adult.name}</span>
+                                <span className="text-xs font-normal opacity-70">({ageCategories.adult.birthYears})</span>
                               </div>
                             </th>
                             <th className="text-right p-5 font-bold">
                               <div className="flex flex-col items-end">
-                                <span className="text-lg">Děti</span>
-                                <span className="text-xs font-normal opacity-70">(2015 a mladší)</span>
+                                <span className="text-lg">{ageCategories.child.name}</span>
+                                <span className="text-xs font-normal opacity-70">({ageCategories.child.birthYears})</span>
                               </div>
                             </th>
                             <th className="text-right p-5 font-bold">
                               <div className="flex flex-col items-end">
-                                <span className="text-lg">Junioři</span>
-                                <span className="text-xs font-normal opacity-70">(2006-2014)</span>
+                                <span className="text-lg">{ageCategories.junior.name}</span>
+                                <span className="text-xs font-normal opacity-70">({ageCategories.junior.birthYears})</span>
                               </div>
                             </th>
                             <th className="text-right p-5 font-bold">
                               <div className="flex flex-col items-end">
-                                <span className="text-lg">Senioři</span>
-                                <span className="text-xs font-normal opacity-70">(1960 a starší)</span>
+                                <span className="text-lg">{ageCategories.senior.name}</span>
+                                <span className="text-xs font-normal opacity-70">({ageCategories.senior.birthYears})</span>
                               </div>
                             </th>
                           </>
@@ -662,8 +702,8 @@ const Pricing = () => {
                             <div className="space-y-1.5">
                               <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">Dospělí</span>
-                                  <p className="text-xs text-gray-500 mt-0.5">(1961-2007)</p>
+                                  <span className="text-sm font-medium text-gray-700">{ageCategories.adult.name}</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">({ageCategories.adult.birthYears})</p>
                                 </div>
                                 <span className="text-xl font-bold text-gray-900">
                                   {typeof row.adult === "number" ? (
@@ -678,8 +718,8 @@ const Pricing = () => {
 
                               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">Děti</span>
-                                  <p className="text-xs text-gray-500 mt-0.5">(2015 a mladší)</p>
+                                  <span className="text-sm font-medium text-gray-700">{ageCategories.child.name}</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">({ageCategories.child.birthYears})</p>
                                 </div>
                                 <span className="text-xl font-bold text-gray-900">
                                   {typeof row.child === "number" ? (
@@ -694,8 +734,8 @@ const Pricing = () => {
 
                               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">Junioři</span>
-                                  <p className="text-xs text-gray-500 mt-0.5">(2006-2014)</p>
+                                  <span className="text-sm font-medium text-gray-700">{ageCategories.junior.name}</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">({ageCategories.junior.birthYears})</p>
                                 </div>
                                 <span className="text-xl font-bold text-gray-900">
                                   {typeof row.junior === "number" ? (
@@ -710,8 +750,8 @@ const Pricing = () => {
 
                               <div className="flex justify-between items-center py-3">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">Senioři</span>
-                                  <p className="text-xs text-gray-500 mt-0.5">(1960 a starší)</p>
+                                  <span className="text-sm font-medium text-gray-700">{ageCategories.senior.name}</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">({ageCategories.senior.birthYears})</p>
                                 </div>
                                 <span className="text-xl font-bold text-gray-900">
                                   {typeof row.senior === "number" ? (
