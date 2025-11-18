@@ -37,20 +37,36 @@ const Cameras = () => {
   const getCameraUrl = (baseUrl: string, time: string) => {
     const selectedOption = timeOptions.find(opt => opt.value === time);
 
-    if (!selectedOption || !selectedOption.hour) {
-      // Current time - use regular URL with cache buster
-      return `${baseUrl}?t=${Date.now()}`;
+    // Base URL for the requested time (current or historical)
+    let rawUrl = baseUrl;
+
+    if (selectedOption && selectedOption.hour) {
+      // Historical time - convert URL pattern
+      // From: http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg
+      // To:   http://data.kohutka.ski/snimky/kamera_HOD09_P1_snimek.jpg
+      const urlParts = baseUrl.split('/');
+      const filename = urlParts[urlParts.length - 1];
+      const newFilename = filename.replace('kamera_P', `kamera_HOD${selectedOption.hour}_P`);
+      urlParts[urlParts.length - 1] = newFilename;
+      rawUrl = urlParts.join('/');
     }
 
-    // Historical time - convert URL pattern
-    // From: http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg
-    // To:   http://data.kohutka.ski/snimky/kamera_HOD09_P1_snimek.jpg
-    const urlParts = baseUrl.split('/');
-    const filename = urlParts[urlParts.length - 1];
-    const newFilename = filename.replace('kamera_P', `kamera_HOD${selectedOption.hour}_P`);
-    urlParts[urlParts.length - 1] = newFilename;
+    const cacheBuster = Date.now();
 
-    return urlParts.join('/');
+    // In production (HTTPS) we can't načíst HTTP snímky přímo kvůli mixed content,
+    // proto je pro data.kohutka.ski posíláme přes Vercel proxy.
+    const isBrowser = typeof window !== 'undefined';
+    if (
+      isBrowser &&
+      window.location.protocol === 'https:' &&
+      rawUrl.startsWith('http://data.kohutka.ski/snimky/')
+    ) {
+      return `/api/camera-proxy?url=${encodeURIComponent(rawUrl)}&t=${cacheBuster}`;
+    }
+
+    // Lokální vývoj (HTTP) nebo už HTTPS URL z API
+    const separator = rawUrl.includes('?') ? '&' : '?';
+    return `${rawUrl}${separator}t=${cacheBuster}`;
   };
 
   // Fetch camera data with auto-refresh every 5 minutes
