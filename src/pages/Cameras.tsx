@@ -34,7 +34,7 @@ const Cameras = () => {
   ];
 
   // Helper function to get camera URL based on selected time
-  const getCameraUrl = (baseUrl: string, time: string) => {
+  const getCameraUrl = (baseUrl: string, time: string, cacheKey?: number) => {
     const selectedOption = timeOptions.find(opt => opt.value === time);
 
     // Base URL for the requested time (current or historical)
@@ -51,7 +51,7 @@ const Cameras = () => {
       rawUrl = urlParts.join('/');
     }
 
-    const cacheBuster = Date.now();
+    const cacheBuster = cacheKey ?? Date.now();
 
     // In production (HTTPS) we can't načíst HTTP snímky přímo kvůli mixed content,
     // proto je pro data.kohutka.ski posíláme přes Vercel proxy.
@@ -198,7 +198,11 @@ const Cameras = () => {
                 >
                   <div className="relative aspect-video bg-muted">
                     <img
-                      src={`${camera.media.last_image.url}${camera.media.last_image.url.includes('?') ? '&' : '?'}t=${refreshKeys[camera.id] || Date.now()}`}
+                      src={getCameraUrl(
+                        camera.media.last_image.url,
+                        "current",
+                        refreshKeys[camera.id]
+                      )}
                       alt={camera.name}
                       className="w-full h-full object-cover"
                       onError={() => {
