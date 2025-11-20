@@ -180,7 +180,7 @@ const SlopesAndLifts = () => {
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-primary/10 font-bold border-t-2 border-white/20">
+                  <tr className="bg-primary/60 text-white font-bold border-t-2 border-white/20">
                     <td className="px-1.5 py-2 md:p-3 text-xs md:text-sm" colSpan={2}>
                       Celkem
                     </td>
@@ -264,7 +264,7 @@ const SlopesAndLifts = () => {
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-primary/10 font-bold border-t-2 border-white/20">
+                  <tr className="bg-primary/60 text-white font-bold border-t-2 border-white/20">
                     <td className="px-1.5 py-2 md:p-3 text-xs md:text-sm" colSpan={2}>
                       Celkem
                     </td>
