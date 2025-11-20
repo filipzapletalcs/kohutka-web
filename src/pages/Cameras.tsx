@@ -134,22 +134,22 @@ const Cameras = () => {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-gradient pt-24 pb-12">
+      <div className="min-h-screen pt-24 pb-12">
         <div className="container mx-auto max-w-7xl px-4">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-primary-foreground mb-2">
+            <h1 className="text-4xl font-bold mb-2">
               Live Webkamery
             </h1>
-            <p className="text-primary-foreground/80">
+            <p className="text-muted-foreground">
               Sledujte aktuální stav sjezdovek v reálném čase
             </p>
           </div>
           <Button
             onClick={refreshAllCameras}
             disabled={isLoading}
-            className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm"
+            variant="outline"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Obnovit vše
@@ -298,7 +298,7 @@ const Cameras = () => {
                   variant={selectedTime === time.value ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedTime(time.value)}
-                  className={selectedTime === time.value ? "bg-accent" : ""}
+                  className={selectedTime === time.value ? "bg-accent hover:bg-accent/90 text-foreground" : ""}
                 >
                   <Clock className="h-4 w-4 mr-2" />
                   {time.label}

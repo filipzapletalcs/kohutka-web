@@ -289,7 +289,7 @@ const SlopesAndLifts = () => {
               href="https://www.holidayinfo.cz"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent hover:underline"
+              className="text-primary hover:underline"
             >
               www.holidayinfo.cz
             </a>

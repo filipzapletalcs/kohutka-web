@@ -18,32 +18,38 @@ const Navigation = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground border-b border-primary-foreground/20">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3" aria-label="Přejít na úvodní stránku">
             <img src={logo} alt="Ski Kohútka logo" className="h-16 md:h-12 w-auto" />
-            <span className="font-bold text-xl hidden sm:inline" aria-hidden="true">Ski Kohútka</span>
+            <span className="font-bold text-xl hidden sm:inline text-primary-foreground" aria-hidden="true">Ski Kohútka</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link key={item.path} to={item.path}>
-                <Button
-                  variant="ghost"
-                  className={
-                    isActive(item.path)
-                      ? "bg-primary/90 text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                      : "text-foreground hover:bg-primary/90 hover:text-primary-foreground"
-                  }
-                  aria-label={`Přejít na ${item.name}`}
-                  aria-current={isActive(item.path) ? "page" : undefined}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
-                </Button>
+                {isActive(item.path) ? (
+                  <div
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 bg-white/90 text-foreground hover:bg-white hover:text-foreground"
+                    aria-label={`Přejít na ${item.name}`}
+                    aria-current="page"
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.name}
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                    aria-label={`Přejít na ${item.name}`}
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.name}
+                  </Button>
+                )}
               </Link>
             ))}
             <Button asChild className="ml-4 bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -57,7 +63,7 @@ const Navigation = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden text-primary-foreground hover:bg-primary-foreground/10"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Zavřít menu" : "Otevřít menu"}
             aria-expanded={isOpen}
@@ -75,19 +81,25 @@ const Navigation = () => {
                 to={item.path}
                 onClick={() => setIsOpen(false)}
               >
-                <Button
-                  variant="ghost"
-                  className={`w-full justify-start ${
-                    isActive(item.path)
-                      ? "bg-primary/90 text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                      : "text-foreground hover:bg-primary/90 hover:text-primary-foreground"
-                  }`}
-                  aria-label={`Přejít na ${item.name}`}
-                  aria-current={isActive(item.path) ? "page" : undefined}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
-                </Button>
+                {isActive(item.path) ? (
+                  <div
+                    className="flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 w-full bg-white/90 text-foreground hover:bg-white hover:text-foreground"
+                    aria-label={`Přejít na ${item.name}`}
+                    aria-current="page"
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.name}
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                    aria-label={`Přejít na ${item.name}`}
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.name}
+                  </Button>
+                )}
               </Link>
             ))}
             <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">

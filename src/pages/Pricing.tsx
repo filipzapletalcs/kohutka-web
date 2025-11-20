@@ -439,14 +439,14 @@ const Pricing = () => {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-gradient pt-24 pb-12 scroll-smooth">
+      <div className="min-h-screen pt-24 pb-12 scroll-smooth">
         <div className="container mx-auto max-w-7xl px-4">
           {/* Header */}
           <div className="mb-8 md:mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
               Ceník skipasů
             </h1>
-            <p className="text-base md:text-lg text-white drop-shadow-md">
+            <p className="text-base md:text-lg text-muted-foreground">
               Sezóna 2024/2025
             </p>
           </div>
