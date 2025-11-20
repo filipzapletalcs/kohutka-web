@@ -274,8 +274,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     source: 'archive',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
+        url: 'https://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
+        url_preview: 'https://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
         temp: '',
         date: '',
         time: '',
@@ -291,8 +291,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     source: 'archive',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
+        url: 'https://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
+        url_preview: 'https://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
         temp: '',
         date: '',
         time: '',
@@ -308,8 +308,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     source: 'archive',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
+        url: 'https://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
+        url_preview: 'https://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
         temp: '',
         date: '',
         time: '',
@@ -327,8 +327,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka01_.m3u8',
     media: {
       last_image: {
-        url: 'http://webcams.i2net.cz/obr/kohutka-01.jpg',
-        url_preview: 'http://webcams.i2net.cz/obr/kohutka-01.jpg',
+        url: 'https://webcams.i2net.cz/obr/kohutka-01.jpg',
+        url_preview: 'https://webcams.i2net.cz/obr/kohutka-01.jpg',
         temp: '',
         date: '',
         time: '',
@@ -345,8 +345,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka03_.m3u8',
     media: {
       last_image: {
-        url: 'http://webcams.i2net.cz/obr/kohutka-03.jpg',
-        url_preview: 'http://webcams.i2net.cz/obr/kohutka-03.jpg',
+        url: 'https://webcams.i2net.cz/obr/kohutka-03.jpg',
+        url_preview: 'https://webcams.i2net.cz/obr/kohutka-03.jpg',
         temp: '',
         date: '',
         time: '',
