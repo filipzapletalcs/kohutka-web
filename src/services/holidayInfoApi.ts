@@ -266,6 +266,7 @@ export function parseCameras(xmlDoc: Document): Camera[] {
   });
 
   // Add custom cameras from data.kohutka.ski (for archive time filtering)
+  // Note: data.kohutka.ski doesn't have valid HTTPS certificate, must use HTTP
   cameras.push({
     id: 'kohutka-p0',
     name: 'Velká sjezdovka',
@@ -274,8 +275,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     source: 'archive',
     media: {
       last_image: {
-        url: 'https://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
-        url_preview: 'https://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
+        url: 'http://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
         temp: '',
         date: '',
         time: '',
@@ -291,8 +292,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     source: 'archive',
     media: {
       last_image: {
-        url: 'https://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
-        url_preview: 'https://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
+        url: 'http://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
         temp: '',
         date: '',
         time: '',
@@ -308,8 +309,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     source: 'archive',
     media: {
       last_image: {
-        url: 'https://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
-        url_preview: 'https://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
+        url: 'http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
         temp: '',
         date: '',
         time: '',
