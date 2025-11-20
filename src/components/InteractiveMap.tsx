@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Map, Download } from "lucide-react";
+import mapaPNG from "@/assets/Ski_Centrum_Kohutka_Mapa.png";
 import mapaPDF from "@/assets/Ski_Centrum_Kohutka_Mapa.pdf";
 
 const InteractiveMap = () => {
@@ -20,20 +21,13 @@ const InteractiveMap = () => {
 
         {/* Map Card */}
         <Card className="glass overflow-hidden border-white/20 rounded-lg">
-          <div className="w-full bg-white aspect-[4/3]">
-            <object
-              data={`${mapaPDF}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-              type="application/pdf"
-              className="w-full h-full"
-              title="Mapa ski areálu Kohútka"
-            >
-              <p className="p-8 text-center">
-                Váš prohlížeč nepodporuje zobrazení PDF.
-                <a href={mapaPDF} className="text-primary underline ml-2">
-                  Stáhněte si mapu zde
-                </a>
-              </p>
-            </object>
+          <div className="w-full bg-white">
+            <img
+              src={mapaPNG}
+              alt="Mapa ski areálu Kohútka"
+              className="w-full h-full object-contain"
+              loading="lazy"
+            />
           </div>
 
           {/* Footer with download button */}

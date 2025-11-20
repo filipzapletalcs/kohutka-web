@@ -79,8 +79,14 @@ if (fs.existsSync(apiDir)) {
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // SPA fallback - serve index.html for all other routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+app.use((req, res, next) => {
+  // If we get here, it means the route wasn't handled by API or static files
+  // This is for React Router - serve index.html
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'), (err) => {
+    if (err) {
+      next(err);
+    }
+  });
 });
 
 // Error handling middleware
