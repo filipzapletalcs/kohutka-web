@@ -174,6 +174,7 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     if (lastImage) {
       const datetime = lastImage.getAttribute('datetime') || '';
       const temp = getXMLText(lastImage, 'temp');
+      const link = getXMLText(lastImage, 'link');
 
       // Format datetime to readable format
       let time = '';
@@ -251,9 +252,9 @@ export function parseCameras(xmlDoc: Document): Camera[] {
         hasPanorama: !!finalPanoramaData,
         media: {
           last_image: {
-            // Používáme proxy endpoint místo přímého odkazu
-            url: buildProxyImageUrl(id, { cropaspect: '16:9', outw: '1280' }),
-            url_preview: buildProxyImageUrl(id, { cropaspect: '16:9', outw: '640' }),
+            // Používáme přímý odkaz z XML API
+            url: link,
+            url_preview: link,
             temp,
             date,
             time,
