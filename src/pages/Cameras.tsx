@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Maximize2, RefreshCw, AlertCircle, Thermometer, Clock, Video, History } from "lucide-react";
+import { Maximize2, RefreshCw, AlertCircle, Thermometer, Clock, Video, History, Mountain, Play, Camera } from "lucide-react";
 import Hls from "hls.js";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -22,6 +23,7 @@ const Cameras = () => {
   const [selectedCamera, setSelectedCamera] = useState<CameraType | null>(null);
   const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
   const [selectedTime, setSelectedTime] = useState<string>("current");
+  const [showPlayButton, setShowPlayButton] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const timeOptions = [
@@ -81,38 +83,147 @@ const Cameras = () => {
 
   // Initialize HLS.js for live stream cameras
   useEffect(() => {
-    if (selectedCamera?.hasLiveStream && selectedCamera?.liveStreamUrl && videoRef.current) {
+    if (!selectedCamera?.hasLiveStream || !selectedCamera?.liveStreamUrl) {
+      return;
+    }
+
+    // Wait for video element to be in DOM (dialog animation)
+    let timeoutId: NodeJS.Timeout | null = null;
+    let hlsInstance: Hls | null = null;
+    let pauseHandler: (() => void) | null = null;
+    let playingHandler: (() => void) | null = null;
+    let metadataHandler: (() => void) | null = null;
+
+    const initVideo = () => {
+      if (!videoRef.current) {
+        timeoutId = setTimeout(initVideo, 100);
+        return;
+      }
+
       const video = videoRef.current;
 
       // Check if browser supports HLS natively (Safari)
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = selectedCamera.liveStreamUrl;
+
+        // Safari autoplay handling
+        const playVideo = () => {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .catch(() => {
+                setTimeout(playVideo, 1000);
+              });
+          }
+        };
+
+        // Handle pause events (Safari might pause automatically)
+        pauseHandler = () => {
+          // Try to resume automatically first
+          setTimeout(() => {
+            if (video.paused && !video.ended) {
+              playVideo();
+              // Only show play button if auto-resume fails after 2 seconds
+              setTimeout(() => {
+                if (video.paused && !video.ended) {
+                  setShowPlayButton(true);
+                }
+              }, 2000);
+            }
+          }, 100);
+        };
+
+        // Hide play button when video starts playing
+        playingHandler = () => {
+          setShowPlayButton(false);
+        };
+
+        video.addEventListener('playing', playingHandler);
+
+        metadataHandler = playVideo;
+
+        video.addEventListener('pause', pauseHandler);
+        video.addEventListener('loadedmetadata', metadataHandler);
+
+        // Initial play attempt
+        playVideo();
       }
       // Use HLS.js for other browsers
       else if (Hls.isSupported()) {
-        const hls = new Hls({
+        hlsInstance = new Hls({
           enableWorker: true,
-          lowLatencyMode: true,
+          lowLatencyMode: false,
+          debug: false,
         });
 
-        hls.loadSource(selectedCamera.liveStreamUrl);
-        hls.attachMedia(video);
+        hlsInstance.loadSource(selectedCamera.liveStreamUrl);
+        hlsInstance.attachMedia(video);
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(err => console.log('Autoplay prevented:', err));
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {
+            setShowPlayButton(true);
+          });
         });
 
-        hls.on(Hls.Events.ERROR, (_event, data) => {
-          console.error('HLS error:', data);
-        });
-
-        return () => {
-          hls.destroy();
+        // Handle pause events (Chrome might pause automatically)
+        pauseHandler = () => {
+          // Only show play button after 2 seconds if still paused
+          setTimeout(() => {
+            if (video.paused && !video.ended) {
+              setShowPlayButton(true);
+            }
+          }, 2000);
         };
-      } else {
-        console.error('HLS is not supported in this browser');
+
+        // Hide play button when video starts playing
+        playingHandler = () => {
+          setShowPlayButton(false);
+        };
+
+        video.addEventListener('playing', playingHandler);
+        video.addEventListener('pause', pauseHandler);
+
+        hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                hlsInstance?.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                hlsInstance?.recoverMediaError();
+                break;
+              default:
+                hlsInstance?.destroy();
+                break;
+            }
+          }
+        });
       }
-    }
+    };
+
+    initVideo();
+
+    // Cleanup
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (hlsInstance) {
+        hlsInstance.destroy();
+      }
+      if (videoRef.current) {
+        if (pauseHandler) {
+          videoRef.current.removeEventListener('pause', pauseHandler);
+        }
+        if (playingHandler) {
+          videoRef.current.removeEventListener('playing', playingHandler);
+        }
+        if (metadataHandler) {
+          videoRef.current.removeEventListener('loadedmetadata', metadataHandler);
+        }
+      }
+      setShowPlayButton(false);
+    };
   }, [selectedCamera]);
 
   const refreshCamera = (cameraId: string) => {
@@ -190,7 +301,7 @@ const Cameras = () => {
                 <p className="text-muted-foreground">Momentálně nejsou k dispozici žádné kamery.</p>
               </div>
             ) : (
-              cameras.map((camera: CameraType) => (
+              cameras.filter((camera: CameraType) => camera.source !== 'archive' || camera.id === 'kohutka-p0').map((camera: CameraType) => (
                 <Card
                   key={camera.id}
                   className="glass overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
@@ -205,9 +316,6 @@ const Cameras = () => {
                       )}
                       alt={camera.name}
                       className="w-full h-full object-cover"
-                      onError={() => {
-                        console.error(`Failed to load image for camera ${camera.id}:`, camera.media.last_image.url);
-                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -233,16 +341,37 @@ const Cameras = () => {
                       </Button>
                     </div>
 
-                    {/* Live indicator */}
+                    {/* Live indicator and camera type badges */}
                     <div className="absolute top-3 left-3 flex gap-2">
-                      <div className="flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                        LIVE
-                      </div>
-                      {(camera.hasVideo || camera.hasLiveStream) && (
+                      {/* LIVE tag only for live stream cameras */}
+                      {camera.hasLiveStream && (
+                        <div className="flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                          LIVE
+                        </div>
+                      )}
+
+                      {/* STREAM badge for live stream cameras */}
+                      {camera.hasLiveStream && (
                         <Badge variant="secondary" className="bg-blue-500 text-white">
                           <Video className="h-3 w-3 mr-1" />
-                          {camera.hasLiveStream ? 'STREAM' : 'VIDEO'}
+                          STREAM
+                        </Badge>
+                      )}
+
+                      {/* PANORAMA badge - show for cameras with panorama support */}
+                      {camera.hasPanorama && !camera.hasLiveStream && (
+                        <Badge variant="secondary" className="bg-purple-500 text-white">
+                          <Mountain className="h-3 w-3 mr-1" />
+                          PANORAMA
+                        </Badge>
+                      )}
+
+                      {/* SNÍMEK badge for regular cameras (no special features) */}
+                      {!camera.hasLiveStream && !camera.hasPanorama && (
+                        <Badge variant="secondary" className="bg-slate-500 text-white">
+                          <Camera className="h-3 w-3 mr-1" />
+                          SNÍMEK
                         </Badge>
                       )}
                     </div>
@@ -309,10 +438,7 @@ const Cameras = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {cameras
-              .filter((camera: CameraType) =>
-                camera.media.last_image.url.includes('data.kohutka.ski') &&
-                camera.media.last_image.url.includes('kamera_P')
-              )
+              .filter((camera: CameraType) => camera.source === 'archive')
               .map((camera: CameraType) => (
                 <Card
                   key={`archive-${camera.id}-${selectedTime}`}
@@ -366,7 +492,7 @@ const Cameras = () => {
                 • Můžete obnovit kameru ručně tlačítkem
               </p>
               <p className="text-muted-foreground mb-2">
-                • Kamery s 🎥 VIDEO nabízí live stream
+                • Kamery s 🎥 STREAM nabízí live přenos
               </p>
             </div>
             <div>
@@ -374,7 +500,7 @@ const Cameras = () => {
                 • Klikněte na kameru pro fullscreen zobrazení
               </p>
               <p className="text-muted-foreground mb-2">
-                • Live indikátor ukazuje aktivní kameru
+                • LIVE indikátor ukazuje aktivní live stream
               </p>
               <p className="text-muted-foreground mb-2">
                 • Zobrazuje se aktuální teplota a čas
@@ -387,7 +513,7 @@ const Cameras = () => {
         {/* Fullscreen Dialog */}
         {selectedCamera && (
           <Dialog open={true} onOpenChange={() => setSelectedCamera(null)}>
-            <DialogContent className="max-w-6xl" aria-describedby="camera-description">
+            <DialogContent className="max-w-6xl">
               <DialogHeader>
                 <DialogTitle className="flex items-center justify-between">
                   <div>
@@ -395,10 +521,22 @@ const Cameras = () => {
                     <span className="text-sm text-muted-foreground ml-3">
                       {selectedCamera.description || selectedCamera.location}
                     </span>
-                    {(selectedCamera.hasVideo || selectedCamera.hasLiveStream) && (
+                    {selectedCamera.hasLiveStream && (
                       <Badge variant="secondary" className="ml-2 bg-blue-500 text-white">
                         <Video className="h-3 w-3 mr-1" />
-                        LIVE STREAM
+                        STREAM
+                      </Badge>
+                    )}
+                    {selectedCamera.hasPanorama && !selectedCamera.hasLiveStream && (
+                      <Badge variant="secondary" className="ml-2 bg-purple-500 text-white">
+                        <Mountain className="h-3 w-3 mr-1" />
+                        PANORAMA
+                      </Badge>
+                    )}
+                    {!selectedCamera.hasLiveStream && !selectedCamera.hasPanorama && (
+                      <Badge variant="secondary" className="ml-2 bg-slate-500 text-white">
+                        <Camera className="h-3 w-3 mr-1" />
+                        SNÍMEK
                       </Badge>
                     )}
                   </div>
@@ -421,21 +559,43 @@ const Cameras = () => {
                     )}
                   </div>
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Zobrazení live kamery {selectedCamera.name}
+                </DialogDescription>
               </DialogHeader>
-              <p id="camera-description" className="sr-only">
-                Zobrazení live kamery {selectedCamera.name}
-              </p>
               <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                 {selectedCamera.hasLiveStream && selectedCamera.liveStreamUrl ? (
-                  <video
-                    ref={videoRef}
-                    controls
-                    muted
-                    playsInline
-                    className="w-full h-full object-contain"
-                  >
-                    Váš prohlížeč nepodporuje HLS live stream.
-                  </video>
+                  <>
+                    <video
+                      ref={videoRef}
+                      controls
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-full object-contain"
+                    >
+                      Váš prohlížeč nepodporuje HLS live stream.
+                    </video>
+                    {showPlayButton && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <Button
+                          size="lg"
+                          onClick={() => {
+                            videoRef.current?.play()
+                              .then(() => {
+                                setShowPlayButton(false);
+                              })
+                              .catch(() => {
+                                // Play failed
+                              });
+                          }}
+                          className="h-20 w-20 rounded-full bg-white hover:bg-white/90 text-black"
+                        >
+                          <Play className="h-10 w-10" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 ) : selectedCamera.hasVideo && selectedCamera.media.last_video ? (
                   <video
                     controls
@@ -444,20 +604,19 @@ const Cameras = () => {
                     playsInline
                     className="w-full h-full object-contain"
                     key={selectedCamera.id}
-                    onError={(e) => {
-                      console.error('Video load error:', selectedCamera.media.last_video?.url);
-                      console.error('Error event:', e);
-                    }}
-                    onLoadedData={() => {
-                      console.log('Video loaded successfully:', selectedCamera.media.last_video?.url);
-                    }}
                   >
                     <source
-                      src={selectedCamera.media.last_video.url}
+                      src={selectedCamera.media.last_video.direct_url || selectedCamera.media.last_video.url}
                       type="video/mp4"
                     />
                     Váš prohlížeč nepodporuje video tag.
                   </video>
+                ) : selectedCamera.hasPanorama && selectedCamera.media.last_panorama ? (
+                  <img
+                    src={selectedCamera.media.last_panorama.url}
+                    alt={`${selectedCamera.name} - Panorama`}
+                    className="w-full h-full object-contain"
+                  />
                 ) : (
                   <img
                     src={`${selectedCamera.media.last_image.url}${selectedCamera.media.last_image.url.includes('?') ? '&' : '?'}t=${refreshKeys[selectedCamera.id] || Date.now()}`}

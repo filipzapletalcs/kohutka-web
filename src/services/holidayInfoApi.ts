@@ -87,6 +87,70 @@ export async function fetchHolidayInfoXML(): Promise<string> {
   }
 }
 
+// Download kód - v produkci je v environment variables, v dev módu použijeme hardcoded
+const HOLIDAYINFO_DC = import.meta.env.VITE_HOLIDAYINFO_DC || 'c9ixxlejab5d4mrr';
+const IS_DEV = import.meta.env.DEV;
+
+/**
+ * Helper funkce pro vytvoření URL přes proxy (produkce) nebo přímo (development)
+ */
+function buildProxyImageUrl(camid: string, options: { cropaspect?: string; outw?: string; outh?: string } = {}): string {
+  const params = new URLSearchParams();
+
+  // V development módu voláme Holidayinfo API přímo (jen pro testování)
+  // V produkci používáme proxy endpoint
+  if (IS_DEV) {
+    params.append('dc', HOLIDAYINFO_DC);
+    params.append('camid', camid);
+    if (options.cropaspect) params.append('cropaspect', options.cropaspect);
+    if (options.outw) params.append('outw', options.outw);
+    if (options.outh) params.append('outh', options.outh);
+    return `https://exports.holidayinfo.cz/loc_cams_lastimage.php?${params.toString()}`;
+  } else {
+    params.append('camid', camid);
+    if (options.cropaspect) params.append('cropaspect', options.cropaspect);
+    if (options.outw) params.append('outw', options.outw);
+    if (options.outh) params.append('outh', options.outh);
+    return `/api/holidayinfo-image?${params.toString()}`;
+  }
+}
+
+function buildProxyVideoUrl(camid: string, options: { size?: string; ext?: string } = {}): string {
+  const params = new URLSearchParams();
+
+  if (IS_DEV) {
+    params.append('dc', HOLIDAYINFO_DC);
+    params.append('camid', camid);
+    if (options.size) params.append('size', options.size);
+    if (options.ext) params.append('ext', options.ext);
+    return `https://exports.holidayinfo.cz/loc_cams_expvideo_lastvideofile.php?${params.toString()}`;
+  } else {
+    params.append('camid', camid);
+    if (options.size) params.append('size', options.size);
+    if (options.ext) params.append('ext', options.ext);
+    return `/api/holidayinfo-video?${params.toString()}`;
+  }
+}
+
+function buildProxyPanoramaUrl(camid: string, options: { cropaspect?: string; outw?: string; outh?: string } = {}): string {
+  const params = new URLSearchParams();
+
+  if (IS_DEV) {
+    params.append('dc', HOLIDAYINFO_DC);
+    params.append('camid', camid);
+    if (options.cropaspect) params.append('cropaspect', options.cropaspect);
+    if (options.outw) params.append('outw', options.outw);
+    if (options.outh) params.append('outh', options.outh);
+    return `https://exports.holidayinfo.cz/loc_cams_lastpanoimage.php?${params.toString()}`;
+  } else {
+    params.append('camid', camid);
+    if (options.cropaspect) params.append('cropaspect', options.cropaspect);
+    if (options.outw) params.append('outw', options.outw);
+    if (options.outh) params.append('outh', options.outh);
+    return `/api/holidayinfo-panorama?${params.toString()}`;
+  }
+}
+
 /**
  * Parse cameras from XML
  */
@@ -110,7 +174,6 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     if (lastImage) {
       const datetime = lastImage.getAttribute('datetime') || '';
       const temp = getXMLText(lastImage, 'temp');
-      const link = getXMLText(lastImage, 'link');
 
       // Format datetime to readable format
       let time = '';
@@ -153,41 +216,100 @@ export function parseCameras(xmlDoc: Document): Camera[] {
             videoData = {
               url: videoUrl,
               datetime: videoDatetime,
+              // Přidáme direct_url přes proxy pro bezpečný přístup
+              direct_url: buildProxyVideoUrl(id, { size: 'full', ext: 'mp4' }),
             };
           }
         }
       }
+
+      // Parse panorama if available
+      let panoramaData = undefined;
+      const lastPanoImage = camEl.querySelector('media > last_panoimage');
+      if (lastPanoImage) {
+        const panoDatetime = lastPanoImage.getAttribute('datetime') || '';
+        panoramaData = {
+          url: buildProxyPanoramaUrl(id, { cropaspect: '16:9', outw: '1920' }),
+          datetime: panoDatetime,
+        };
+      }
+
+      // Special handling for camera 2122 (Kohútka -> Chata Kohútka) - has panorama
+      const isPanoramaCamera = id === '2122';
+      const finalPanoramaData = panoramaData || (isPanoramaCamera ? {
+        url: buildProxyPanoramaUrl(id, { cropaspect: '16:9', outw: '1920' }),
+        datetime,
+      } : undefined);
 
       cameras.push({
         id,
         name,
         description: `Nadmořská výška: ${sealevel}m`,
         location: sealevel,
+        source: 'holidayinfo',
         hasVideo,
+        hasPanorama: !!finalPanoramaData,
         media: {
           last_image: {
-            url: link,
-            url_preview: link, // Same as full image
+            // Používáme proxy endpoint místo přímého odkazu
+            url: buildProxyImageUrl(id, { cropaspect: '16:9', outw: '1280' }),
+            url_preview: buildProxyImageUrl(id, { cropaspect: '16:9', outw: '640' }),
             temp,
             date,
             time,
           },
           last_video: videoData,
+          last_panorama: finalPanoramaData,
         },
       });
     }
   });
 
-  // Add custom camera P0
+  // Add custom cameras from data.kohutka.ski (for archive time filtering)
   cameras.push({
     id: 'kohutka-p0',
     name: 'Velká sjezdovka',
     description: 'Náhled na Velkou sjezdovku z horní stanice',
     location: 'Horní stanice',
+    source: 'archive',
     media: {
       last_image: {
         url: 'http://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
         url_preview: 'http://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
+        temp: '',
+        date: '',
+        time: '',
+      },
+    },
+  });
+
+  cameras.push({
+    id: 'kohutka-p5',
+    name: 'Kohútka',
+    description: 'Náhled na areál Kohútka',
+    location: 'Kohútka',
+    source: 'archive',
+    media: {
+      last_image: {
+        url: 'http://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
+        temp: '',
+        date: '',
+        time: '',
+      },
+    },
+  });
+
+  cameras.push({
+    id: 'kohutka-p1',
+    name: 'Malá Kohútka',
+    description: 'Náhled na areál Malá Kohútka',
+    location: 'Malá Kohútka',
+    source: 'archive',
+    media: {
+      last_image: {
+        url: 'http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
+        url_preview: 'http://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
         temp: '',
         date: '',
         time: '',
@@ -205,8 +327,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka01_.m3u8',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
+        url: 'http://webcams.i2net.cz/obr/kohutka-01.jpg',
+        url_preview: 'http://webcams.i2net.cz/obr/kohutka-01.jpg',
         temp: '',
         date: '',
         time: '',
@@ -223,8 +345,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka03_.m3u8',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
+        url: 'http://webcams.i2net.cz/obr/kohutka-03.jpg',
+        url_preview: 'http://webcams.i2net.cz/obr/kohutka-03.jpg',
         temp: '',
         date: '',
         time: '',
@@ -238,7 +360,20 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     return FALLBACK_CAMERAS;
   }
 
-  return cameras;
+  // Sort cameras: 1. Panorama (Chata Kohútka), 2. Live streams, 3. Others
+  const sortedCameras = cameras.sort((a, b) => {
+    // Priority order
+    const getPriority = (camera: Camera) => {
+      if (camera.id === '2122') return 1; // Chata Kohútka (panorama) - first
+      if (camera.id === 'live-kohutka') return 2; // Kohútka live stream - second
+      if (camera.id === 'live-mala-kohutka') return 3; // Malá Kohútka live stream - third
+      return 4; // All other cameras
+    };
+
+    return getPriority(a) - getPriority(b);
+  });
+
+  return sortedCameras;
 }
 
 /**

@@ -1,15 +1,25 @@
 // Holiday Info API Types based on WordPress plugin analysis
 
+/**
+ * Zdroj dat pro kameru
+ */
+export type CameraSource = 'holidayinfo' | 'i2net' | 'archive';
+
+/**
+ * Unified Camera interface podporující Holiday Info i i2net kamery
+ */
 export interface Camera {
   id: string;
   name: string;
   description: string;
   location: string;
+  source?: CameraSource; // Zdroj dat (holidayinfo nebo i2net)
   hasVideo?: boolean;
   hasLiveStream?: boolean;
   liveStreamUrl?: string;
   hasPanorama?: boolean;
   panoramaUrl?: string;
+  updateInterval?: number; // Interval aktualizace v minutách (0 = live stream)
   media: {
     last_image: {
       url: string;
@@ -19,6 +29,12 @@ export interface Camera {
       time?: string;
     };
     last_video?: {
+      url: string;
+      datetime?: string;
+      // Přímý přístup k video souboru přes proxy
+      direct_url?: string;
+    };
+    last_panorama?: {
       url: string;
       datetime?: string;
     };
