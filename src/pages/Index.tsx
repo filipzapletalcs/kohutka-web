@@ -239,7 +239,7 @@ const Index = () => {
               <StatusWidget
                 icon={Snowflake}
                 label="Sníh"
-                value={operation?.snowHeight || "N/A"}
+                value={operation?.snowHeight || "0 cm"}
               />
             </div>
           )}

@@ -793,7 +793,7 @@ const Pricing = () => {
           {/* Info Card - Show for tabs with pricing tables */}
           {!["informace", "slevy"].includes(activeTab) && (
             <div className="mt-6 md:mt-8">
-              <Card className="bg-blue-50 p-5 md:p-6 border-0 shadow-lg border-l-4 border-primary">
+              <Card className="bg-white/95 p-5 md:p-6 border-0 shadow-lg border-l-4 border-primary">
                 <div className="flex items-start gap-3 md:gap-4">
                   <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                     <Info className="h-5 w-5 md:h-6 md:w-6 text-primary" />
