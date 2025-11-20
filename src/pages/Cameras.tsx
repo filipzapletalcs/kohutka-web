@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const Cameras = () => {
   const [selectedCamera, setSelectedCamera] = useState<CameraType | null>(null);
+  const [selectedCameraTime, setSelectedCameraTime] = useState<string>("current");
   const [refreshKeys, setRefreshKeys] = useState<Record<string, number>>({});
   const [selectedTime, setSelectedTime] = useState<string>("current");
   const [showPlayButton, setShowPlayButton] = useState(false);
@@ -305,7 +306,10 @@ const Cameras = () => {
                 <Card
                   key={camera.id}
                   className="glass overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
-                  onClick={() => setSelectedCamera(camera)}
+                  onClick={() => {
+                    setSelectedCamera(camera);
+                    setSelectedCameraTime("current");
+                  }}
                 >
                   <div className="relative aspect-video bg-muted">
                     <img
@@ -443,7 +447,10 @@ const Cameras = () => {
                 <Card
                   key={`archive-${camera.id}-${selectedTime}`}
                   className="overflow-hidden group cursor-pointer hover:shadow-lg transition-all"
-                  onClick={() => setSelectedCamera(camera)}
+                  onClick={() => {
+                    setSelectedCamera(camera);
+                    setSelectedCameraTime(selectedTime);
+                  }}
                 >
                   <div className="relative aspect-video bg-muted">
                     <img
@@ -513,9 +520,9 @@ const Cameras = () => {
         {/* Fullscreen Dialog */}
         {selectedCamera && (
           <Dialog open={true} onOpenChange={() => setSelectedCamera(null)}>
-            <DialogContent className="max-w-6xl">
+            <DialogContent className="max-w-7xl w-[95vw]">
               <DialogHeader>
-                <DialogTitle className="flex items-center justify-between">
+                <DialogTitle className="flex items-center justify-between gap-4 pr-8">
                   <div>
                     <span className="text-xl">{selectedCamera.name}</span>
                     <span className="text-sm text-muted-foreground ml-3">
@@ -621,7 +628,7 @@ const Cameras = () => {
                   <img
                     src={getCameraUrl(
                       selectedCamera.media.last_image.url,
-                      "current",
+                      selectedCamera.source === 'archive' ? selectedCameraTime : "current",
                       refreshKeys[selectedCamera.id]
                     )}
                     alt={selectedCamera.name}
