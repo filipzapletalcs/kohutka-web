@@ -619,7 +619,11 @@ const Cameras = () => {
                   />
                 ) : (
                   <img
-                    src={`${selectedCamera.media.last_image.url}${selectedCamera.media.last_image.url.includes('?') ? '&' : '?'}t=${refreshKeys[selectedCamera.id] || Date.now()}`}
+                    src={getCameraUrl(
+                      selectedCamera.media.last_image.url,
+                      "current",
+                      refreshKeys[selectedCamera.id]
+                    )}
                     alt={selectedCamera.name}
                     className="w-full h-full object-contain"
                   />
