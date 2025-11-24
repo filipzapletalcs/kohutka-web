@@ -8,6 +8,7 @@ interface StatusWidgetProps {
   value: string;
   status?: "open" | "closed" | "partial";
   className?: string;
+  fullWidth?: boolean;
 }
 
 export const StatusWidget = ({
@@ -16,6 +17,7 @@ export const StatusWidget = ({
   value,
   status,
   className,
+  fullWidth = false,
 }: StatusWidgetProps) => {
   const statusConfig = {
     open: {
@@ -55,37 +57,55 @@ export const StatusWidget = ({
 
   return (
     <Card className={cn(
-      "bg-white/95 backdrop-blur-sm p-3 md:p-5",
+      "bg-white/95 backdrop-blur-sm",
       "border-2 shadow-lg hover:shadow-xl",
       "hover:scale-[1.02] hover:-translate-y-0.5",
       "transition-all duration-300 ease-out",
       "rounded-xl md:rounded-2xl",
+      fullWidth ? "p-4 md:p-6" : "p-3 md:p-5",
       config.cardBorder,
       config.cardShadow,
       className
     )}>
-      <div className="flex flex-col items-center text-center space-y-2 md:space-y-3">
+      <div className={cn(
+        "flex items-center text-center",
+        fullWidth ? "flex-row gap-4 space-y-0 justify-center md:flex-col md:space-y-3" : "flex-col space-y-2 md:space-y-3"
+      )}>
         {/* Icon with gradient background and ring */}
         <div className={cn(
-          "p-2 md:p-3 rounded-xl transition-all duration-300",
+          "rounded-xl transition-all duration-300 flex-shrink-0",
           "shadow-sm hover:shadow-md",
+          fullWidth ? "p-3 md:p-3" : "p-2 md:p-3",
           config.iconBg,
           config.iconRing
         )}>
-          <Icon className={cn("h-5 w-5 md:h-7 md:w-7 stroke-[2.5]", config.iconColor)} />
+          <Icon className={cn(
+            "stroke-[2.5]",
+            fullWidth ? "h-6 w-6 md:h-7 md:w-7" : "h-5 w-5 md:h-7 md:w-7",
+            config.iconColor
+          )} />
         </div>
 
-        {/* Label */}
-        <div className="text-[10px] md:text-xs text-gray-600 uppercase tracking-[0.1em] font-bold leading-tight">
-          {label}
-        </div>
-
-        {/* Value */}
         <div className={cn(
-          "text-lg md:text-2xl font-extrabold tracking-tight leading-none",
-          config.valueColor
+          "flex flex-col",
+          fullWidth ? "items-start text-left md:items-center md:text-center" : "items-center text-center"
         )}>
-          {value}
+          {/* Label */}
+          <div className={cn(
+            "text-gray-600 uppercase tracking-[0.1em] font-bold leading-tight",
+            fullWidth ? "text-xs mb-1 md:mb-0" : "text-[10px] md:text-xs mb-2 md:mb-0"
+          )}>
+            {label}
+          </div>
+
+          {/* Value */}
+          <div className={cn(
+            "font-extrabold tracking-tight leading-none whitespace-nowrap",
+            fullWidth ? "text-xl md:text-2xl" : "text-lg md:text-2xl",
+            config.valueColor
+          )}>
+            {value}
+          </div>
         </div>
       </div>
     </Card>

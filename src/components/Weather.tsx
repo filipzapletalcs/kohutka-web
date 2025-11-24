@@ -58,17 +58,15 @@ const Weather = () => {
               <iframe
                 key={isMobile ? "mobile-three" : "desktop-three"}
                 src={isMobile ? mobileWidgetUrl : desktopWidgetUrl}
-                frameBorder="0"
-                scrolling="no"
-                allowTransparency={true}
                 sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"
                 style={{
                   width: "100%",
-                  height: isMobile ? "520px" : "588px",
+                  height: isMobile ? "550px" : "630px",
                   border: "0",
                   overflow: "hidden",
                 }}
                 title="Meteoblue weather widget"
+                {...{ allowtransparency: "true" }}
               />
             </div>
           </div>

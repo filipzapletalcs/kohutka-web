@@ -6,6 +6,7 @@ import {
   Mountain,
   MountainSnow,
   Snowflake,
+  Navigation2,
 } from "lucide-react";
 import { GiSnowboard } from "react-icons/gi";
 import { Button } from "@/components/ui/button";
@@ -24,16 +25,10 @@ import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, useRef } from "react";
 import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.png";
-import heroImage2 from "@/assets/P01Slider-Slide01.jpg";
 import logo from "@/assets/logo.png";
 
-const heroImages = [heroImage1, heroImage2];
-
 const Index = () => {
-  const [panoramaProgress, setPanoramaProgress] = useState(0);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isHeroVisible, setIsHeroVisible] = useState(true);
-  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([false, false]);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
   // Fetch data with auto-refresh every 5 minutes
@@ -48,74 +43,14 @@ const Index = () => {
   const lifts = data?.lifts;
   const slopes = data?.slopes;
 
-  // Preload hero images
+  // Preload hero image
   useEffect(() => {
-    heroImages.forEach((src, index) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        setImagesLoaded(prev => {
-          const newLoaded = [...prev];
-          newLoaded[index] = true;
-          return newLoaded;
-        });
-      };
-    });
-  }, []);
-
-  // Intersection Observer for hero visibility
-  useEffect(() => {
-    if (!heroRef.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsHeroVisible(entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(heroRef.current);
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Auto-rotate hero images every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Auto-animate panoramic scroll effect - only when hero is visible
-  useEffect(() => {
-    if (!isHeroVisible) return;
-
-    let animationFrame: number;
-    let progress = panoramaProgress;
-    let direction = 1; // 1 for right, -1 for left
-
-    const animate = () => {
-      progress += direction * 0.0005; // Adjust speed here (smaller = slower)
-
-      // Reverse direction at edges
-      if (progress >= 1) {
-        progress = 1;
-        direction = -1;
-      } else if (progress <= 0) {
-        progress = 0;
-        direction = 1;
-      }
-
-      setPanoramaProgress(progress);
-      animationFrame = requestAnimationFrame(animate);
+    const img = new Image();
+    img.src = heroImage1;
+    img.onload = () => {
+      setImageLoaded(true);
     };
-
-    animationFrame = requestAnimationFrame(animate);
-
-    return () => cancelAnimationFrame(animationFrame);
-  }, [isHeroVisible, panoramaProgress]);
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -124,30 +59,21 @@ const Index = () => {
       {/* Hero Section */}
       <div ref={heroRef} className="relative min-h-[80vh] md:h-[110vh] overflow-hidden">
         {/* Loading skeleton */}
-        {!imagesLoaded[currentImageIndex] && (
+        {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 animate-pulse" />
         )}
 
-        {/* Panoramic Images with Automatic Horizontal Movement and Rotation */}
-        {heroImages.map((image, index) => (
-          <div
-            key={index}
-            className="absolute inset-0 w-full h-full transition-opacity duration-1000"
-            style={{
-              backgroundImage: `url(${image})`,
-              backgroundSize: 'auto 100%',
-              backgroundPosition: `${panoramaProgress * 100}% center`,
-              backgroundRepeat: 'no-repeat',
-              opacity: currentImageIndex === index && imagesLoaded[index] ? 1 : 0,
-              zIndex: currentImageIndex === index ? 1 : 0,
-            }}
-            onLoad={() => {
-              const newLoaded = [...imagesLoaded];
-              newLoaded[index] = true;
-              setImagesLoaded(newLoaded);
-            }}
-          />
-        ))}
+        {/* Static Panoramic Image - Centered */}
+        <div
+          className="absolute inset-0 w-full h-full"
+          style={{
+            backgroundImage: `url(${heroImage1})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            opacity: imageLoaded ? 1 : 0,
+          }}
+        />
 
         {/* Content */}
         <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -157,13 +83,13 @@ const Index = () => {
               <div className="mb-6 flex justify-center">
                 <img
                   src={logo}
-                  alt="Kohútka Logo"
+                  alt="SKI CENTRUM KOHÚTKA Logo"
                   className="h-48 md:h-96 w-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
                 />
               </div>
 
               <p className="text-xl md:text-2xl text-white mb-6 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] font-semibold">
-                Lyžařské středisko v srdci Valašska
+                SKI CENTRUM KOHÚTKA - Lyžařské středisko v srdci Valašska
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -188,8 +114,8 @@ const Index = () => {
       <section className="py-12 -mt-20 relative z-20">
         <div className="container mx-auto max-w-7xl px-4">
           {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 md:gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-4">
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                 <div key={i} className="glass p-4 rounded-lg">
                   <Skeleton className="h-8 w-8 mx-auto mb-2" />
                   <Skeleton className="h-3 w-16 mx-auto mb-2" />
@@ -198,13 +124,17 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-4">
+              {/* Main Status - Full width on mobile */}
               <StatusWidget
                 icon={Mountain}
                 label="Skiareál"
                 value={operation?.operationText || "mimo provoz"}
                 status={operation?.isOpen ? "open" : "closed"}
+                fullWidth
+                className="col-span-2 md:col-span-1"
               />
+
               <StatusWidget
                 icon={CableCar}
                 label="Vleky a lanovky"
@@ -215,6 +145,7 @@ const Index = () => {
                     : "closed"
                 }
               />
+
               <StatusWidget
                 icon={MountainSnow}
                 label="Sjezdovky"
@@ -225,17 +156,27 @@ const Index = () => {
                     : "closed"
                 }
               />
+
+              <StatusWidget
+                icon={Navigation2}
+                label="Stav vozovky"
+                value="zasněžená"
+                status="partial"
+              />
+
               <StatusWidget
                 icon={CloudSun}
                 label="Počasí"
                 value={operation?.temperature ? `${operation.temperature}°C` : "N/A"}
               />
+
               <StatusWidget
                 icon={(props) => <GiSnowboard {...props} />}
                 label="Skipark"
                 value={lifts?.skiParkOpen ? "otevřen" : "zavřen"}
                 status={lifts?.skiParkOpen ? "open" : "closed"}
               />
+
               <StatusWidget
                 icon={Snowflake}
                 label="Sníh"

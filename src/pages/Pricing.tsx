@@ -291,7 +291,8 @@ const Pricing = () => {
     queryKey: ['pricing', activeTab],
     queryFn: () => fetchPricingFromGoogleSheets(activeTab as PricingCategory),
     enabled: shouldFetchFromSheets, // Fetchuj pouze pro ceníky
-    staleTime: 5 * 60 * 1000, // 5 minut cache
+    staleTime: 24 * 60 * 60 * 1000, // 24 hodin - data se nepřenačítají při každém otevření
+    gcTime: 24 * 60 * 60 * 1000, // Data zůstávají v cache 24 hodin (garbage collection time)
     retry: 1, // Zkus znovu jen jednou při chybě
   });
 
@@ -299,7 +300,8 @@ const Pricing = () => {
   const { data: ageCategoriesData, error: ageCategoriesError } = useQuery({
     queryKey: ['ageCategories'],
     queryFn: fetchAgeCategoriesFromGoogleSheets,
-    staleTime: 10 * 60 * 1000, // 10 minut cache (mění se zřídka)
+    staleTime: 24 * 60 * 60 * 1000, // 24 hodin cache (mění se velmi zřídka)
+    gcTime: 24 * 60 * 60 * 1000, // Data zůstávají v cache 24 hodin
     retry: 1,
   });
 
@@ -340,9 +342,9 @@ const Pricing = () => {
         </h3>
         <div className="grid md:grid-cols-2 gap-4">
           {Object.values(ageCategories).map((cat) => (
-            <div key={cat.category} className="bg-primary/90 hover:bg-primary p-5 rounded-lg shadow-md hover:shadow-lg transition-all">
+            <div key={cat.category} className="bg-gradient hover:shadow-xl p-5 rounded-xl shadow-lg transition-all duration-200 hover:-translate-y-0.5">
               <p className="font-bold text-xl text-primary-foreground mb-2">{cat.name}</p>
-              <p className="text-primary-foreground/80 font-semibold text-base">Narození {cat.birthYears}</p>
+              <p className="text-primary-foreground/90 font-semibold text-base">Narození {cat.birthYears}</p>
             </div>
           ))}
         </div>
@@ -443,41 +445,58 @@ const Pricing = () => {
         <div className="container mx-auto max-w-7xl px-4">
           {/* Header */}
           <div className="mb-8 md:mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">
-              Ceník skipasů
-            </h1>
-            <p className="text-base md:text-lg text-muted-foreground">
-              Sezóna 2024/2025
-            </p>
-          </div>
-
-          {/* Tabs - Desktop */}
-          <div className="mb-8 hidden md:block overflow-x-auto">
-            <div className="flex gap-2 flex-wrap bg-white/95 backdrop-blur-sm rounded-lg p-2 shadow-lg">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 lg:px-6 py-3 rounded-md font-semibold text-sm transition-all flex items-center gap-2 ${
-                      activeTab === tab.id
-                        ? "bg-accent text-accent-foreground shadow-lg scale-105"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl md:text-5xl font-bold mb-2 text-gradient">
+                  Ceník skipasů
+                </h1>
+                <p className="text-base md:text-lg text-muted-foreground font-medium">
+                  Sezóna 2024/2025
+                </p>
+              </div>
+              <div className="flex-shrink-0 md:hidden">
+                <a
+                  href="https://valassko.ski/shop-kohutka"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-lg font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  <Ticket className="h-5 w-5" />
+                  Koupit skipas online
+                </a>
+              </div>
             </div>
           </div>
 
-          {/* Dropdown - Mobile */}
-          <div className="mb-8 md:hidden">
+          {/* Tabs - Desktop with sticky positioning */}
+          <div className="mb-8 hidden md:block sticky top-16 z-40 -mx-4 px-4 pt-4 pb-2 bg-background/80 backdrop-blur-md">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex gap-2 flex-wrap bg-white/98 backdrop-blur-sm rounded-xl p-2 shadow-xl border border-primary/10">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-4 lg:px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center gap-2 ${
+                        activeTab === tab.id
+                          ? "bg-accent text-accent-foreground shadow-lg scale-105 hover:scale-105"
+                          : "text-gray-700 hover:text-gray-900 hover:bg-gray-100 hover:scale-102"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Dropdown - Mobile with sticky positioning */}
+          <div className="mb-8 md:hidden sticky top-16 z-40 -mx-4 px-4 pt-4 pb-2 bg-background/95 backdrop-blur-md">
             <Select value={activeTab} onValueChange={(value) => setActiveTab(value as PricingTab)}>
-              <SelectTrigger className="w-full bg-white/95 text-gray-900 border-2 border-primary/30 h-14 text-lg shadow-lg hover:bg-white hover:border-primary/50 transition-all">
+              <SelectTrigger className="w-full bg-white/98 text-gray-900 border-2 border-primary/20 h-14 text-lg shadow-lg hover:bg-white hover:border-primary/40 transition-all duration-200 rounded-xl">
                 <SelectValue>
                   {(() => {
                     const currentTab = tabs.find(t => t.id === activeTab);
@@ -491,11 +510,11 @@ const Pricing = () => {
                   })()}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-white border-2 border-primary/30">
+              <SelectContent className="bg-white border-2 border-primary/20 shadow-xl">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
-                    <SelectItem key={tab.id} value={tab.id} className="text-base py-3 cursor-pointer hover:bg-primary/10">
+                    <SelectItem key={tab.id} value={tab.id} className="text-base py-3 cursor-pointer hover:bg-primary/10 transition-colors">
                       <div className="flex items-center gap-3">
                         <Icon className="h-4 w-4 text-primary" />
                         <span className="font-semibold">{tab.label}</span>
@@ -534,36 +553,36 @@ const Pricing = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-b border-white/20">
-                        <th className="text-left p-5 font-bold text-lg">Typ jízdenky</th>
+                      <tr className="bg-gradient text-primary-foreground border-b border-white/30">
+                        <th className="text-left p-6 font-bold text-lg tracking-wide">Typ jízdenky</th>
                         {data[0]?.all !== undefined ? (
-                          <th className="text-right p-5 font-bold">
-                            <span className="text-lg">Všechny kategorie</span>
+                          <th className="text-right p-6 font-bold">
+                            <span className="text-lg tracking-wide">Všechny kategorie</span>
                           </th>
                         ) : (
                           <>
-                            <th className="text-right p-5 font-bold">
-                              <div className="flex flex-col items-end">
-                                <span className="text-lg">{ageCategories.adult.name}</span>
-                                <span className="text-xs font-normal opacity-70">({ageCategories.adult.birthYears})</span>
+                            <th className="text-right p-6 font-bold">
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-lg tracking-wide">{ageCategories.adult.name}</span>
+                                <span className="text-xs font-normal opacity-80">({ageCategories.adult.birthYears})</span>
                               </div>
                             </th>
-                            <th className="text-right p-5 font-bold">
-                              <div className="flex flex-col items-end">
-                                <span className="text-lg">{ageCategories.child.name}</span>
-                                <span className="text-xs font-normal opacity-70">({ageCategories.child.birthYears})</span>
+                            <th className="text-right p-6 font-bold">
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-lg tracking-wide">{ageCategories.child.name}</span>
+                                <span className="text-xs font-normal opacity-80">({ageCategories.child.birthYears})</span>
                               </div>
                             </th>
-                            <th className="text-right p-5 font-bold">
-                              <div className="flex flex-col items-end">
-                                <span className="text-lg">{ageCategories.junior.name}</span>
-                                <span className="text-xs font-normal opacity-70">({ageCategories.junior.birthYears})</span>
+                            <th className="text-right p-6 font-bold">
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-lg tracking-wide">{ageCategories.junior.name}</span>
+                                <span className="text-xs font-normal opacity-80">({ageCategories.junior.birthYears})</span>
                               </div>
                             </th>
-                            <th className="text-right p-5 font-bold">
-                              <div className="flex flex-col items-end">
-                                <span className="text-lg">{ageCategories.senior.name}</span>
-                                <span className="text-xs font-normal opacity-70">({ageCategories.senior.birthYears})</span>
+                            <th className="text-right p-6 font-bold">
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-lg tracking-wide">{ageCategories.senior.name}</span>
+                                <span className="text-xs font-normal opacity-80">({ageCategories.senior.birthYears})</span>
                               </div>
                             </th>
                           </>
@@ -576,73 +595,73 @@ const Pricing = () => {
                           <tr
                             className={
                               row.isHeader
-                                ? "bg-blue-100 border-l-4 border-blue-600"
-                                : "border-b border-gray-100 hover:bg-blue-50 transition-colors"
+                                ? "bg-primary/10 border-l-4 border-primary shadow-sm"
+                                : "border-b border-gray-100 hover:bg-primary/5 transition-all duration-150"
                             }
                           >
-                            <td className={`p-4 ${row.isHeader ? "font-bold text-gray-900 text-lg" : "font-medium text-gray-700"}`}>
+                            <td className={`p-5 ${row.isHeader ? "font-bold text-gray-900 text-lg tracking-wide" : "font-medium text-gray-800"}`}>
                               {row.name}
                             </td>
                             {row.all !== undefined ? (
-                              <td className="text-right p-4 font-semibold text-gray-900">
+                              <td className="text-right p-5 font-semibold text-gray-900">
                                 {row.isHeader ? "" : (
                                   typeof row.all === "number" ? (
-                                    <span className="inline-flex items-center gap-1">
-                                      <span className="text-lg">{row.all}</span>
-                                      <span className="text-xs text-gray-500">Kč</span>
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="text-xl font-bold text-primary">{row.all}</span>
+                                      <span className="text-sm text-gray-600">Kč</span>
                                     </span>
                                   ) : (
-                                    <span className="text-sm">{row.all}</span>
+                                    <span className="text-base text-gray-700">{row.all}</span>
                                   )
                                 )}
                               </td>
                             ) : (
                               <>
-                                <td className="text-right p-4 font-semibold text-gray-900">
+                                <td className="text-right p-5 font-semibold text-gray-900">
                                   {row.isHeader ? "" : (
                                     typeof row.adult === "number" ? (
-                                      <span className="inline-flex items-center gap-1">
-                                        <span className="text-lg">{row.adult}</span>
-                                        <span className="text-xs text-gray-500">Kč</span>
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span className="text-xl font-bold text-primary">{row.adult}</span>
+                                        <span className="text-sm text-gray-600">Kč</span>
                                       </span>
                                     ) : (
-                                      <span className="text-sm">{row.adult}</span>
+                                      <span className="text-base text-gray-700">{row.adult}</span>
                                     )
                                   )}
                                 </td>
-                                <td className="text-right p-4 font-semibold text-gray-900">
+                                <td className="text-right p-5 font-semibold text-gray-900">
                                   {row.isHeader ? "" : (
                                     typeof row.child === "number" ? (
-                                      <span className="inline-flex items-center gap-1">
-                                        <span className="text-lg">{row.child}</span>
-                                        <span className="text-xs text-gray-500">Kč</span>
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span className="text-xl font-bold text-primary">{row.child}</span>
+                                        <span className="text-sm text-gray-600">Kč</span>
                                       </span>
                                     ) : (
-                                      <span className="text-sm">{row.child}</span>
+                                      <span className="text-base text-gray-700">{row.child}</span>
                                     )
                                   )}
                                 </td>
-                                <td className="text-right p-4 font-semibold text-gray-900">
+                                <td className="text-right p-5 font-semibold text-gray-900">
                                   {row.isHeader ? "" : (
                                     typeof row.junior === "number" ? (
-                                      <span className="inline-flex items-center gap-1">
-                                        <span className="text-lg">{row.junior}</span>
-                                        <span className="text-xs text-gray-500">Kč</span>
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span className="text-xl font-bold text-primary">{row.junior}</span>
+                                        <span className="text-sm text-gray-600">Kč</span>
                                       </span>
                                     ) : (
-                                      <span className="text-sm">{row.junior}</span>
+                                      <span className="text-base text-gray-700">{row.junior}</span>
                                     )
                                   )}
                                 </td>
-                                <td className="text-right p-4 font-semibold text-gray-900">
+                                <td className="text-right p-5 font-semibold text-gray-900">
                                   {row.isHeader ? "" : (
                                     typeof row.senior === "number" ? (
-                                      <span className="inline-flex items-center gap-1">
-                                        <span className="text-lg">{row.senior}</span>
-                                        <span className="text-xs text-gray-500">Kč</span>
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span className="text-xl font-bold text-primary">{row.senior}</span>
+                                        <span className="text-sm text-gray-600">Kč</span>
                                       </span>
                                     ) : (
-                                      <span className="text-sm">{row.senior}</span>
+                                      <span className="text-base text-gray-700">{row.senior}</span>
                                     )
                                   )}
                                 </td>
@@ -651,9 +670,9 @@ const Pricing = () => {
                           </tr>
                           {row.note && (
                             <tr>
-                              <td colSpan={5} className="px-4 py-2 bg-blue-50 border-b border-gray-100">
-                                <p className="text-xs text-blue-700 italic flex items-center gap-2">
-                                  <Info className="h-3 w-3" />
+                              <td colSpan={5} className="px-5 py-3 bg-primary/5 border-b border-gray-100">
+                                <p className="text-sm text-primary/90 italic flex items-center gap-2 font-medium">
+                                  <Info className="h-4 w-4" />
                                   {row.note}
                                 </p>
                               </td>
@@ -667,26 +686,26 @@ const Pricing = () => {
               </Card>
 
               {/* Mobile Card View */}
-              <div className="md:hidden space-y-2">
+              <div className="md:hidden space-y-3">
                 {data.map((row, index) => (
                   <div key={`mobile-price-${index}-${row.name}`}>
                     {row.isHeader ? (
-                      <div className="bg-white/95 backdrop-blur-sm p-3 border-l-4 border-primary shadow-lg rounded-lg">
-                        <h3 className="font-bold text-base text-gray-900">
+                      <div className="bg-primary/10 backdrop-blur-sm p-4 border-l-4 border-primary shadow-md rounded-xl">
+                        <h3 className="font-bold text-base text-gray-900 tracking-wide">
                           {row.name}
                         </h3>
                       </div>
                     ) : (
-                      <Card className="bg-white/95 border-0 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                        <div className="p-3">
-                          <h4 className="font-semibold text-base text-gray-900 mb-2.5 leading-snug">
+                      <Card className="bg-gradient-to-br from-white via-white to-primary/5 border-0 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+                        <div className="p-4">
+                          <h4 className="font-semibold text-base text-gray-900 mb-3 leading-snug">
                             {row.name}
                           </h4>
 
                           {row.all !== undefined ? (
-                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-2.5 rounded-lg">
+                            <div className="bg-gradient-to-r from-primary/15 to-primary/5 p-3.5 rounded-xl shadow-sm">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium text-gray-700">Všechny kategorie</span>
+                                <span className="text-sm font-semibold text-gray-700">Všechny kategorie</span>
                                 <span className="text-2xl font-bold text-primary">
                                   {typeof row.all === "number" ? (
                                     <>
@@ -699,16 +718,16 @@ const Pricing = () => {
                               </div>
                             </div>
                           ) : (
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between items-center py-1.5 border-b border-gray-100">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center py-2.5 border-b border-gray-150">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">{ageCategories.adult.name}</span>
+                                  <span className="text-sm font-semibold text-gray-800">{ageCategories.adult.name}</span>
                                   <p className="text-xs text-gray-500 mt-0.5">({ageCategories.adult.birthYears})</p>
                                 </div>
-                                <span className="text-xl font-bold text-gray-900">
+                                <span className="text-xl font-bold text-primary">
                                   {typeof row.adult === "number" ? (
                                     <>
-                                      {row.adult} <span className="text-xs text-gray-500">Kč</span>
+                                      {row.adult} <span className="text-xs text-gray-600">Kč</span>
                                     </>
                                   ) : (
                                     row.adult
@@ -716,15 +735,15 @@ const Pricing = () => {
                                 </span>
                               </div>
 
-                              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                              <div className="flex justify-between items-center py-2.5 border-b border-gray-150">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">{ageCategories.child.name}</span>
+                                  <span className="text-sm font-semibold text-gray-800">{ageCategories.child.name}</span>
                                   <p className="text-xs text-gray-500 mt-0.5">({ageCategories.child.birthYears})</p>
                                 </div>
-                                <span className="text-xl font-bold text-gray-900">
+                                <span className="text-xl font-bold text-primary">
                                   {typeof row.child === "number" ? (
                                     <>
-                                      {row.child} <span className="text-xs text-gray-500">Kč</span>
+                                      {row.child} <span className="text-xs text-gray-600">Kč</span>
                                     </>
                                   ) : (
                                     row.child
@@ -732,15 +751,15 @@ const Pricing = () => {
                                 </span>
                               </div>
 
-                              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                              <div className="flex justify-between items-center py-2.5 border-b border-gray-150">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">{ageCategories.junior.name}</span>
+                                  <span className="text-sm font-semibold text-gray-800">{ageCategories.junior.name}</span>
                                   <p className="text-xs text-gray-500 mt-0.5">({ageCategories.junior.birthYears})</p>
                                 </div>
-                                <span className="text-xl font-bold text-gray-900">
+                                <span className="text-xl font-bold text-primary">
                                   {typeof row.junior === "number" ? (
                                     <>
-                                      {row.junior} <span className="text-xs text-gray-500">Kč</span>
+                                      {row.junior} <span className="text-xs text-gray-600">Kč</span>
                                     </>
                                   ) : (
                                     row.junior
@@ -748,15 +767,15 @@ const Pricing = () => {
                                 </span>
                               </div>
 
-                              <div className="flex justify-between items-center py-3">
+                              <div className="flex justify-between items-center py-2.5">
                                 <div>
-                                  <span className="text-sm font-medium text-gray-700">{ageCategories.senior.name}</span>
+                                  <span className="text-sm font-semibold text-gray-800">{ageCategories.senior.name}</span>
                                   <p className="text-xs text-gray-500 mt-0.5">({ageCategories.senior.birthYears})</p>
                                 </div>
-                                <span className="text-xl font-bold text-gray-900">
+                                <span className="text-xl font-bold text-primary">
                                   {typeof row.senior === "number" ? (
                                     <>
-                                      {row.senior} <span className="text-xs text-gray-500">Kč</span>
+                                      {row.senior} <span className="text-xs text-gray-600">Kč</span>
                                     </>
                                   ) : (
                                     row.senior
@@ -767,9 +786,9 @@ const Pricing = () => {
                           )}
 
                           {row.note && (
-                            <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-2 border-blue-400">
-                              <p className="text-xs text-blue-700 flex items-start gap-2">
-                                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            <div className="mt-4 p-3 bg-primary/10 rounded-lg border-l-2 border-primary">
+                              <p className="text-xs text-primary/90 flex items-start gap-2 font-medium">
+                                <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                                 <span className="leading-relaxed">{row.note}</span>
                               </p>
                             </div>
