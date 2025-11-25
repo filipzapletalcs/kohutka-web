@@ -35,7 +35,7 @@ const Footer = () => {
 
             {/* Ski Centrum */}
             <div className="space-y-2.5">
-              <p className="text-sm font-bold opacity-95">Ski Centrum</p>
+              <p className="text-sm font-bold opacity-95">SkI CENTRUM KOHÚTKA</p>
               <a
                 href="tel:+420725005725"
                 className="flex items-center gap-2.5 hover:text-accent transition-all duration-200 text-sm hover:translate-x-1 group"

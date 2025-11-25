@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const pageId = process.env.VITE_FACEBOOK_PAGE_ID || 'SKI.CENTRUM.KOHUTKA';
+  const pageId = process.env.VITE_FACEBOOK_PAGE_ID || '385566021470850';
   const accessToken = process.env.VITE_FACEBOOK_PAGE_ACCESS_TOKEN;
 
   if (!accessToken) {

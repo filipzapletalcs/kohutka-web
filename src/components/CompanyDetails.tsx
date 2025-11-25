@@ -68,7 +68,7 @@ const CompanyDetails = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Poloha</p>
                 <p className="text-lg font-semibold">
-                  České-slovenské pomezí v pohoří Javorníky
+                  České-slovenské pomezí v pohoří Beskydy
                 </p>
               </div>
             </div>

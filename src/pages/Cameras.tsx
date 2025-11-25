@@ -119,7 +119,7 @@ const Cameras = () => {
                   .map((camera: CameraType, index: number) => (
                     <Card
                       key={camera.id}
-                      className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1 border-2 hover:border-primary/20 animate-in fade-in slide-in-from-bottom-4"
+                      className="overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 border-2 hover:border-primary/20 animate-in fade-in slide-in-from-bottom-4"
                       style={{ animationDelay: `${index * 50}ms` }}
                       onClick={() => setSelectedCamera(camera)}
                     >

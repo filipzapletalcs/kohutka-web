@@ -19,30 +19,20 @@ const FacebookFeed = () => {
 
   const fetchPosts = async (cursor?: string) => {
     try {
-      const pageId = import.meta.env.VITE_FACEBOOK_PAGE_ID || 'SKI.CENTRUM.KOHUTKA';
+      const pageId = import.meta.env.VITE_FACEBOOK_PAGE_ID || '385566021470850';
       const token = import.meta.env.VITE_FACEBOOK_PAGE_ACCESS_TOKEN;
-
-      console.log('[FB DEBUG] pageId:', pageId);
-      console.log('[FB DEBUG] token exists:', !!token);
-      console.log('[FB DEBUG] token length:', token?.length || 0);
-      console.log('[FB DEBUG] all VITE env keys:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE')));
 
       let url = `https://graph.facebook.com/v18.0/${pageId}/posts?fields=id,message,created_time,full_picture,permalink_url&limit=6&access_token=${token}`;
       if (cursor) {
         url += `&after=${cursor}`;
       }
 
-      console.log('[FB DEBUG] Fetching...');
       const response = await fetch(url);
-      console.log('[FB DEBUG] Response status:', response.status);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[FB DEBUG] Error response:', errorText);
         throw new Error(`Failed to fetch posts: ${response.status}`);
       }
       const data = await response.json();
-      console.log('[FB DEBUG] Posts received:', data.data?.length || 0);
 
       if (cursor) {
         setPosts(prev => [...prev, ...(data.data || [])]);
@@ -51,8 +41,7 @@ const FacebookFeed = () => {
       }
 
       setNextCursor(data.paging?.cursors?.after || null);
-    } catch (err) {
-      console.error('[FB DEBUG] Error:', err);
+    } catch {
       setError('Nepodařilo se načíst příspěvky');
     }
   };
