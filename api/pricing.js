@@ -83,13 +83,20 @@ setInterval(saveCacheToDisk, 5 * 60 * 1000);
  */
 const proactiveRefreshAllCategories = async () => {
   console.log('\n🔄 Proaktivní refresh cache - začínám...');
+
+  // Debug: vypíš env proměnné
+  console.log('📋 PRICING_SHEET_URLS:', JSON.stringify(PRICING_SHEET_URLS, null, 2));
+
   const categories = Object.keys(PRICING_SHEET_URLS);
+  console.log(`📋 Kategorie k refreshi: ${categories.join(', ')}`);
+
   let successCount = 0;
   let errorCount = 0;
 
   for (const category of categories) {
     try {
       const url = PRICING_SHEET_URLS[category];
+      console.log(`  → ${category}: ${url ? 'URL OK' : 'URL PRÁZDNÁ!'}`);
       if (!url) continue;
 
       const response = await fetch(url, {
