@@ -5,11 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # Build arguments for Vite (client-side, embedded at build time)
-      args:
-        - VITE_FACEBOOK_APP_ID=${VITE_FACEBOOK_APP_ID}
-        - VITE_FACEBOOK_PAGE_ACCESS_TOKEN=${VITE_FACEBOOK_PAGE_ACCESS_TOKEN}
-        - VITE_FACEBOOK_PAGE_ID=${VITE_FACEBOOK_PAGE_ID}
+      # Note: Vite reads .env file directly during build (COPY . . includes .env)
     container_name: kohutka-web
     ports:
       - "3000:3000"
