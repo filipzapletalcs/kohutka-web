@@ -3,6 +3,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build arguments for Vite (client-side variables)
+# These MUST be available at build time for Vite to embed them
+ARG VITE_FACEBOOK_APP_ID
+ARG VITE_FACEBOOK_PAGE_ACCESS_TOKEN
+ARG VITE_FACEBOOK_PAGE_ID
+
+# Set as environment variables for the build process
+ENV VITE_FACEBOOK_APP_ID=$VITE_FACEBOOK_APP_ID
+ENV VITE_FACEBOOK_PAGE_ACCESS_TOKEN=$VITE_FACEBOOK_PAGE_ACCESS_TOKEN
+ENV VITE_FACEBOOK_PAGE_ID=$VITE_FACEBOOK_PAGE_ID
+
 # Copy package files
 COPY package*.json ./
 
@@ -12,7 +23,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (Vite will use the ENV variables above)
 RUN npm run build
 
 # Stage 2: Production runtime
