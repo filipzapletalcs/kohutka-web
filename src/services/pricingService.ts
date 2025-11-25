@@ -2,8 +2,13 @@
  * Service pro načítání ceníku z Google Sheets
  *
  * Načítá publikované CSV z Google Sheets a parsuje je do struktury PriceRow[]
- * Obsahuje fallback na hardcodovaná data v případě nedostupnosti Google Sheets
+ * Cache strategie:
+ * 1. localStorage cache (persistentní, přežije refresh)
+ * 2. Server API cache (v produkci)
+ * 3. Přímé volání Google Sheets (fallback)
  */
+
+import { getCacheItem, setCacheItem } from './cacheHelper';
 
 export interface PriceRow {
   name: string;
@@ -143,13 +148,57 @@ export const parseCSVToPriceRows = (csvText: string): PriceRow[] => {
 };
 
 /**
- * Načte a parsuje ceník z Google Sheets
+ * Načte ceník z lokálního API s cache (primární metoda)
  *
  * @param category - Kategorie ceníku (denni, casove, atd.)
  * @returns Promise<PriceRow[]>
  * @throws Error pokud se nepodaří načíst data
  */
-export const fetchPricingFromGoogleSheets = async (
+const fetchPricingFromAPI = async (
+  category: PricingCategory
+): Promise<PriceRow[]> => {
+  try {
+    // Zkus načíst z lokálního API (s cache na serveru)
+    const apiUrl = `/api/pricing?category=${category}`;
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API responded with ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.data) {
+      throw new Error('API nevrátilo data');
+    }
+
+    // Log pro debugging
+    if (result.cached) {
+      console.log(`✓ Ceník "${category}" načten z cache (stáří: ${Math.round((Date.now() - new Date(result.cachedAt).getTime()) / 1000)}s)`);
+    } else {
+      console.log(`✓ Ceník "${category}" načten z Google Sheets přes API`);
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error(`Chyba při načítání ceníku "${category}" z API:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Načte a parsuje ceník přímo z Google Sheets (fallback metoda)
+ *
+ * @param category - Kategorie ceníku (denni, casove, atd.)
+ * @returns Promise<PriceRow[]>
+ * @throws Error pokud se nepodaří načíst data
+ */
+const fetchPricingDirectFromGoogleSheets = async (
   category: PricingCategory
 ): Promise<PriceRow[]> => {
   const url = PRICING_SHEET_URLS[category];
@@ -180,6 +229,49 @@ export const fetchPricingFromGoogleSheets = async (
   } catch (error) {
     console.error(`Chyba při načítání ceníku "${category}" z Google Sheets:`, error);
     throw error;
+  }
+};
+
+/**
+ * Načte a parsuje ceník z Google Sheets
+ * Cache strategie: localStorage → Server API → Google Sheets
+ *
+ * @param category - Kategorie ceníku (denni, casove, atd.)
+ * @returns Promise<PriceRow[]>
+ * @throws Error pokud se nepodaří načíst data
+ */
+export const fetchPricingFromGoogleSheets = async (
+  category: PricingCategory
+): Promise<PriceRow[]> => {
+  // 1. Zkus localStorage cache (nejrychlejší, funguje v dev i prod)
+  const cachedData = getCacheItem<PriceRow[]>(`pricing_${category}`);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  try {
+    // 2. Zkus načíst z API (s cache na serveru - pouze v produkci)
+    const data = await fetchPricingFromAPI(category);
+
+    // Ulož do localStorage pro příští načtení
+    setCacheItem(`pricing_${category}`, data);
+
+    return data;
+  } catch (apiError) {
+    console.warn(`API selhalo pro "${category}", zkouším přímé volání Google Sheets jako fallback...`);
+
+    try {
+      // 3. Fallback na přímé volání Google Sheets
+      const data = await fetchPricingDirectFromGoogleSheets(category);
+
+      // Ulož do localStorage i když načítáme z Google Sheets
+      setCacheItem(`pricing_${category}`, data);
+
+      return data;
+    } catch (sheetsError) {
+      console.error(`Všechny metody načítání selhaly pro "${category}"`);
+      throw sheetsError;
+    }
   }
 };
 
@@ -243,12 +335,52 @@ const parseAgeCategoriesCSV = (csvText: string): AgeCategoriesData => {
 };
 
 /**
- * Načte a parsuje věkové kategorie z Google Sheets
+ * Načte věkové kategorie z lokálního API s cache (primární metoda)
  *
  * @returns Promise<AgeCategoriesData>
  * @throws Error pokud se nepodaří načíst data
  */
-export const fetchAgeCategoriesFromGoogleSheets = async (): Promise<AgeCategoriesData> => {
+const fetchAgeCategoriesFromAPI = async (): Promise<AgeCategoriesData> => {
+  try {
+    const apiUrl = '/api/pricing?category=info_vek';
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API responded with ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.data) {
+      throw new Error('API nevrátilo data');
+    }
+
+    // Log pro debugging
+    if (result.cached) {
+      console.log(`✓ Věkové kategorie načteny z cache (stáří: ${Math.round((Date.now() - new Date(result.cachedAt).getTime()) / 1000)}s)`);
+    } else {
+      console.log(`✓ Věkové kategorie načteny z Google Sheets přes API`);
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('Chyba při načítání věkových kategorií z API:', error);
+    throw error;
+  }
+};
+
+/**
+ * Načte a parsuje věkové kategorie přímo z Google Sheets (fallback metoda)
+ *
+ * @returns Promise<AgeCategoriesData>
+ * @throws Error pokud se nepodaří načíst data
+ */
+const fetchAgeCategoriesDirectFromGoogleSheets = async (): Promise<AgeCategoriesData> => {
   const url = import.meta.env.VITE_PRICING_INFO_VEK_URL;
 
   if (!url) {
@@ -277,5 +409,45 @@ export const fetchAgeCategoriesFromGoogleSheets = async (): Promise<AgeCategorie
   } catch (error) {
     console.error('Chyba při načítání věkových kategorií z Google Sheets:', error);
     throw error;
+  }
+};
+
+/**
+ * Načte a parsuje věkové kategorie z Google Sheets
+ * Cache strategie: localStorage → Server API → Google Sheets
+ *
+ * @returns Promise<AgeCategoriesData>
+ * @throws Error pokud se nepodaří načíst data
+ */
+export const fetchAgeCategoriesFromGoogleSheets = async (): Promise<AgeCategoriesData> => {
+  // 1. Zkus localStorage cache (nejrychlejší, funguje v dev i prod)
+  const cachedData = getCacheItem<AgeCategoriesData>('age_categories');
+  if (cachedData) {
+    return cachedData;
+  }
+
+  try {
+    // 2. Zkus načíst z API (s cache na serveru - pouze v produkci)
+    const data = await fetchAgeCategoriesFromAPI();
+
+    // Ulož do localStorage pro příští načtení
+    setCacheItem('age_categories', data);
+
+    return data;
+  } catch (apiError) {
+    console.warn('API selhalo pro věkové kategorie, zkouším přímé volání Google Sheets jako fallback...');
+
+    try {
+      // 3. Fallback na přímé volání Google Sheets
+      const data = await fetchAgeCategoriesDirectFromGoogleSheets();
+
+      // Ulož do localStorage i když načítáme z Google Sheets
+      setCacheItem('age_categories', data);
+
+      return data;
+    } catch (sheetsError) {
+      console.error('Všechny metody načítání věkových kategorií selhaly');
+      throw sheetsError;
+    }
   }
 };

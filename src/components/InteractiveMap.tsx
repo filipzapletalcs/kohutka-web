@@ -24,7 +24,7 @@ const InteractiveMap = () => {
           <div className="w-full bg-white">
             <img
               src={mapaPNG}
-              alt="Mapa ski areálu Kohútka"
+              alt="Mapa SKI CENTRUM KOHÚTKA"
               className="w-full h-full object-contain"
               loading="lazy"
             />
@@ -34,7 +34,7 @@ const InteractiveMap = () => {
           <div className="p-4 md:p-6 bg-primary/5 border-t border-white/10">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-sm text-muted-foreground text-center sm:text-left">
-                Mapa ski areálu Kohútka s vyznačením všech sjezdovek, vleků a lanovek
+                Mapa SKI CENTRUM KOHÚTKA s vyznačením všech sjezdovek, vleků a lanovek
               </p>
               <Button asChild variant="outline" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm">
                 <a href={mapaPDF} download="Ski_Centrum_Kohutka_Mapa.pdf">

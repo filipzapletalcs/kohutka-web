@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useState, Fragment, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Info, Clock, Calendar, Ticket, Award, Coins, Package, FileText, Percent
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPricingFromGoogleSheets, fetchAgeCategoriesFromGoogleSheets, PricingCategory, PriceRow, AgeCategoriesData } from "@/services/pricingService";
+import { getCacheItem } from "@/services/cacheHelper";
 
 type PricingTab = "denni" | "casove" | "sezonni" | "jednotlive" | "bodove" | "ostatni" | "informace" | "slevy";
 
@@ -287,21 +288,33 @@ const Pricing = () => {
   // Fetch data z Google Sheets pomocí React Query (pouze pro ceníky, ne info/slevy)
   const shouldFetchFromSheets = !['informace', 'slevy'].includes(activeTab);
 
+  // Synchronní načtení z localStorage pro okamžité zobrazení (bez skeleton)
+  const cachedPricingData = useMemo(() => {
+    if (!shouldFetchFromSheets) return undefined;
+    return getCacheItem<PriceRow[]>(`pricing_${activeTab}`) ?? undefined;
+  }, [activeTab, shouldFetchFromSheets]);
+
+  const cachedAgeCategories = useMemo(() => {
+    return getCacheItem<AgeCategoriesData>('age_categories') ?? undefined;
+  }, []);
+
   const { data: sheetData, isLoading: isLoadingSheets, error } = useQuery({
     queryKey: ['pricing', activeTab],
     queryFn: () => fetchPricingFromGoogleSheets(activeTab as PricingCategory),
-    enabled: shouldFetchFromSheets, // Fetchuj pouze pro ceníky
-    staleTime: 24 * 60 * 60 * 1000, // 24 hodin - data se nepřenačítají při každém otevření
-    gcTime: 24 * 60 * 60 * 1000, // Data zůstávají v cache 24 hodin (garbage collection time)
-    retry: 1, // Zkus znovu jen jednou při chybě
+    enabled: shouldFetchFromSheets,
+    placeholderData: cachedPricingData, // Zobrazí okamžitě, ale fetchne čerstvá data na pozadí
+    staleTime: 5 * 60 * 1000, // 5 minut - pak se revaliduje
+    gcTime: 24 * 60 * 60 * 1000,
+    retry: 1,
   });
 
   // Fetch věkových kategorií z Google Sheets
   const { data: ageCategoriesData, error: ageCategoriesError } = useQuery({
     queryKey: ['ageCategories'],
     queryFn: fetchAgeCategoriesFromGoogleSheets,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hodin cache (mění se velmi zřídka)
-    gcTime: 24 * 60 * 60 * 1000, // Data zůstávají v cache 24 hodin
+    placeholderData: cachedAgeCategories, // Zobrazí okamžitě, ale fetchne čerstvá data na pozadí
+    staleTime: 60 * 60 * 1000, // 1 hodina - mění se zřídka
+    gcTime: 24 * 60 * 60 * 1000,
     retry: 1,
   });
 
@@ -321,16 +334,16 @@ const Pricing = () => {
   // Log pro debugging (můžeš smazat po otestování)
   if (shouldFetchFromSheets) {
     if (error) {
-      console.warn(`Google Sheets nedostupný pro "${activeTab}", používám lokální data`, error);
+      console.warn(`API/Google Sheets nedostupný pro "${activeTab}", používám lokální data`, error);
     } else if (sheetData) {
-      console.log(`✅ Data pro "${activeTab}" načtena z Google Sheets (${sheetData.length} položek)`);
+      console.log(`✅ Ceník "${activeTab}" načten (${sheetData.length} položek)`);
     }
   }
 
   if (ageCategoriesError) {
-    console.warn('Google Sheets nedostupný pro věkové kategorie, používám lokální data', ageCategoriesError);
+    console.warn('API/Google Sheets nedostupný pro věkové kategorie, používám lokální data', ageCategoriesError);
   } else if (ageCategoriesData) {
-    console.log('✅ Věkové kategorie načteny z Google Sheets');
+    console.log('✅ Věkové kategorie načteny');
   }
 
   const renderInformaceTab = () => (

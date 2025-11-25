@@ -37,7 +37,7 @@ const Cameras = () => {
   };
 
   // Fetch camera data with auto-refresh every 5 minutes
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['holidayInfo'],
     queryFn: fetchHolidayInfoData,
     refetchInterval: 5 * 60 * 1000, // 5 minutes
@@ -51,15 +51,6 @@ const Cameras = () => {
       ...prev,
       [cameraId]: Date.now()
     }));
-  };
-
-  const refreshAllCameras = () => {
-    const newKeys: Record<string, number> = {};
-    cameras.forEach((cam: CameraType) => {
-      newKeys[cam.id] = Date.now();
-    });
-    setRefreshKeys(newKeys);
-    refetch();
   };
 
   // Reorder cameras according to specification: 1→1, 2→8, 3→3, 4→2, 5→4, 6→6, 7→5, 8→7
@@ -78,24 +69,13 @@ const Cameras = () => {
       <div className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background via-background to-muted/20">
         <div className="container mx-auto max-w-7xl px-4">
           {/* Header */}
-          <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="space-y-2">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Live Webkamery
-              </h1>
-              <p className="text-muted-foreground text-base md:text-lg">
-                Sledujte aktuální stav sjezdovek v reálném čase
-              </p>
-            </div>
-            <Button
-              onClick={refreshAllCameras}
-              disabled={isLoading}
-              variant="outline"
-              className="transition-all duration-200 hover:scale-105"
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Obnovit vše
-            </Button>
+          <div className="mb-10 space-y-2">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Live Webkamery
+            </h1>
+            <p className="text-muted-foreground text-base md:text-lg">
+              Sledujte aktuální stav sjezdovek v reálném čase
+            </p>
           </div>
 
           {/* Error State */}
@@ -147,7 +127,7 @@ const Cameras = () => {
                         <img
                           src={getCameraUrl(camera.media.last_image.url, refreshKeys[camera.id])}
                           alt={camera.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -235,40 +215,6 @@ const Cameras = () => {
             </div>
           )}
 
-          {/* Info Box */}
-          <Card className="mt-12 p-6 md:p-8 bg-card/50 backdrop-blur-sm border-2">
-            <h2 className="text-2xl font-bold mb-4">Informace o kamerách</h2>
-            <div className="grid sm:grid-cols-2 gap-6 text-sm">
-              <div className="space-y-3">
-                <p className="flex items-start gap-2 text-muted-foreground">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Snímky se automaticky aktualizují každých 5 minut</span>
-                </p>
-                <p className="flex items-start gap-2 text-muted-foreground">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Můžete obnovit kameru ručně tlačítkem</span>
-                </p>
-                <p className="flex items-start gap-2 text-muted-foreground">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Kamery s 🎥 STREAM nabízí live přenos</span>
-                </p>
-              </div>
-              <div className="space-y-3">
-                <p className="flex items-start gap-2 text-muted-foreground">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Klikněte na kameru pro fullscreen zobrazení</span>
-                </p>
-                <p className="flex items-start gap-2 text-muted-foreground">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>LIVE indikátor ukazuje aktivní live stream</span>
-                </p>
-                <p className="flex items-start gap-2 text-muted-foreground">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Zobrazuje se aktuální teplota a čas snímku</span>
-                </p>
-              </div>
-            </div>
-          </Card>
         </div>
       </div>
 

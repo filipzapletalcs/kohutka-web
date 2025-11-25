@@ -60,7 +60,7 @@ const Location = () => {
             Kde nás najdete
           </h2>
           <p className="text-lg text-muted-foreground">
-            Lyžařské středisko Kohútka v srdci Valašska
+            SKI CENTRUM KOHÚTKA v srdci Valašska
           </p>
         </div>
 
@@ -77,7 +77,7 @@ const Location = () => {
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Mapa - Ski Centrum Kohútka"
+                  title="Mapa - SKI CENTRUM KOHÚTKA"
                   className="rounded-lg"
                 />
               </div>

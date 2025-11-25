@@ -14,7 +14,7 @@ const AboutUs = () => {
           <Card className="glass py-8 px-6 md:p-10 border-white/20 rounded-lg h-full flex flex-col">
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                Vítejte v Ski Centru Kohútka – místě, kde si zima podává ruku s pohodou a zážitky!
+                Vítejte v SKI CENTRUM KOHÚTKA – místě, kde si zima podává ruku s pohodou a zážitky!
                 Naše horské středisko se nachází v srdci Beskyd na pomezí České republiky a Slovenska.
                 Nabízíme skvělé podmínky pro lyžování, snowboarding i rodinné radovánky na sněhu.
               </p>
@@ -25,11 +25,11 @@ const AboutUs = () => {
               </p>
               <p>
                 Naším cílem je poskytnout vám nezapomenutelný zážitek, a proto klademe důraz na kvalitu služeb,
-                bezpečnost i pohodlí. Přijeďte zažít zimní radost do Ski Centra Kohútka – vaše dokonalá
+                bezpečnost i pohodlí. Přijeďte zažít zimní radost do SKI CENTRUM KOHÚTKA – vaše dokonalá
                 destinace pro zimní dovolenou!
               </p>
               <div className="pt-4 border-t border-white/10">
-                <p className="font-semibold text-foreground">Tým Skicentra Kohútka</p>
+                <p className="font-semibold text-foreground">Tým SKI CENTRUM KOHÚTKA</p>
                 <p className="text-sm italic">Těšíme se na vás.</p>
               </div>
             </div>
@@ -40,7 +40,7 @@ const AboutUs = () => {
             <Card className="glass overflow-hidden border-white/20 rounded-lg h-full">
               <img
                 src={aboutImage}
-                alt="Lanovka v zimě - Ski Centrum Kohútka"
+                alt="Lanovka v zimě - SKI CENTRUM KOHÚTKA"
                 className="w-full h-full object-cover object-center"
                 loading="lazy"
               />

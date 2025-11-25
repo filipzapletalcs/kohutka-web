@@ -61,7 +61,7 @@ const Navigation = () => {
               href="https://valassko.ski/shop-kohutka"
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-3 inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-lg font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:scale-105"
+              className="ml-3 inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-lg font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02]"
             >
               <Ticket className="h-5 w-5" />
               Koupit skipas online

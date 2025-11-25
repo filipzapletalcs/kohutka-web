@@ -8,60 +8,60 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 100% 97%;
-    --foreground: 210 60% 10%;
+    --background: 210 100% 98%;
+    --foreground: 210 65% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 60% 10%;
+    --card-foreground: 210 65% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 60% 10%;
+    --popover-foreground: 210 65% 12%;
 
-    /* Ski resort primary - deep mountain blue */
-    --primary: 210 70% 25%;
+    /* Ski resort primary - slightly richer mountain blue */
+    --primary: 210 75% 28%;
     --primary-foreground: 0 0% 100%;
 
-    /* Ice blue accent */
-    --secondary: 195 100% 63%;
-    --secondary-foreground: 210 60% 10%;
+    /* Ice blue accent - slightly more vivid */
+    --secondary: 195 95% 65%;
+    --secondary-foreground: 210 65% 12%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 210 20% 45%;
+    --muted: 210 45% 97%;
+    --muted-foreground: 210 25% 48%;
 
-    /* Fresh snow green accent */
-    --accent: 88 100% 63%;
-    --accent-foreground: 210 60% 10%;
+    /* Fresh snow green accent - slightly more saturated */
+    --accent: 88 95% 65%;
+    --accent-foreground: 210 65% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 30% 88%;
-    --input: 210 30% 88%;
-    --ring: 210 70% 25%;
+    --border: 210 35% 90%;
+    --input: 210 35% 90%;
+    --ring: 210 75% 28%;
 
     --radius: 0.75rem;
 
-    /* Glass effect colors */
-    --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 210 30% 88% / 0.3;
-    
-    /* Gradient colors */
-    --gradient-start: 210 70% 25%;
-    --gradient-end: 195 100% 40%;
-    
+    /* Enhanced glass effect with better depth */
+    --glass-bg: 0 0% 100% / 0.75;
+    --glass-border: 210 35% 88% / 0.4;
+
+    /* Slightly more vibrant gradient */
+    --gradient-start: 210 75% 28%;
+    --gradient-end: 195 95% 42%;
+
     /* Status colors */
-    --status-open: 88 100% 63%;
+    --status-open: 88 95% 65%;
     --status-closed: 0 84% 60%;
     --status-partial: 45 100% 55%;
 
-    --sidebar-background: 210 100% 97%;
-    --sidebar-foreground: 210 60% 10%;
-    --sidebar-primary: 210 70% 25%;
+    --sidebar-background: 210 100% 98%;
+    --sidebar-foreground: 210 65% 12%;
+    --sidebar-primary: 210 75% 28%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 195 100% 63%;
-    --sidebar-accent-foreground: 210 60% 10%;
-    --sidebar-border: 210 30% 88%;
-    --sidebar-ring: 195 100% 63%;
+    --sidebar-accent: 195 95% 65%;
+    --sidebar-accent-foreground: 210 65% 12%;
+    --sidebar-border: 210 35% 90%;
+    --sidebar-ring: 195 95% 65%;
   }
 
   .dark {
@@ -116,18 +116,32 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    line-height: 1.6;
   }
 
-  /* Glass morphism utility */
+  /* Enhanced glass morphism with better depth */
   .glass {
     background: hsl(var(--glass-bg));
-    backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(200%);
     border: 1px solid hsl(var(--glass-border));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+                0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
-  /* Smooth animations */
+  /* Smooth animations - optimized for performance */
   * {
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Performance optimization for animations */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -143,42 +157,66 @@ All colors MUST be HSL.
     background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
   }
 
-  /* Infinite scroll animations for partners carousel */
+  /* Subtle depth enhancements */
+  .subtle-shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06),
+                0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .subtle-shadow-hover:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
+                0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Smooth hover lift effect */
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Infinite scroll animations for partners carousel - optimized for performance */
   @keyframes scroll-left {
-    0% {
+    from {
       transform: translateX(0);
     }
-    100% {
-      transform: translateX(-33.333%);
+    to {
+      transform: translateX(-50%);
     }
   }
 
   @keyframes scroll-right {
-    0% {
-      transform: translateX(-33.333%);
+    from {
+      transform: translateX(-50%);
     }
-    100% {
+    to {
       transform: translateX(0);
     }
   }
 
-  /* Mobile: faster animation (12s) */
+  /* Mobile: fast animation (15s) with long duplication cycle */
   .animate-scroll-left {
-    animation: scroll-left 12s linear infinite;
+    animation: scroll-left 15s linear infinite;
+    will-change: transform;
   }
 
   .animate-scroll-right {
-    animation: scroll-right 12s linear infinite;
+    animation: scroll-right 15s linear infinite;
+    will-change: transform;
   }
 
-  /* Desktop: slower animation (40s) */
+  /* Desktop: slower animation (25s) */
   @media (min-width: 768px) {
     .animate-scroll-left-slow {
-      animation: scroll-left 40s linear infinite;
+      animation: scroll-left 25s linear infinite;
+      will-change: transform;
     }
 
     .animate-scroll-right-slow {
-      animation: scroll-right 40s linear infinite;
+      animation: scroll-right 25s linear infinite;
+      will-change: transform;
     }
   }
 
@@ -188,5 +226,21 @@ All colors MUST be HSL.
   .animate-scroll-left-slow:hover,
   .animate-scroll-right-slow:hover {
     animation-play-state: paused;
+  }
+
+  /* Fade-in animation for page elements */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in-up 0.6s ease-out forwards;
   }
 }
