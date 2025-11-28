@@ -1,4 +1,6 @@
-# Welcome to your Lovable project
+# Ski Centrum Kohútka - Web
+
+<!-- Test deploy: 2025-11-28 -->
 
 ## Project info
 
