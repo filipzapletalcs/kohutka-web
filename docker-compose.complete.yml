@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Main web application
+  kohutka-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kohutka-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOLIDAYINFO_DC=${HOLIDAYINFO_DC}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - kohutka-network
+
+  # Git Auto-Update Webhook Server
+  webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    container_name: kohutka-webhook
+    ports:
+      - "9000:9000"
+    environment:
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-change-me-please}
+      - WEBHOOK_PORT=9000
+      - REPO_PATH=/repo
+      - COMPOSE_FILE=docker-compose.complete.yml
+    volumes:
+      # Mount Docker socket to allow container management
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mount entire project directory
+      - .:/repo
+    restart: unless-stopped
+    networks:
+      - kohutka-network
+    depends_on:
+      - kohutka-web
+
+networks:
+  kohutka-network:
+    driver: bridge

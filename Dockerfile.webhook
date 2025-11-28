@@ -1,0 +1,19 @@
+# Dockerfile for Git Webhook Auto-Update Service
+FROM node:20-alpine
+
+# Install git, docker-cli, and docker-compose
+RUN apk add --no-cache git docker-cli docker-compose
+
+WORKDIR /app
+
+# Install minimal Node.js dependencies for webhook server
+RUN npm init -y && npm install express
+
+# Copy webhook server
+COPY webhook-server.js .
+
+# Expose webhook port
+EXPOSE 9000
+
+# Start webhook server
+CMD ["node", "webhook-server.js"]

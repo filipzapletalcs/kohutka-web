@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  kohutka-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Note: Vite reads .env file directly during build (COPY . . includes .env)
+    container_name: kohutka-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOLIDAYINFO_DC=${HOLIDAYINFO_DC:-c9ixxlejab5d4mrr}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # Watchtower - automaticky aktualizuje kontejnery při změně image
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup
+    restart: unless-stopped
