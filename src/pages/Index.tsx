@@ -89,7 +89,7 @@ const Index = () => {
               </div>
 
               <p className="text-xl md:text-2xl text-white mb-6 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] font-semibold">
-                SKI CENTRUM KOHÚTKA - Lyžařské středisko v srdci Valašska [DEPLOY v2]
+                SKI CENTRUM KOHÚTKA - Lyžařské středisko v srdci Valašska [DEPLOY v3]
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
