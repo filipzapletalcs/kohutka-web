@@ -298,11 +298,11 @@ const Pricing = () => {
     return getCacheItem<AgeCategoriesData>('age_categories') ?? undefined;
   }, []);
 
-  const { data: sheetData, isLoading: isLoadingSheets, error } = useQuery({
+  const { data: sheetData, error } = useQuery({
     queryKey: ['pricing', activeTab],
     queryFn: () => fetchPricingFromGoogleSheets(activeTab as PricingCategory),
     enabled: shouldFetchFromSheets,
-    placeholderData: cachedPricingData, // Zobrazí okamžitě, ale fetchne čerstvá data na pozadí
+    placeholderData: cachedPricingData, // Zobrazí okamžitě z cache
     staleTime: 5 * 60 * 1000, // 5 minut - pak se revaliduje
     gcTime: 24 * 60 * 60 * 1000,
     retry: 1,
@@ -539,23 +539,8 @@ const Pricing = () => {
             </Select>
           </div>
 
-          {/* Content */}
-          {isLoadingSheets ? (
-            /* Loading skeleton při načítání z Google Sheets */
-            <Card className="glass p-12 border-0 shadow-2xl">
-              <div className="animate-pulse space-y-6">
-                <div className="h-8 bg-primary/20 rounded w-3/4 mx-auto"></div>
-                <div className="space-y-3">
-                  <div className="h-6 bg-primary/10 rounded w-full"></div>
-                  <div className="h-6 bg-primary/10 rounded w-5/6"></div>
-                  <div className="h-6 bg-primary/10 rounded w-4/5"></div>
-                  <div className="h-6 bg-primary/10 rounded w-full"></div>
-                  <div className="h-6 bg-primary/10 rounded w-3/4"></div>
-                </div>
-                <p className="text-center text-primary/70 text-sm mt-4">Načítám ceník z Google Sheets...</p>
-              </div>
-            </Card>
-          ) : activeTab === "informace" ? (
+          {/* Content - vždy zobrazí data okamžitě */}
+          {activeTab === "informace" ? (
             renderInformaceTab()
           ) : activeTab === "slevy" ? (
             renderSlevyTab()

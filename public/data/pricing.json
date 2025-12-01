@@ -1,0 +1,364 @@
+{
+  "generatedAt": "2025-12-01T18:48:03.187Z",
+  "categories": {
+    "denni": [
+      {
+        "name": "Jízdenky platné pouze pro SKI CENTRUM KOHÚTKA",
+        "isHeader": true
+      },
+      {
+        "name": "1-denní (od 8:30 do 16:00 hod.)",
+        "adult": 8700,
+        "child": 3400,
+        "junior": 7100,
+        "senior": 710,
+        "isHeader": false
+      },
+      {
+        "name": "Jízdenky platné pro celý SKIREGION VALAŠSKO",
+        "isHeader": true
+      },
+      {
+        "name": "2-denní (2 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 1540,
+        "child": 570,
+        "junior": 1230,
+        "senior": 1230,
+        "isHeader": false
+      },
+      {
+        "name": "3-denní (3 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 2010,
+        "child": 750,
+        "junior": 1610,
+        "senior": 1610,
+        "isHeader": false
+      },
+      {
+        "name": "4-denní (4 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 2390,
+        "child": 930,
+        "junior": 1920,
+        "senior": 1920,
+        "isHeader": false
+      },
+      {
+        "name": "5-denní (5 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 2790,
+        "child": 1080,
+        "junior": 2230,
+        "senior": 2230,
+        "isHeader": false
+      },
+      {
+        "name": "6 dnů v sezóně (platí i na večerní lyžování)",
+        "adult": 3800,
+        "child": 1400,
+        "junior": 3000,
+        "senior": 3000,
+        "isHeader": false
+      },
+      {
+        "name": "12 dnů v sezóně (platí i na večerní lyžování)",
+        "adult": 5000,
+        "child": 2100,
+        "junior": 4000,
+        "senior": 4000,
+        "isHeader": false
+      },
+      {
+        "name": "KOMBI – 8 hodin v sezóně (platí i na večerní lyžování)",
+        "adult": 1600,
+        "child": 580,
+        "junior": 1240,
+        "senior": 1200,
+        "isHeader": false
+      },
+      {
+        "name": "Beskydy Card – jízdenky platné pro celý SKIREGION VALAŠSKO",
+        "isHeader": true
+      },
+      {
+        "name": "2-denní (2 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 1230,
+        "child": 460,
+        "junior": 980,
+        "senior": 980,
+        "isHeader": false
+      },
+      {
+        "name": "3-denní (3 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 1610,
+        "child": 600,
+        "junior": 1290,
+        "senior": 1290,
+        "isHeader": false
+      },
+      {
+        "name": "4-denní (4 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 1910,
+        "child": 740,
+        "junior": 1540,
+        "senior": 1540,
+        "isHeader": false
+      },
+      {
+        "name": "5-denní (5 dny po sobě jdoucí bez večerního lyžování)",
+        "adult": 2230,
+        "child": 860,
+        "junior": 1780,
+        "senior": 1780,
+        "isHeader": false
+      }
+    ],
+    "info_vek": {
+      "adult": {
+        "category": "adult",
+        "name": "Dospělí",
+        "birthYears": "1961-2007"
+      },
+      "child": {
+        "category": "child",
+        "name": "Děti",
+        "birthYears": "2015 a mladší"
+      },
+      "junior": {
+        "category": "junior",
+        "name": "Junioři",
+        "birthYears": "2006-2014"
+      },
+      "senior": {
+        "category": "senior",
+        "name": "Senioři",
+        "birthYears": "1960 a starší"
+      }
+    },
+    "casove": [
+      {
+        "name": "3 hodinová",
+        "adult": 710,
+        "child": 270,
+        "junior": 590,
+        "senior": 590,
+        "isHeader": false
+      },
+      {
+        "name": "4 hodinová",
+        "adult": 790,
+        "child": 300,
+        "junior": 640,
+        "senior": 640,
+        "isHeader": false
+      },
+      {
+        "name": "Večerní lyžování (19:00-21:00)",
+        "adult": 300,
+        "child": 150,
+        "junior": 200,
+        "senior": 200,
+        "isHeader": false
+      },
+      {
+        "name": "Odpolední lyžování (13:30-16:00)",
+        "adult": 500,
+        "child": 180,
+        "junior": 400,
+        "senior": 400,
+        "isHeader": false
+      }
+    ],
+    "sezonni": [
+      {
+        "name": "Kohútka Skipas (nepřenosný)",
+        "adult": 8000,
+        "child": 4000,
+        "junior": 6000,
+        "senior": 6000,
+        "isHeader": false
+      },
+      {
+        "name": "Czech Skipass (s fotkou)",
+        "adult": 18,
+        "child": 17490,
+        "junior": 13490,
+        "senior": 14990,
+        "all": 13490,
+        "isHeader": false,
+        "note": "NE"
+      }
+    ],
+    "jednotlive": [
+      {
+        "name": "Jednotlivá jízda (pouze nahoru)",
+        "senior": 170,
+        "all": "NE",
+        "isHeader": false
+      }
+    ],
+    "bodove": [
+      {
+        "name": "Bodové jízdenky",
+        "isHeader": true
+      },
+      {
+        "name": "40 bodů",
+        "all": 440,
+        "isHeader": false
+      },
+      {
+        "name": "100 bodů",
+        "all": 750,
+        "isHeader": false
+      },
+      {
+        "name": "300 bodů",
+        "all": 2000,
+        "isHeader": false
+      },
+      {
+        "name": "Kurz (300 bodů)",
+        "all": 1500,
+        "isHeader": false
+      },
+      {
+        "name": "Spotřeba bodů na jednotlivých vlecích",
+        "isHeader": true
+      },
+      {
+        "name": "Kohútka (4-sed. lanovka)",
+        "all": 10,
+        "isHeader": false
+      },
+      {
+        "name": "Runda",
+        "all": 6,
+        "isHeader": false
+      },
+      {
+        "name": "Malá Kohútka",
+        "all": 5,
+        "isHeader": false
+      },
+      {
+        "name": "Barborka",
+        "all": 4,
+        "isHeader": false
+      },
+      {
+        "name": "Spartak",
+        "all": 5,
+        "isHeader": false
+      },
+      {
+        "name": "Seník",
+        "all": 6,
+        "isHeader": false
+      }
+    ],
+    "ostatni": [
+      {
+        "name": "Lyžařské kurzy (4-5 dní)",
+        "adult": 1850,
+        "child": 1850,
+        "junior": 1850,
+        "senior": "—",
+        "isHeader": false
+      },
+      {
+        "name": "Lyžařské kurzy (5 dní)",
+        "adult": 1950,
+        "child": 300,
+        "junior": 1950,
+        "senior": "—",
+        "isHeader": false
+      },
+      {
+        "name": "Skialp",
+        "adult": 200,
+        "child": 100,
+        "junior": 150,
+        "senior": 150,
+        "isHeader": false
+      },
+      {
+        "name": "Dětský lyžařský park (8:30-16:00)",
+        "adult": 200,
+        "child": 200,
+        "junior": 200,
+        "senior": 200,
+        "isHeader": false
+      }
+    ],
+    "info_dulezite": [
+      {
+        "name": "Záloha za čipovou kartu je 100 Kč",
+        "adult": "vratná pouze do 20 minut po zavření provozu při odevzdání nepoškozené karty",
+        "isHeader": false
+      },
+      {
+        "name": "Jízdenky jsou nepřenosné",
+        "isHeader": false
+      },
+      {
+        "name": "Nevyužité body a čas nelze vrátit",
+        "isHeader": false
+      },
+      {
+        "name": "Bodové jízdenky mají časový zámek zamezující současnému použití více osobami (s výjimkou kurzovních jízdenek)",
+        "isHeader": false
+      },
+      {
+        "name": "Večerní lyžování provozováno pouze v sobotu při příznivých podmínkách",
+        "isHeader": false
+      },
+      {
+        "name": "Fotografie pořízená na turniketu je dočasná; po vrácení karty automaticky vymazána",
+        "isHeader": false
+      },
+      {
+        "name": "Pro ověření věku nutný občanský průkaz",
+        "adult": "pas nebo kartička sociálního pojištění",
+        "isHeader": false
+      },
+      {
+        "name": "Hello world",
+        "isHeader": false
+      }
+    ],
+    "slevy": [
+      {
+        "name": "Slevy se nesčítají",
+        "isHeader": false
+      },
+      {
+        "name": "Děti do 11 let obdrží sníženou dětskou sazbu (kromě bodových jízdenek)",
+        "isHeader": false
+      },
+      {
+        "name": "Junioři 11-17 let obdrží juniorskou sazbu (kromě bodových jízdenek)",
+        "isHeader": false
+      },
+      {
+        "name": "Senioři 65+ obdrží sníženou sazbu (kromě bodových jízdenek)",
+        "isHeader": false
+      },
+      {
+        "name": "Studentské slevy dostupné pouze při online nákupu",
+        "isHeader": false
+      },
+      {
+        "name": "Držitelé průkazů TP/ZTP/ZTP/P obdrží slevy pouze na časové jízdenky",
+        "isHeader": false
+      },
+      {
+        "name": "Skupinová sleva: při nákupu 15+ stejných jízdenek jeden kus stejného typu zdarma",
+        "isHeader": false
+      },
+      {
+        "name": "Speciální kurzovní ceny: 4-5 dní 1 300 Kč",
+        "adult": 5,
+        "isHeader": false
+      }
+    ]
+  }
+}

@@ -1,14 +1,21 @@
 /**
- * Service pro načítání ceníku z Google Sheets
+ * Service pro načítání ceníku
  *
- * Načítá publikované CSV z Google Sheets a parsuje je do struktury PriceRow[]
- * Cache strategie:
- * 1. localStorage cache (persistentní, přežije refresh)
- * 2. Server API cache (v produkci)
- * 3. Přímé volání Google Sheets (fallback)
+ * Cache strategie (priorita):
+ * 1. In-memory cache (okamžité)
+ * 2. Statický JSON soubor /data/pricing.json (velmi rychlé)
+ * 3. localStorage cache (rychlé)
+ * 4. Server API cache (pomalejší)
+ * 5. Přímé volání Google Sheets (fallback)
  */
 
 import { getCacheItem, setCacheItem } from './cacheHelper';
+
+// In-memory cache pro okamžité načtení
+let staticPricingData: Record<string, PriceRow[]> | null = null;
+let staticAgeCategoriesData: AgeCategoriesData | null = null;
+let staticDataLoaded = false;
+let staticDataPromise: Promise<void> | null = null;
 
 export interface PriceRow {
   name: string;
@@ -233,8 +240,69 @@ const fetchPricingDirectFromGoogleSheets = async (
 };
 
 /**
- * Načte a parsuje ceník z Google Sheets
- * Cache strategie: localStorage → Server API → Google Sheets
+ * Načte statický pricing.json (vygenerovaný při buildu)
+ * Toto je nejrychlejší způsob načtení - statický soubor
+ */
+const loadStaticPricingData = async (): Promise<void> => {
+  if (staticDataLoaded) return;
+
+  // Zajisti že se načítá jen jednou
+  if (staticDataPromise) {
+    await staticDataPromise;
+    return;
+  }
+
+  staticDataPromise = (async () => {
+    try {
+      const response = await fetch('/data/pricing.json');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Uložíme do in-memory cache
+      staticPricingData = data.categories || {};
+      staticAgeCategoriesData = data.categories?.info_vek || null;
+      staticDataLoaded = true;
+
+      console.log('✅ Statický pricing.json načten');
+    } catch (error) {
+      console.warn('⚠️ Statický pricing.json nenalezen, používám API fallback');
+      staticDataLoaded = true; // Označíme jako načteno, aby se neopakoval pokus
+    }
+  })();
+
+  await staticDataPromise;
+};
+
+/**
+ * Získá data z in-memory cache (okamžité)
+ */
+export const getStaticPricingData = (category: PricingCategory): PriceRow[] | null => {
+  if (staticPricingData && staticPricingData[category]) {
+    return staticPricingData[category];
+  }
+  return null;
+};
+
+/**
+ * Získá věkové kategorie z in-memory cache (okamžité)
+ */
+export const getStaticAgeCategories = (): AgeCategoriesData | null => {
+  return staticAgeCategoriesData;
+};
+
+/**
+ * Inicializuje statická data - volat při startu aplikace
+ */
+export const initStaticPricing = async (): Promise<void> => {
+  await loadStaticPricingData();
+};
+
+/**
+ * Načte a parsuje ceník
+ * Cache strategie: In-memory → localStorage → Server API → Google Sheets
  *
  * @param category - Kategorie ceníku (denni, casove, atd.)
  * @returns Promise<PriceRow[]>
@@ -243,30 +311,30 @@ const fetchPricingDirectFromGoogleSheets = async (
 export const fetchPricingFromGoogleSheets = async (
   category: PricingCategory
 ): Promise<PriceRow[]> => {
-  // 1. Zkus localStorage cache (nejrychlejší, funguje v dev i prod)
+  // 1. Zkus in-memory static data (okamžité)
+  await loadStaticPricingData();
+  if (staticPricingData && staticPricingData[category]) {
+    return staticPricingData[category];
+  }
+
+  // 2. Zkus localStorage cache
   const cachedData = getCacheItem<PriceRow[]>(`pricing_${category}`);
   if (cachedData) {
     return cachedData;
   }
 
   try {
-    // 2. Zkus načíst z API (s cache na serveru - pouze v produkci)
+    // 3. Zkus načíst z API (s cache na serveru)
     const data = await fetchPricingFromAPI(category);
-
-    // Ulož do localStorage pro příští načtení
     setCacheItem(`pricing_${category}`, data);
-
     return data;
   } catch (apiError) {
-    console.warn(`API selhalo pro "${category}", zkouším přímé volání Google Sheets jako fallback...`);
+    console.warn(`API selhalo pro "${category}", zkouším Google Sheets...`);
 
     try {
-      // 3. Fallback na přímé volání Google Sheets
+      // 4. Fallback na přímé volání Google Sheets
       const data = await fetchPricingDirectFromGoogleSheets(category);
-
-      // Ulož do localStorage i když načítáme z Google Sheets
       setCacheItem(`pricing_${category}`, data);
-
       return data;
     } catch (sheetsError) {
       console.error(`Všechny metody načítání selhaly pro "${category}"`);
@@ -413,37 +481,37 @@ const fetchAgeCategoriesDirectFromGoogleSheets = async (): Promise<AgeCategories
 };
 
 /**
- * Načte a parsuje věkové kategorie z Google Sheets
- * Cache strategie: localStorage → Server API → Google Sheets
+ * Načte a parsuje věkové kategorie
+ * Cache strategie: In-memory → localStorage → Server API → Google Sheets
  *
  * @returns Promise<AgeCategoriesData>
  * @throws Error pokud se nepodaří načíst data
  */
 export const fetchAgeCategoriesFromGoogleSheets = async (): Promise<AgeCategoriesData> => {
-  // 1. Zkus localStorage cache (nejrychlejší, funguje v dev i prod)
+  // 1. Zkus in-memory static data (okamžité)
+  await loadStaticPricingData();
+  if (staticAgeCategoriesData) {
+    return staticAgeCategoriesData;
+  }
+
+  // 2. Zkus localStorage cache
   const cachedData = getCacheItem<AgeCategoriesData>('age_categories');
   if (cachedData) {
     return cachedData;
   }
 
   try {
-    // 2. Zkus načíst z API (s cache na serveru - pouze v produkci)
+    // 3. Zkus načíst z API
     const data = await fetchAgeCategoriesFromAPI();
-
-    // Ulož do localStorage pro příští načtení
     setCacheItem('age_categories', data);
-
     return data;
   } catch (apiError) {
-    console.warn('API selhalo pro věkové kategorie, zkouším přímé volání Google Sheets jako fallback...');
+    console.warn('API selhalo pro věkové kategorie, zkouším Google Sheets...');
 
     try {
-      // 3. Fallback na přímé volání Google Sheets
+      // 4. Fallback na přímé volání Google Sheets
       const data = await fetchAgeCategoriesDirectFromGoogleSheets();
-
-      // Ulož do localStorage i když načítáme z Google Sheets
       setCacheItem('age_categories', data);
-
       return data;
     } catch (sheetsError) {
       console.error('Všechny metody načítání věkových kategorií selhaly');
