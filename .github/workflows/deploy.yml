@@ -22,6 +22,9 @@ jobs:
             cd /srv/containers/kohutka/app
             git pull
 
+            # Regeneruj statický ceník při každém deployi
+            node scripts/generate-pricing-json.js || echo "Pricing generation skipped"
+
             cd /srv/containers/kohutka
             docker compose build
             docker compose up -d
