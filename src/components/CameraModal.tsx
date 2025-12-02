@@ -29,7 +29,8 @@ export const CameraModal = ({
 
   // Initialize HLS.js for live stream cameras
   useEffect(() => {
-    if (!camera?.hasLiveStream || !camera?.liveStreamUrl) {
+    // Only initialize when modal is open and camera has live stream
+    if (!isOpen || !camera?.hasLiveStream || !camera?.liveStreamUrl) {
       return;
     }
 
@@ -42,6 +43,7 @@ export const CameraModal = ({
     let pauseHandler: (() => void) | null = null;
     let playingHandler: (() => void) | null = null;
     let metadataHandler: (() => void) | null = null;
+    let errorHandler: (() => void) | null = null;
 
     const initVideo = () => {
       if (!videoRef.current) {
@@ -52,7 +54,11 @@ export const CameraModal = ({
       const video = videoRef.current;
 
       // Check if browser supports HLS natively (Safari)
-      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // DEBUG: Set to false to force HLS.js usage for testing
+      const forceHlsJs = false; // Change to true to test HLS.js in Chrome/Safari
+
+      if (!forceHlsJs && video.canPlayType('application/vnd.apple.mpegurl')) {
+        console.log('[HLS] Using native HLS support (Safari)');
         video.src = camera.liveStreamUrl;
 
         const playVideo = () => {
@@ -82,28 +88,50 @@ export const CameraModal = ({
           setIsStreamLoaded(true);
         };
 
+        errorHandler = () => {
+          console.error('[HLS] Native playback error');
+          setIsStreamLoaded(true);
+          setShowPlayButton(true);
+        };
+
         video.addEventListener('playing', playingHandler);
+        video.addEventListener('error', errorHandler);
         metadataHandler = playVideo;
         video.addEventListener('pause', pauseHandler);
         video.addEventListener('loadedmetadata', metadataHandler);
         playVideo();
       }
-      // Use HLS.js for other browsers
+      // Use HLS.js for other browsers (Edge, Firefox, Chrome)
       else if (Hls.isSupported()) {
+        console.log('[HLS] Using HLS.js for stream playback');
         hlsInstance = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
           debug: false,
+          // Additional settings for better compatibility
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          startLevel: -1, // Auto quality
         });
 
-        hlsInstance.loadSource(camera.liveStreamUrl);
+        // Use proxy URL to bypass CORS restrictions
+        const proxyUrl = `/api/hls-proxy?url=${encodeURIComponent(camera.liveStreamUrl)}`;
+        console.log('[HLS] Using proxy URL:', proxyUrl);
+        hlsInstance.loadSource(proxyUrl);
         hlsInstance.attachMedia(video);
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => {
+          console.log('[HLS] Manifest parsed, starting playback');
+          video.play().catch((err) => {
+            console.warn('[HLS] Autoplay blocked:', err);
             setShowPlayButton(true);
             setIsStreamLoaded(true);
           });
+        });
+
+        hlsInstance.on(Hls.Events.FRAG_LOADED, () => {
+          // Stream is loading, mark as loaded
+          setIsStreamLoaded(true);
         });
 
         pauseHandler = () => {
@@ -123,21 +151,30 @@ export const CameraModal = ({
         video.addEventListener('pause', pauseHandler);
 
         hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+          console.error('[HLS] Error:', data.type, data.details);
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
+                console.log('[HLS] Network error, trying to recover...');
                 hlsInstance?.startLoad();
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
+                console.log('[HLS] Media error, trying to recover...');
                 hlsInstance?.recoverMediaError();
                 break;
               default:
+                console.error('[HLS] Fatal error, cannot recover');
                 hlsInstance?.destroy();
                 setIsStreamLoaded(true);
+                setShowPlayButton(true);
                 break;
             }
           }
         });
+      } else {
+        // HLS not supported at all
+        console.error('[HLS] HLS is not supported in this browser');
+        setIsStreamLoaded(true);
       }
     };
 
@@ -145,22 +182,47 @@ export const CameraModal = ({
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
-      if (hlsInstance) hlsInstance.destroy();
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
       if (videoRef.current) {
         if (pauseHandler) videoRef.current.removeEventListener('pause', pauseHandler);
         if (playingHandler) videoRef.current.removeEventListener('playing', playingHandler);
         if (metadataHandler) videoRef.current.removeEventListener('loadedmetadata', metadataHandler);
+        if (errorHandler) videoRef.current.removeEventListener('error', errorHandler);
+        // Clear video source
+        videoRef.current.src = '';
+        videoRef.current.load();
       }
       setShowPlayButton(false);
       setIsStreamLoaded(false);
     };
-  }, [camera]);
+  }, [camera, isOpen]);
 
   if (!camera) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 gap-0 overflow-hidden bg-black/95 border-2 border-white/10">
+      <DialogContent
+        className="p-0 gap-0 overflow-hidden bg-black/95 border-2 border-white/10 flex flex-col"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100dvh',
+          maxWidth: '100vw',
+          maxHeight: '100dvh',
+          transform: 'none',
+          left: 0,
+          top: 0,
+          borderRadius: 0,
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingLeft: 'env(safe-area-inset-left, 0px)',
+          paddingRight: 'env(safe-area-inset-right, 0px)',
+        }}
+      >
         {/* Header with camera info and close button */}
         <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/90 via-black/70 to-transparent p-4 sm:p-6">
           <div className="flex items-start justify-between gap-4">
@@ -227,7 +289,10 @@ export const CameraModal = ({
         </div>
 
         {/* Main content - camera view */}
-        <div className="w-full h-[95vh] flex items-center justify-center p-4 sm:p-6">
+        <div
+          className="w-full flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden"
+          style={{ minHeight: 0 }}
+        >
           <div className="relative w-full h-full flex items-center justify-center">
             {camera.hasLiveStream && camera.liveStreamUrl ? (
               <>

@@ -266,18 +266,18 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     }
   });
 
-  // Add custom cameras from data.kohutka.ski (for archive time filtering)
-  // Note: data.kohutka.ski doesn't have valid HTTPS certificate, must use HTTP
+  // Velká sjezdovka - Live stream from i2net
   cameras.push({
-    id: 'kohutka-p0',
+    id: 'live-velka-sjezdovka',
     name: 'Velká sjezdovka',
-    description: 'Náhled na Velkou sjezdovku z horní stanice',
+    description: 'Live stream z velké sjezdovky',
     location: 'Horní stanice',
-    source: 'archive',
+    hasLiveStream: true,
+    liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka02_.m3u8',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
+        url: 'https://webcams.i2net.cz/obr/kohutka-02.jpg',
+        url_preview: 'https://webcams.i2net.cz/obr/kohutka-02.jpg',
         temp: '',
         date: '',
         time: '',
@@ -368,8 +368,9 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     const getPriority = (camera: Camera) => {
       if (camera.id === '2122') return 1; // Chata Kohútka (panorama) - first
       if (camera.id === 'live-kohutka') return 2; // Kohútka live stream - second
-      if (camera.id === 'live-mala-kohutka') return 3; // Malá Kohútka live stream - third
-      return 4; // All other cameras
+      if (camera.id === 'live-velka-sjezdovka') return 3; // Velká sjezdovka live stream - third
+      if (camera.id === 'live-mala-kohutka') return 4; // Malá Kohútka live stream - fourth
+      return 5; // All other cameras
     };
 
     return getPriority(a) - getPriority(b);
