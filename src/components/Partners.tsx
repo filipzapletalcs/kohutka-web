@@ -140,7 +140,7 @@ const Partners = () => {
       <div className="container mx-auto max-w-7xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
-            Naši partneři a sponzoři
+            Naši partneři
           </h2>
           <p className="text-lg text-muted-foreground font-medium">
             Děkujeme všem, kteří s námi spolupracují a podporují nás

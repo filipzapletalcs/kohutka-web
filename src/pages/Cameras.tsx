@@ -57,9 +57,10 @@ const Cameras = () => {
   const reorderCameras = (cameraList: CameraType[]) => {
     if (cameraList.length < 8) return cameraList;
 
-    // New order: positions [0, 3, 2, 4, 6, 5, 7, 1]
-    // This means: 1st stays 1st, 4th becomes 2nd, 3rd stays 3rd, etc.
-    const newOrder = [0, 3, 2, 4, 6, 5, 7, 1];
+    // New order: positions [0, 3, 7, 4, 6, 5, 2, 1]
+    // This means: 1st stays 1st, 4th becomes 2nd, 8th becomes 3rd (Dolní stanice), etc.
+    // Position 3 and 7 swapped: Velká sjezdovka ↔ Dolní stanice
+    const newOrder = [0, 3, 7, 4, 6, 5, 2, 1];
     return newOrder.map(index => cameraList[index]).filter(Boolean);
   };
 

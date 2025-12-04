@@ -88,7 +88,7 @@ const DirectionsInfo = () => {
               <h3 className="text-lg font-bold">Parkování</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Zdarma</strong> na centrálním parkovišti v horském sedle pod Kohútkou popř. na záchytném parkovišti v údolí Vranča. Dbejte pokynů obsluhy parkoviště.
+              Na všech odstavných plochách v areálu <strong className="text-foreground">placené parkování</strong>. Úhrada přímo u obsluhy nebo v pokladnách lyžařského areálu. Dbejte prosím pokynů obsluhy parkoviště.
             </p>
           </Card>
 
@@ -101,10 +101,10 @@ const DirectionsInfo = () => {
               <h3 className="text-lg font-bold">Skibus</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-2">
-              V zimním období <strong className="text-foreground">zdarma pouze pro sjezdové lyžaře</strong>, v provozu každý den.
+              V zimním období z údolí <strong className="text-foreground">Vranča a Čertov</strong> po telefonické domluvě. Zdarma pouze pro sjezdové lyžaře.
             </p>
             <p className="text-sm text-muted-foreground">
-              Odjezdy z centrálního parkoviště ve <strong className="text-foreground">14:00, 15:00 a 16:00</strong>. Cesta trvá cca 10 minut. Info: <a href="tel:+420725005725" className="text-primary hover:underline">+420 725 005 725</a>
+              Odjezdy zpět z centrálního parkoviště ve <strong className="text-foreground">14:00, 15:00 a 16:10</strong>. Infotelefon: <a href="tel:+420725005725" className="text-primary hover:underline">+420 725 005 725</a>
             </p>
           </Card>
 
@@ -117,7 +117,7 @@ const DirectionsInfo = () => {
               <h3 className="text-lg font-bold">Stav komunikací</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              Přístupové komunikace z české i slovenské strany jsou pravidelně udržovány. V zimě sjízdné se <strong className="text-foreground">zimní výbavou</strong> (sněhové řetězy, lopata). Z české strany vjezd autobusů pouze do 10 tun.
+              Přístupové komunikace jsou pravidelně udržovány naší technikou. V zimě sjízdné, prohrnnuté a posypané. Jezděte se zvýšenou opatrností, <strong className="text-foreground">sněhové řetězy a zimní výbavu</strong> s sebou.
             </p>
           </Card>
         </div>

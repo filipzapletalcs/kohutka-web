@@ -52,9 +52,9 @@ const Weather = () => {
             </div>
           </div>
 
-          <div className="relative w-full overflow-x-auto">
+          <div className="relative w-full overflow-hidden md:overflow-x-auto touch-pan-y">
             {/* Meteoblue widget – plná šířka, responsivní */}
-            <div className="min-w-[320px] md:min-w-full">
+            <div className="w-full">
               <iframe
                 key={isMobile ? "mobile-three" : "desktop-three"}
                 src={isMobile ? mobileWidgetUrl : desktopWidgetUrl}

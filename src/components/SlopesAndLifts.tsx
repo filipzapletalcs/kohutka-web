@@ -121,9 +121,8 @@ const SlopesAndLifts = () => {
               <table className="w-full text-sm h-full">
                 <thead>
                   <tr className="border-b-2 border-white/20 bg-muted/30">
-                    <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">ID</th>
-                    <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Sjezdovka</th>
-                    <th className="text-center px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Obtížnost</th>
+                    <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Název</th>
+                    <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Obtížnost</th>
                     <th className="text-right px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Převýšení</th>
                     <th className="text-right px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Délka</th>
                     <th className="text-center px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Stav</th>
@@ -140,7 +139,7 @@ const SlopesAndLifts = () => {
                           key={`empty-${index}`}
                           className={`hidden lg:table-row ${index % 2 === 0 ? "bg-blue-500/5" : ""}`}
                         >
-                          <td className="px-1.5 py-2 md:p-3" colSpan={6}>&nbsp;</td>
+                          <td className="px-1.5 py-2 md:p-3" colSpan={5}>&nbsp;</td>
                         </tr>
                       );
                     }
@@ -156,10 +155,10 @@ const SlopesAndLifts = () => {
                         }`}
                       >
                         <td className="px-1.5 py-2 md:p-3 font-bold text-xs md:text-sm text-gray-800">{slope.name}</td>
-                        <td className="px-1.5 py-2 md:p-3 text-xs md:text-sm font-medium text-gray-700">{slope.diff_text}</td>
-                        <td className="px-1.5 py-2 md:p-3 text-center">
-                          <div className="flex items-center justify-center">
-                            <div className={`w-4 h-4 md:w-5 md:h-5 rounded-full shadow-md ${getDifficultyColor(slope.diff_code)}`} />
+                        <td className="px-1.5 py-2 md:p-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 md:w-5 md:h-5 rounded-full shadow-md flex-shrink-0 ${getDifficultyColor(slope.diff_code)}`} />
+                            <span className="text-xs md:text-sm font-semibold text-gray-800">{slope.diff_text}</span>
                           </div>
                         </td>
                         <td className="px-1.5 py-2 md:p-3 text-right whitespace-nowrap">
@@ -181,10 +180,10 @@ const SlopesAndLifts = () => {
                 </tbody>
                 <tfoot>
                   <tr className="bg-white border-t-4 border-primary shadow-sm">
-                    <td className="px-1.5 py-3 md:p-4 text-xs md:text-sm tracking-wide font-bold text-gray-900" colSpan={2}>
+                    <td className="px-1.5 py-3 md:p-4 text-xs md:text-sm tracking-wide font-bold text-gray-900">
                       Celkem
                     </td>
-                    <td className="px-1.5 py-3 md:p-4 text-center text-xs md:text-sm font-semibold text-gray-700">-</td>
+                    <td className="px-1.5 py-3 md:p-4 text-xs md:text-sm font-semibold text-gray-700">-</td>
                     <td className="px-1.5 py-3 md:p-4 text-right text-xs md:text-sm font-bold text-primary whitespace-nowrap">{totalSlopesExceed} m</td>
                     <td className="px-1.5 py-3 md:p-4 text-right text-xs md:text-sm font-bold text-primary whitespace-nowrap">{totalSlopesLength} m</td>
                     <td className="px-1.5 py-3 md:p-4 text-center text-xs md:text-sm font-bold text-primary whitespace-nowrap">
@@ -209,7 +208,6 @@ const SlopesAndLifts = () => {
               <table className="w-full text-sm h-full">
                 <thead>
                   <tr className="border-b-2 border-white/20 bg-muted/30">
-                    <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">ID</th>
                     <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Název</th>
                     <th className="text-left px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Typ</th>
                     <th className="text-right px-1.5 py-2 md:p-3 text-xs md:text-sm font-bold tracking-wide">Kapacita</th>
@@ -228,7 +226,7 @@ const SlopesAndLifts = () => {
                           key={`empty-lift-${index}`}
                           className={`hidden lg:table-row ${index % 2 === 0 ? "bg-blue-500/5" : ""}`}
                         >
-                          <td className="px-1.5 py-2 md:p-3" colSpan={6}>&nbsp;</td>
+                          <td className="px-1.5 py-2 md:p-3" colSpan={5}>&nbsp;</td>
                         </tr>
                       );
                     }
@@ -244,8 +242,7 @@ const SlopesAndLifts = () => {
                         }`}
                       >
                         <td className="px-1.5 py-2 md:p-3 font-bold text-xs md:text-sm text-gray-800">{lift.name}</td>
-                        <td className="px-1.5 py-2 md:p-3 text-xs md:text-sm font-medium text-gray-700">{lift.name}</td>
-                        <td className="px-1.5 py-2 md:p-3 text-[11px] md:text-xs font-medium text-gray-700">{lift.type_text}</td>
+                        <td className="px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold text-gray-800">{lift.type_text}</td>
                         <td className="px-1.5 py-2 md:p-3 text-right whitespace-nowrap">
                           <span className="text-xs md:text-sm font-semibold text-gray-800">{lift.capacity} os/h</span>
                         </td>
@@ -265,7 +262,7 @@ const SlopesAndLifts = () => {
                 </tbody>
                 <tfoot>
                   <tr className="bg-white border-t-4 border-primary shadow-sm">
-                    <td className="px-1.5 py-3 md:p-4 text-xs md:text-sm tracking-wide font-bold text-gray-900" colSpan={2}>
+                    <td className="px-1.5 py-3 md:p-4 text-xs md:text-sm tracking-wide font-bold text-gray-900">
                       Celkem
                     </td>
                     <td className="px-1.5 py-3 md:p-4 text-xs md:text-sm font-semibold text-gray-700">-</td>

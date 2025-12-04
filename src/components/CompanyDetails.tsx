@@ -24,7 +24,7 @@ const CompanyDetails = () => {
       lines: ["Mládí 1466", "755 01 Vsetín"],
     },
     {
-      title: "Infocentrum Slovensko",
+      title: "Infocentrum Kohútka",
       icon: MapPin,
       lines: ["Lazy pod Makytou 1133", "020 55 Lazy pod Makytou"],
     },
@@ -68,7 +68,7 @@ const CompanyDetails = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Poloha</p>
                 <p className="text-lg font-semibold">
-                  České-slovenské pomezí v pohoří Beskydy
+                  České-slovenské pomezí v pohoří Javorníky
                 </p>
               </div>
             </div>

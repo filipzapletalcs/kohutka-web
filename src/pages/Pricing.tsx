@@ -464,7 +464,7 @@ const Pricing = () => {
                   Ceník skipasů
                 </h1>
                 <p className="text-base md:text-lg text-muted-foreground font-medium">
-                  Sezóna 2024/2025
+                  Sezóna 2025/2026
                 </p>
               </div>
               <div className="flex-shrink-0 md:hidden">
