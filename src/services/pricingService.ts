@@ -101,6 +101,11 @@ const parseValue = (value: string): number | string | undefined => {
     return value; // Vrátíme jako string (např. "10 bodů", "—")
   }
 
+  // Pokud hodnota obsahuje speciální znaky jako "+", je to text (např. "1+2", "2+1")
+  if (value.includes('+')) {
+    return value;
+  }
+
   // Pokud je to čisté číslo, vrátíme number
   const numValue = parseFloat(value);
   if (!isNaN(numValue)) return numValue;
@@ -135,7 +140,21 @@ export const parseCSVToPriceRows = (csvText: string): PriceRow[] => {
     // 6: Je header (ANO/NE)
     // 7: Poznámka
 
-    const isHeader = values[6]?.toUpperCase() === 'ANO';
+    // Zpracuj hodnotu "all" - pokud je "NE" nebo "ANO", je to ve skutečnosti hodnota z "Je header"
+    let allValue = parseValue(values[5]);
+    let isHeader = values[6]?.toUpperCase() === 'ANO';
+
+    // Pokud jsou vyplněné jednotlivé ceny, ignoruj "all" sloupec úplně
+    const hasIndividualPrices = values[1] || values[2] || values[3] || values[4];
+    if (hasIndividualPrices) {
+      allValue = undefined;
+    }
+
+    // Fix pro případ, kdy je "NE"/"ANO" ve sloupci "Všechny" místo "Je header"
+    if (typeof allValue === 'string' && (allValue.toUpperCase() === 'NE' || allValue.toUpperCase() === 'ANO')) {
+      isHeader = allValue.toUpperCase() === 'ANO';
+      allValue = undefined;
+    }
 
     const row: PriceRow = {
       name: values[0] || '',
@@ -143,7 +162,7 @@ export const parseCSVToPriceRows = (csvText: string): PriceRow[] => {
       child: parseValue(values[2]),
       junior: parseValue(values[3]),
       senior: parseValue(values[4]),
-      all: parseValue(values[5]),
+      all: allValue,
       isHeader,
       note: values[7] || undefined,
     };

@@ -10,6 +10,36 @@ import { getCacheItem } from "@/services/cacheHelper";
 
 type PricingTab = "denni" | "casove" | "sezonni" | "jednotlive" | "bodove" | "ostatni" | "informace" | "slevy";
 
+// Helper funkce pro získání hodnot pro Rodinné jízdné
+// Tyto hodnoty jsou hardcodované, protože parsování "1+2" z CSV nefunguje správně
+const getRodinneJizdneValues = (column: 'adult' | 'child' | 'junior' | 'senior'): string => {
+  const values = {
+    adult: "1+2",
+    child: "2+1",
+    junior: "2+2",
+    senior: "2+3",
+  };
+  return values[column];
+};
+
+// Helper pro kontrolu, zda je řádek "Rodinné jízdné"
+const isRodinneJizdne = (name: string): boolean => {
+  return name.toLowerCase().includes("rodinné");
+};
+
+// Helper pro kontrolu, zda data mají jednotlivé ceny (adult/child/junior/senior)
+// Pokud ano, ignoruj "all" sloupec úplně
+const hasIndividualPrices = (rows: PriceRow[]): boolean => {
+  return rows.some(row =>
+    !row.isHeader && (
+      row.adult !== undefined ||
+      row.child !== undefined ||
+      row.junior !== undefined ||
+      row.senior !== undefined
+    )
+  );
+};
+
 const Pricing = () => {
   const [activeTab, setActiveTab] = useState<PricingTab>("denni");
 
@@ -178,7 +208,10 @@ const Pricing = () => {
   const jednotliveData: PriceRow[] = [
     {
       name: "Jednotlivá jízda (pouze nahoru)",
-      all: 170,
+      adult: 170,
+      child: 170,
+      junior: 170,
+      senior: 170,
     },
   ];
 
@@ -201,15 +234,15 @@ const Pricing = () => {
       all: 2000,
     },
     {
-      name: "Kurz (300 bodů)",
-      all: 1500,
+      name: "Lyžařský kurz (300 bodů)",
+      all: 1600,
     },
     {
       name: "Spotřeba bodů na jednotlivých vlecích",
       isHeader: true,
     },
     {
-      name: "Kohútka (4-sed. lanovka)",
+      name: "Lanová dráha Kohútka",
       all: "10 bodů",
     },
     {
@@ -553,7 +586,7 @@ const Pricing = () => {
                     <thead>
                       <tr className="bg-gradient text-primary-foreground border-b border-white/30">
                         <th className="text-left p-6 font-bold text-lg tracking-wide">Typ jízdenky</th>
-                        {data[0]?.all !== undefined ? (
+                        {!hasIndividualPrices(data) ? (
                           <th className="text-right p-6 font-bold">
                             <span className="text-lg tracking-wide">Všechny kategorie</span>
                           </th>
@@ -600,7 +633,7 @@ const Pricing = () => {
                             <td className={`p-5 ${row.isHeader ? "font-bold text-gray-900 text-lg tracking-wide" : "font-medium text-gray-800"}`}>
                               {row.name}
                             </td>
-                            {row.all !== undefined ? (
+                            {!hasIndividualPrices(data) ? (
                               <td className="text-right p-5 font-semibold text-gray-900">
                                 {row.isHeader ? "" : (
                                   typeof row.all === "number" ? (
@@ -615,52 +648,60 @@ const Pricing = () => {
                               </td>
                             ) : (
                               <>
-                                <td className="text-right p-5 font-semibold text-gray-900">
-                                  {row.isHeader ? "" : (
-                                    typeof row.adult === "number" ? (
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <span className="text-xl font-bold text-primary">{row.adult}</span>
-                                        <span className="text-sm text-gray-600">Kč</span>
-                                      </span>
-                                    ) : (
-                                      <span className="text-base text-gray-700">{row.adult}</span>
-                                    )
+                                <td className={`p-5 font-semibold text-gray-900 ${row.isHeader && isRodinneJizdne(row.name) ? "text-center" : "text-right"}`}>
+                                  {row.isHeader ? (
+                                    isRodinneJizdne(row.name) ? (
+                                      <span className="text-lg font-bold text-gray-900">{getRodinneJizdneValues('adult')}</span>
+                                    ) : ""
+                                  ) : typeof row.adult === "number" ? (
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="text-xl font-bold text-primary">{row.adult}</span>
+                                      <span className="text-sm text-gray-600">Kč</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-base text-gray-700">{row.adult}</span>
                                   )}
                                 </td>
-                                <td className="text-right p-5 font-semibold text-gray-900">
-                                  {row.isHeader ? "" : (
-                                    typeof row.child === "number" ? (
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <span className="text-xl font-bold text-primary">{row.child}</span>
-                                        <span className="text-sm text-gray-600">Kč</span>
-                                      </span>
-                                    ) : (
-                                      <span className="text-base text-gray-700">{row.child}</span>
-                                    )
+                                <td className={`p-5 font-semibold text-gray-900 ${row.isHeader && isRodinneJizdne(row.name) ? "text-center" : "text-right"}`}>
+                                  {row.isHeader ? (
+                                    isRodinneJizdne(row.name) ? (
+                                      <span className="text-lg font-bold text-gray-900">{getRodinneJizdneValues('child')}</span>
+                                    ) : ""
+                                  ) : typeof row.child === "number" ? (
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="text-xl font-bold text-primary">{row.child}</span>
+                                      <span className="text-sm text-gray-600">Kč</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-base text-gray-700">{row.child}</span>
                                   )}
                                 </td>
-                                <td className="text-right p-5 font-semibold text-gray-900">
-                                  {row.isHeader ? "" : (
-                                    typeof row.junior === "number" ? (
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <span className="text-xl font-bold text-primary">{row.junior}</span>
-                                        <span className="text-sm text-gray-600">Kč</span>
-                                      </span>
-                                    ) : (
-                                      <span className="text-base text-gray-700">{row.junior}</span>
-                                    )
+                                <td className={`p-5 font-semibold text-gray-900 ${row.isHeader && isRodinneJizdne(row.name) ? "text-center" : "text-right"}`}>
+                                  {row.isHeader ? (
+                                    isRodinneJizdne(row.name) ? (
+                                      <span className="text-lg font-bold text-gray-900">{getRodinneJizdneValues('junior')}</span>
+                                    ) : ""
+                                  ) : typeof row.junior === "number" ? (
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="text-xl font-bold text-primary">{row.junior}</span>
+                                      <span className="text-sm text-gray-600">Kč</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-base text-gray-700">{row.junior}</span>
                                   )}
                                 </td>
-                                <td className="text-right p-5 font-semibold text-gray-900">
-                                  {row.isHeader ? "" : (
-                                    typeof row.senior === "number" ? (
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <span className="text-xl font-bold text-primary">{row.senior}</span>
-                                        <span className="text-sm text-gray-600">Kč</span>
-                                      </span>
-                                    ) : (
-                                      <span className="text-base text-gray-700">{row.senior}</span>
-                                    )
+                                <td className={`p-5 font-semibold text-gray-900 ${row.isHeader && isRodinneJizdne(row.name) ? "text-center" : "text-right"}`}>
+                                  {row.isHeader ? (
+                                    isRodinneJizdne(row.name) ? (
+                                      <span className="text-lg font-bold text-gray-900">{getRodinneJizdneValues('senior')}</span>
+                                    ) : ""
+                                  ) : typeof row.senior === "number" ? (
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span className="text-xl font-bold text-primary">{row.senior}</span>
+                                      <span className="text-sm text-gray-600">Kč</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-base text-gray-700">{row.senior}</span>
                                   )}
                                 </td>
                               </>
@@ -692,6 +733,15 @@ const Pricing = () => {
                         <h3 className="font-bold text-base text-gray-900 tracking-wide">
                           {row.name}
                         </h3>
+                        {/* Hardcoded values for Rodinné jízdné */}
+                        {isRodinneJizdne(row.name) && (
+                          <div className="flex flex-wrap justify-center gap-4 mt-3 text-lg font-bold text-gray-900">
+                            <span>{getRodinneJizdneValues('adult')}</span>
+                            <span>{getRodinneJizdneValues('child')}</span>
+                            <span>{getRodinneJizdneValues('junior')}</span>
+                            <span>{getRodinneJizdneValues('senior')}</span>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <Card className="bg-gradient-to-br from-white via-white to-primary/5 border-0 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
@@ -700,7 +750,7 @@ const Pricing = () => {
                             {row.name}
                           </h4>
 
-                          {row.all !== undefined ? (
+                          {!hasIndividualPrices(data) ? (
                             <div className="bg-gradient-to-r from-primary/15 to-primary/5 p-3.5 rounded-xl shadow-sm">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm font-semibold text-gray-700">Všechny kategorie</span>

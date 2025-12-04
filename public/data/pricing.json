@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-12-01T18:48:03.187Z",
+  "generatedAt": "2025-12-04T19:26:28.272Z",
   "categories": {
     "denni": [
       {
@@ -8,10 +8,10 @@
       },
       {
         "name": "1-denní (od 8:30 do 16:00 hod.)",
-        "adult": 8700,
-        "child": 3400,
-        "junior": 7100,
-        "senior": 710,
+        "adult": 810,
+        "child": 330,
+        "junior": 650,
+        "senior": 650,
         "isHeader": false
       },
       {
@@ -20,7 +20,7 @@
       },
       {
         "name": "2-denní (2 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 1540,
+        "adult": 1590,
         "child": 570,
         "junior": 1230,
         "senior": 1230,
@@ -28,26 +28,26 @@
       },
       {
         "name": "3-denní (3 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 2010,
+        "adult": 2050,
         "child": 750,
-        "junior": 1610,
-        "senior": 1610,
+        "junior": 1650,
+        "senior": 1650,
         "isHeader": false
       },
       {
         "name": "4-denní (4 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 2390,
+        "adult": 2400,
         "child": 930,
-        "junior": 1920,
-        "senior": 1920,
+        "junior": 1930,
+        "senior": 1930,
         "isHeader": false
       },
       {
         "name": "5-denní (5 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 2790,
+        "adult": 2800,
         "child": 1080,
-        "junior": 2230,
-        "senior": 2230,
+        "junior": 2240,
+        "senior": 2240,
         "isHeader": false
       },
       {
@@ -68,10 +68,10 @@
       },
       {
         "name": "KOMBI – 8 hodin v sezóně (platí i na večerní lyžování)",
-        "adult": 1600,
+        "adult": 1650,
         "child": 580,
-        "junior": 1240,
-        "senior": 1200,
+        "junior": 1290,
+        "senior": 1290,
         "isHeader": false
       },
       {
@@ -80,118 +80,168 @@
       },
       {
         "name": "2-denní (2 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 1230,
+        "adult": 1270,
         "child": 460,
-        "junior": 980,
-        "senior": 980,
+        "junior": 1020,
+        "senior": 1020,
         "isHeader": false
       },
       {
         "name": "3-denní (3 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 1610,
+        "adult": 1640,
         "child": 600,
-        "junior": 1290,
-        "senior": 1290,
+        "junior": 1320,
+        "senior": 1320,
         "isHeader": false
       },
       {
         "name": "4-denní (4 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 1910,
+        "adult": 1920,
         "child": 740,
-        "junior": 1540,
-        "senior": 1540,
+        "junior": 1550,
+        "senior": 1550,
         "isHeader": false
       },
       {
         "name": "5-denní (5 dny po sobě jdoucí bez večerního lyžování)",
-        "adult": 2230,
+        "adult": 2240,
         "child": 860,
-        "junior": 1780,
-        "senior": 1780,
+        "junior": 1790,
+        "senior": 1790,
+        "isHeader": false
+      },
+      {
+        "name": "KOMBI – 8 hodin v sezóně (platí i na večerní lyžování)",
+        "adult": 1320,
+        "child": 460,
+        "junior": 1030,
+        "senior": 1030,
+        "isHeader": false
+      },
+      {
+        "name": "Rodinné jízdné",
+        "adult": "1+2",
+        "child": "2+1",
+        "junior": "2+2",
+        "senior": "2+3",
+        "isHeader": true
+      },
+      {
+        "name": "1-denní (od 8:30 do 16:00 hod.)",
+        "adult": 1380,
+        "child": 1900,
+        "junior": 2100,
+        "senior": 2450,
         "isHeader": false
       }
     ],
-    "info_vek": {
-      "adult": {
-        "category": "adult",
-        "name": "Dospělí",
-        "birthYears": "1961-2007"
-      },
-      "child": {
-        "category": "child",
-        "name": "Děti",
-        "birthYears": "2015 a mladší"
-      },
-      "junior": {
-        "category": "junior",
-        "name": "Junioři",
-        "birthYears": "2006-2014"
-      },
-      "senior": {
-        "category": "senior",
-        "name": "Senioři",
-        "birthYears": "1960 a starší"
-      }
-    },
     "casove": [
       {
+        "name": "Jízdenky platné pouze pro SKI CENTRUM KOHÚTKA",
+        "isHeader": true
+      },
+      {
         "name": "3 hodinová",
-        "adult": 710,
-        "child": 270,
-        "junior": 590,
-        "senior": 590,
+        "adult": 680,
+        "child": 280,
+        "junior": 550,
+        "senior": 550,
         "isHeader": false
       },
       {
         "name": "4 hodinová",
-        "adult": 790,
-        "child": 300,
-        "junior": 640,
-        "senior": 640,
+        "adult": 720,
+        "child": 290,
+        "junior": 580,
+        "senior": 580,
         "isHeader": false
       },
       {
         "name": "Večerní lyžování (19:00-21:00)",
-        "adult": 300,
-        "child": 150,
+        "adult": 280,
+        "child": 140,
         "junior": 200,
         "senior": 200,
         "isHeader": false
       },
       {
         "name": "Odpolední lyžování (13:30-16:00)",
-        "adult": 500,
-        "child": 180,
-        "junior": 400,
-        "senior": 400,
+        "adult": 450,
+        "child": 200,
+        "junior": 350,
+        "senior": 350,
+        "isHeader": false
+      },
+      {
+        "name": "",
+        "isHeader": false
+      },
+      {
+        "name": "Rodinné jízdné",
+        "adult": "1+2",
+        "child": "2+1",
+        "junior": "2+2",
+        "senior": "2+3",
+        "isHeader": true
+      },
+      {
+        "name": "3 hodinová",
+        "adult": 1180,
+        "child": 1580,
+        "junior": 1780,
+        "senior": 2100,
+        "isHeader": false
+      },
+      {
+        "name": "4 hodinová",
+        "adult": 1250,
+        "child": 1750,
+        "junior": 1950,
+        "senior": 2300,
+        "isHeader": false
+      },
+      {
+        "name": "Večerní lyžování (19:00-21:00)",
+        "adult": "-",
+        "child": "-",
+        "junior": "-",
+        "senior": "-",
+        "isHeader": false
+      },
+      {
+        "name": "Odpolední lyžování (13:30-16:00)",
+        "adult": 800,
+        "child": 1050,
+        "junior": 1250,
+        "senior": 1400,
         "isHeader": false
       }
     ],
     "sezonni": [
       {
         "name": "Kohútka Skipas (nepřenosný)",
-        "adult": 8000,
-        "child": 4000,
-        "junior": 6000,
-        "senior": 6000,
+        "adult": 7000,
+        "child": 3000,
+        "junior": 5000,
+        "senior": 5000,
         "isHeader": false
       },
       {
-        "name": "Czech Skipass (s fotkou)",
-        "adult": 18,
-        "child": 17490,
-        "junior": 13490,
-        "senior": 14990,
-        "all": 13490,
-        "isHeader": false,
-        "note": "NE"
+        "name": "Czech Skipass (s fotkou, 18 středisek)",
+        "adult": 17490,
+        "child": 13490,
+        "junior": 14990,
+        "senior": 13490,
+        "isHeader": false
       }
     ],
     "jednotlive": [
       {
         "name": "Jednotlivá jízda (pouze nahoru)",
+        "adult": 170,
+        "child": 170,
+        "junior": 170,
         "senior": 170,
-        "all": "NE",
         "isHeader": false
       }
     ],
@@ -216,8 +266,8 @@
         "isHeader": false
       },
       {
-        "name": "Kurz (300 bodů)",
-        "all": 1500,
+        "name": "Lyžařský kurz (300 bodů)",
+        "all": 1600,
         "isHeader": false
       },
       {
@@ -225,39 +275,39 @@
         "isHeader": true
       },
       {
-        "name": "Kohútka (4-sed. lanovka)",
-        "all": 10,
+        "name": "Lanová dráha Kohútka",
+        "all": "10 bodů",
         "isHeader": false
       },
       {
         "name": "Runda",
-        "all": 6,
+        "all": "6 bodů",
         "isHeader": false
       },
       {
         "name": "Malá Kohútka",
-        "all": 5,
+        "all": "5 bodů",
         "isHeader": false
       },
       {
         "name": "Barborka",
-        "all": 4,
+        "all": "4 body",
         "isHeader": false
       },
       {
         "name": "Spartak",
-        "all": 5,
+        "all": "5 bodů",
         "isHeader": false
       },
       {
         "name": "Seník",
-        "all": 6,
+        "all": "6 bodů",
         "isHeader": false
       }
     ],
     "ostatni": [
       {
-        "name": "Lyžařské kurzy (4-5 dní)",
+        "name": "Lyžařské kurzy (4-5 dnů)",
         "adult": 1850,
         "child": 1850,
         "junior": 1850,
@@ -265,9 +315,9 @@
         "isHeader": false
       },
       {
-        "name": "Lyžařské kurzy (5 dní)",
+        "name": "Lyžařské kurzy (5 dnů)",
         "adult": 1950,
-        "child": 300,
+        "child": 1950,
         "junior": 1950,
         "senior": "—",
         "isHeader": false
@@ -289,6 +339,28 @@
         "isHeader": false
       }
     ],
+    "info_vek": {
+      "adult": {
+        "category": "adult",
+        "name": "Dospělí",
+        "birthYears": "1962-2008"
+      },
+      "child": {
+        "category": "child",
+        "name": "Děti",
+        "birthYears": "2016 a mladší"
+      },
+      "junior": {
+        "category": "junior",
+        "name": "Junioři",
+        "birthYears": "2007-2015"
+      },
+      "senior": {
+        "category": "senior",
+        "name": "Senioři",
+        "birthYears": "1961 a starší"
+      }
+    },
     "info_dulezite": [
       {
         "name": "Záloha za čipovou kartu je 100 Kč",
@@ -318,10 +390,6 @@
       {
         "name": "Pro ověření věku nutný občanský průkaz",
         "adult": "pas nebo kartička sociálního pojištění",
-        "isHeader": false
-      },
-      {
-        "name": "Hello world",
         "isHeader": false
       }
     ],
@@ -355,8 +423,8 @@
         "isHeader": false
       },
       {
-        "name": "Speciální kurzovní ceny: 4-5 dní 1 300 Kč",
-        "adult": 5,
+        "name": "Speciální kurzovní ceny: 4-5 dní 1 850 Kč",
+        "adult": "5 dní 1 950 Kč (platné 23.12.-17.3.)",
         "isHeader": false
       }
     ]
