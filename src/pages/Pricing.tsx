@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Info, Clock, Calendar, Ticket, Award, Coins, Package, FileText, Percent } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { fetchPricingFromGoogleSheets, fetchAgeCategoriesFromGoogleSheets, PricingCategory, PriceRow, AgeCategoriesData } from "@/services/pricingService";
+import { fetchPricingFromGoogleSheets, fetchAgeCategoriesFromGoogleSheets, fetchTextDataFromGoogleSheets, PricingCategory, PriceRow, AgeCategoriesData, TextRow } from "@/services/pricingService";
 import { getCacheItem } from "@/services/cacheHelper";
 
 type PricingTab = "denni" | "casove" | "sezonni" | "jednotlive" | "bodove" | "ostatni" | "informace" | "slevy";
@@ -27,6 +27,12 @@ const isRodinneJizdne = (name: string): boolean => {
   return name.toLowerCase().includes("rodinné");
 };
 
+// Helper pro určení jednotky u bodových jízdenek
+// Hodnoty pod 50 jsou body (max spotřeba je 10 bodů), nad 50 jsou Kč (min cena je 440 Kč)
+const getBodoveUnit = (value: number): string => {
+  return value < 50 ? "bodů" : "Kč";
+};
+
 // Helper pro kontrolu, zda data mají jednotlivé ceny (adult/child/junior/senior)
 // Pokud ano, ignoruj "all" sloupec úplně
 const hasIndividualPrices = (rows: PriceRow[]): boolean => {
@@ -41,14 +47,14 @@ const hasIndividualPrices = (rows: PriceRow[]): boolean => {
 };
 
 const Pricing = () => {
-  const [activeTab, setActiveTab] = useState<PricingTab>("denni");
+  const [activeTab, setActiveTab] = useState<PricingTab>("casove");
 
   const tabs: { id: PricingTab; label: string; icon: any }[] = [
-    { id: "denni", label: "DENNÍ", icon: Calendar },
     { id: "casove", label: "ČASOVÉ", icon: Clock },
+    { id: "denni", label: "DENNÍ", icon: Calendar },
+    { id: "bodove", label: "BODOVÉ", icon: Coins },
     { id: "sezonni", label: "SEZÓNNÍ", icon: Award },
     { id: "jednotlive", label: "JEDNOTLIVÉ", icon: Ticket },
-    { id: "bodove", label: "BODOVÉ", icon: Coins },
     { id: "ostatni", label: "OSTATNÍ", icon: Package },
     { id: "informace", label: "INFORMACE", icon: FileText },
     { id: "slevy", label: "SLEVY", icon: Percent },
@@ -379,6 +385,39 @@ const Pricing = () => {
     console.log('✅ Věkové kategorie načteny');
   }
 
+  // Fetch důležitých informací z Google Sheets
+  const { data: infoDuleziteData } = useQuery({
+    queryKey: ['infoDulezite'],
+    queryFn: () => fetchTextDataFromGoogleSheets('info_dulezite'),
+    staleTime: 60 * 60 * 1000, // 1 hodina
+    gcTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+  });
+
+  // Fetch slev z Google Sheets
+  const { data: slevyData } = useQuery({
+    queryKey: ['slevy'],
+    queryFn: () => fetchTextDataFromGoogleSheets('slevy'),
+    staleTime: 60 * 60 * 1000, // 1 hodina
+    gcTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+  });
+
+  // Fallback data pro Informace
+  const fallbackInfoDulezite: TextRow[] = [
+    { text: "Záloha na čipovou kartu je 100,- Kč. Záloha je vratná pouze při vrácení nepoškozené a plně funkční čipové karty a to vždy do 20 minut po ukončení provozu areálu." },
+    { text: "Jízdenka je nepřenosná na jinou osobu." },
+    { text: "Porušení přepravních podmínek se trestá odnětím / zablokováním jízdenky." },
+    { text: "Za neprojeté body a čas peníze nevracíme." },
+    { text: "V případě reklamace je potřeba předložit jízdenku." },
+    { text: "Aktuální zůstatek jízdenky ukazují turnikety." },
+    { text: "Jízdenky \"KOMBI\" ( 8 hodin) platí celou sezónu na denní i večerní lyžování a odečítá se vždy započatá hodina." },
+  ];
+
+  const informaceRows = infoDuleziteData && infoDuleziteData.length > 0
+    ? infoDuleziteData.filter(row => !row.isEmpty)
+    : fallbackInfoDulezite;
+
   const renderInformaceTab = () => (
     <div className="space-y-6">
       <Card className="bg-white/95 p-6 border-0 shadow-lg">
@@ -403,42 +442,82 @@ const Pricing = () => {
         </h3>
         <div className="bg-gray-50 p-5 rounded-lg">
           <ul className="space-y-3 text-gray-900">
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Záloha za čipovou kartu je 100 Kč, vratná pouze do 20 minut po zavření provozu při odevzdání nepoškozené karty</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Jízdenky jsou nepřenosné</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Nevyužité body a čas nelze vrátit</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Bodové jízdenky mají časový zámek zamezující současnému použití více osobami (s výjimkou kurzovních jízdenek)</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Večerní lyžování provozováno pouze v sobotu při příznivých podmínkách</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Fotografie pořízená na turniketu je dočasná; po vrácení karty automaticky vymazána</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Pro ověření věku nutný občanský průkaz, pas nebo kartička sociálního pojištění</span>
-            </li>
+            {informaceRows.map((row, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <span className="text-primary font-bold text-xl leading-relaxed">•</span>
+                <span className="leading-relaxed font-medium">{row.text}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </Card>
     </div>
   );
 
+  // Parsování slev do 3 sekcí
+  const parseSlevySections = (data: TextRow[] | undefined) => {
+    const fallbackGeneral = [
+      { text: "Slevy nelze sčítat." },
+      { text: "Děti do 10,99 let jezdí za snížené dětské jízdné. Neplatí pro bodové jízdné." },
+      { text: "Junioři od 11,00 do 17,99 let jezdí za snížené (juniorské) jízdné. Neplatí pro bodové jízdné." },
+      { text: "Senioři od 65 let výše jezdí za snížené (seniorské) jízdné. Neplatí pro bodové jízdné." },
+    ];
+
+    if (!data || data.length === 0) {
+      return {
+        general: fallbackGeneral,
+        beskydy: [],
+        eshop: [],
+      };
+    }
+
+    const general: TextRow[] = [];
+    const beskydy: TextRow[] = [];
+    const eshop: TextRow[] = [];
+
+    let currentSection: 'general' | 'beskydy' | 'eshop' = 'general';
+
+    for (const row of data) {
+      // Detekce nadpisů sekcí - musí být přesný match na začátek řádku
+      const textLower = row.text.toLowerCase();
+      if (textLower.includes('beskydy card') && textLower.startsWith('sleva pro držitele')) {
+        currentSection = 'beskydy';
+        continue; // Nadpis nepřidáváme jako bullet
+      }
+      if (textLower.startsWith('slevy při nákupu')) {
+        currentSection = 'eshop';
+        continue; // Nadpis nepřidáváme jako bullet
+      }
+
+      // Přeskočíme prázdné řádky
+      if (row.isEmpty || !row.text.trim()) continue;
+
+      // Přidáme do správné sekce
+      switch (currentSection) {
+        case 'general':
+          general.push(row);
+          break;
+        case 'beskydy':
+          beskydy.push(row);
+          break;
+        case 'eshop':
+          eshop.push(row);
+          break;
+      }
+    }
+
+    return {
+      general: general.length > 0 ? general : fallbackGeneral,
+      beskydy,
+      eshop,
+    };
+  };
+
+  const slevySections = parseSlevySections(slevyData);
+
   const renderSlevyTab = () => (
     <div className="space-y-6">
+      {/* Sekce 1: Obecné slevy */}
       <Card className="bg-white/95 p-6 border-0 shadow-lg">
         <h3 className="font-bold text-2xl mb-6 text-gray-900 flex items-center gap-3">
           <Percent className="h-7 w-7 text-primary" />
@@ -446,41 +525,53 @@ const Pricing = () => {
         </h3>
         <div className="bg-gray-50 p-5 rounded-lg">
           <ul className="space-y-3 text-gray-900">
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Slevy se nesčítají</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Děti do 11 let obdrží sníženou dětskou sazbu (kromě bodových jízdenek)</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Junioři 11-17 let obdrží juniorskou sazbu (kromě bodových jízdenek)</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Senioři 65+ obdrží sníženou sazbu (kromě bodových jízdenek)</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Studentské slevy dostupné pouze při online nákupu</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Držitelé průkazů TP/ZTP/ZTP/P obdrží slevy pouze na časové jízdenky</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Skupinová sleva: při nákupu 15+ stejných jízdenek jeden kus stejného typu zdarma</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-primary font-bold text-xl leading-relaxed">•</span>
-              <span className="leading-relaxed font-medium">Speciální kurzovní ceny: 4-5 dní 1 300 Kč; 5 dní 1 400 Kč (platné 23.12.-17.3.)</span>
-            </li>
+            {slevySections.general.map((row, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <span className="text-primary font-bold text-xl leading-relaxed">•</span>
+                <span className="leading-relaxed font-medium">{row.text}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </Card>
+
+      {/* Sekce 2: Beskydy Card */}
+      {slevySections.beskydy.length > 0 && (
+        <Card className="bg-white/95 p-6 border-0 shadow-lg">
+          <h3 className="font-bold text-xl mb-4 text-gray-900">
+            Sleva pro držitele karet BESKYDY CARD
+          </h3>
+          <div className="bg-gray-50 p-5 rounded-lg">
+            <ul className="space-y-3 text-gray-900">
+              {slevySections.beskydy.map((row, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <span className="text-primary font-bold text-xl leading-relaxed">•</span>
+                  <span className="leading-relaxed font-medium">{row.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+      )}
+
+      {/* Sekce 3: E-shop slevy */}
+      {slevySections.eshop.length > 0 && (
+        <Card className="bg-white/95 p-6 border-0 shadow-lg">
+          <h3 className="font-bold text-xl mb-4 text-gray-900">
+            Slevy při nákupu přes e-shop
+          </h3>
+          <div className="bg-gray-50 p-5 rounded-lg">
+            <ul className="space-y-3 text-gray-900">
+              {slevySections.eshop.map((row, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <span className="text-primary font-bold text-xl leading-relaxed">•</span>
+                  <span className="leading-relaxed font-medium">{row.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+      )}
     </div>
   );
 
@@ -639,7 +730,7 @@ const Pricing = () => {
                                   typeof row.all === "number" ? (
                                     <span className="inline-flex items-center gap-1.5">
                                       <span className="text-xl font-bold text-primary">{row.all}</span>
-                                      <span className="text-sm text-gray-600">Kč</span>
+                                      <span className="text-sm text-gray-600">{activeTab === "bodove" ? getBodoveUnit(row.all) : "Kč"}</span>
                                     </span>
                                   ) : (
                                     <span className="text-base text-gray-700">{row.all}</span>
@@ -757,7 +848,7 @@ const Pricing = () => {
                                 <span className="text-2xl font-bold text-primary">
                                   {typeof row.all === "number" ? (
                                     <>
-                                      {row.all} <span className="text-sm text-gray-600">Kč</span>
+                                      {row.all} <span className="text-sm text-gray-600">{activeTab === "bodove" ? getBodoveUnit(row.all) : "Kč"}</span>
                                     </>
                                   ) : (
                                     row.all

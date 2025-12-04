@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-12-04T19:26:28.272Z",
+  "generatedAt": "2025-12-04T20:03:50.722Z",
   "categories": {
     "denni": [
       {
@@ -120,10 +120,10 @@
       },
       {
         "name": "Rodinné jízdné",
-        "adult": "1+2",
-        "child": "2+1",
-        "junior": "2+2",
-        "senior": "2+3",
+        "adult": 1,
+        "child": 2,
+        "junior": 2,
+        "senior": 2,
         "isHeader": true
       },
       {
@@ -178,10 +178,10 @@
       },
       {
         "name": "Rodinné jízdné",
-        "adult": "1+2",
-        "child": "2+1",
-        "junior": "2+2",
-        "senior": "2+3",
+        "adult": 1,
+        "child": 2,
+        "junior": 2,
+        "senior": 2,
         "isHeader": true
       },
       {
@@ -227,12 +227,14 @@
         "isHeader": false
       },
       {
-        "name": "Czech Skipass (s fotkou, 18 středisek)",
-        "adult": 17490,
-        "child": 13490,
-        "junior": 14990,
-        "senior": 13490,
-        "isHeader": false
+        "name": "Czech Skipass (s fotkou",
+        "adult": 18,
+        "child": 17490,
+        "junior": 13490,
+        "senior": 14990,
+        "all": 13490,
+        "isHeader": false,
+        "note": "NE"
       }
     ],
     "jednotlive": [
@@ -276,32 +278,32 @@
       },
       {
         "name": "Lanová dráha Kohútka",
-        "all": "10 bodů",
+        "all": 10,
         "isHeader": false
       },
       {
         "name": "Runda",
-        "all": "6 bodů",
+        "all": 6,
         "isHeader": false
       },
       {
         "name": "Malá Kohútka",
-        "all": "5 bodů",
+        "all": 5,
         "isHeader": false
       },
       {
         "name": "Barborka",
-        "all": "4 body",
+        "all": 4,
         "isHeader": false
       },
       {
         "name": "Spartak",
-        "all": "5 bodů",
+        "all": 5,
         "isHeader": false
       },
       {
         "name": "Seník",
-        "all": "6 bodů",
+        "all": 6,
         "isHeader": false
       }
     ],
@@ -363,68 +365,166 @@
     },
     "info_dulezite": [
       {
-        "name": "Záloha za čipovou kartu je 100 Kč",
-        "adult": "vratná pouze do 20 minut po zavření provozu při odevzdání nepoškozené karty",
+        "name": " Záloha na čipovou kartu je 100",
+        "adult": "- Kč. Záloha je vratná pouze při vrácení nepoškozené a plně funkční čipové karty a to vždy do 20 minut po ukončení provozu areálu.",
         "isHeader": false
       },
       {
-        "name": "Jízdenky jsou nepřenosné",
+        "name": "Jízdenka je nepřenosná na jinou osobu.",
         "isHeader": false
       },
       {
-        "name": "Nevyužité body a čas nelze vrátit",
+        "name": "Porušení přepravních podmínek se trestá odnětím / zablokováním jízdenky.",
         "isHeader": false
       },
       {
-        "name": "Bodové jízdenky mají časový zámek zamezující současnému použití více osobami (s výjimkou kurzovních jízdenek)",
+        "name": "Za neprojeté body a čas peníze nevracíme.",
         "isHeader": false
       },
       {
-        "name": "Večerní lyžování provozováno pouze v sobotu při příznivých podmínkách",
+        "name": "V případě reklamace je potřeba předložit jízdenku.",
         "isHeader": false
       },
       {
-        "name": "Fotografie pořízená na turniketu je dočasná; po vrácení karty automaticky vymazána",
+        "name": "Aktuální zůstatek jízdenky ukazují turnikety.",
         "isHeader": false
       },
       {
-        "name": "Pro ověření věku nutný občanský průkaz",
-        "adult": "pas nebo kartička sociálního pojištění",
+        "name": "Jízdenky KOMBI ( 8 hodin) platí celou sezónu na denní i večerní lyžování a odečítá se vždy započatá hodina.",
+        "isHeader": false
+      },
+      {
+        "name": "Jízdenky 6 a 12 dnů ze sezóny jsou platné na jakékoliv dny v zimní sezóně. Tyto jízdenky platí také na večerní lyžování.",
+        "isHeader": false
+      },
+      {
+        "name": "Jízdenky 2",
+        "adult": 3,
+        "child": 4,
+        "junior": 5,
+        "senior": "bez večerního lyžování.",
+        "isHeader": false
+      },
+      {
+        "name": "Bodové jízdenky neplatí do dětského parku.",
+        "isHeader": false
+      },
+      {
+        "name": "Bodové jízdenky nelze využívat více osobami najednou",
+        "adult": "mají časový zámek. Vyjimku tvoří bodové jízdenky pro lyžařský kurz.",
+        "isHeader": false
+      },
+      {
+        "name": "Večerní lyžování se koná pouze v sobotu za příznivých podmínek.",
+        "isHeader": false
+      },
+      {
+        "name": "Kontrola věku držitele jízdenky může být provedena také u turniketu.",
+        "isHeader": false
+      },
+      {
+        "name": "Turnikety jsou vybaveny kamerovým systémem. Pořízení fotografie na zakoupený skipas je dočasné. Při vrácení čipové karty jsou data okamžitě odstraněna.",
+        "isHeader": false
+      },
+      {
+        "name": "Zakoupením skipasu se zavazujete dodržovat přepravní podmínky",
+        "adult": "provozní řád a souhlasíte s dočasným pořízením fotografie na skipas.",
         "isHeader": false
       }
     ],
     "slevy": [
       {
-        "name": "Slevy se nesčítají",
+        "name": "Slevy nelze sčítat.",
         "isHeader": false
       },
       {
-        "name": "Děti do 11 let obdrží sníženou dětskou sazbu (kromě bodových jízdenek)",
+        "name": "Děti do 10",
+        "adult": 99,
         "isHeader": false
       },
       {
-        "name": "Junioři 11-17 let obdrží juniorskou sazbu (kromě bodových jízdenek)",
+        "name": "Junioři od 11",
+        "adult": 0,
+        "child": 99,
         "isHeader": false
       },
       {
-        "name": "Senioři 65+ obdrží sníženou sazbu (kromě bodových jízdenek)",
+        "name": "Dospělí od 18",
+        "adult": 0,
+        "child": 99,
         "isHeader": false
       },
       {
-        "name": "Studentské slevy dostupné pouze při online nákupu",
+        "name": "Senioři od 65 let výše jezdí za snížené (seniorské) jízdné. Neplatí pro bodové jízdné.",
         "isHeader": false
       },
       {
-        "name": "Držitelé průkazů TP/ZTP/ZTP/P obdrží slevy pouze na časové jízdenky",
+        "name": "Studentské slevy poskytujeme pouze při nákupu přes internet.",
         "isHeader": false
       },
       {
-        "name": "Skupinová sleva: při nákupu 15+ stejných jízdenek jeden kus stejného typu zdarma",
+        "name": "Slevy TP",
+        "adult": "ZTP",
+        "child": "ZTP/P poskytujeme pouze držitelům průkazu na nesnížené časové jízdenky 3 - 4 hod",
+        "junior": "odpolední",
+        "senior": "večerní a 1 den.",
         "isHeader": false
       },
       {
-        "name": "Speciální kurzovní ceny: 4-5 dní 1 850 Kč",
-        "adult": "5 dní 1 950 Kč (platné 23.12.-17.3.)",
+        "name": "Hromadná sleva - při hromadném zakoupení 15 ks jízdenek stejného typu 1 jízdenka téhož typu zdarma.",
+        "isHeader": false
+      },
+      {
+        "name": "Lyžařské kurzy: speciální cena do 23.12. 2023 a od 17.3. 2024  4/5 dnů 1300",
+        "adult": "- Kč",
+        "child": 5,
+        "junior": "- Kč.",
+        "isHeader": false
+      },
+      {
+        "name": "Na vstup do dětského parku",
+        "adult": "jízdenky Lyžařské kurzy a na jednorázové jízdné se slevy nevztahují.",
+        "isHeader": false
+      },
+      {
+        "name": "Sleva pro držitele karet BESKYDY CARD",
+        "isHeader": false
+      },
+      {
+        "name": "Pro poskytnutí slevy nutno předložit slevovou plastovou kartu BC",
+        "adult": "nikoliv aplikace či fotografie v mobilním telefonu.",
+        "isHeader": false
+      },
+      {
+        "name": "Sleva až 20% z nesnížené ceny skipasu. Platí na dvou a vícedenní jízdenky",
+        "adult": "Kombi jízdenky.",
+        "isHeader": false
+      },
+      {
+        "name": "Sleva neplatí pro Časové jízdenky",
+        "adult": "dále pro jízdenky  Lyžařské kurzy",
+        "child": "Bodové jízdenky",
+        "junior": 6,
+        "isHeader": false
+      },
+      {
+        "name": "Slevy při nákupu přes e-shop",
+        "isHeader": false
+      },
+      {
+        "name": "Sleva 10% na jakoukoliv jízdenku zakoupenou přes e-shop",
+        "isHeader": false
+      },
+      {
+        "name": "U jízdenek koupené přes e-shop je třeba mít zvolený správný datum návštěvy střediska",
+        "adult": "v opačném případě je jízdenka neplatná. Vyjímku tvoří jízdenky bodové",
+        "child": 6,
+        "junior": "kombi 8 hodin",
+        "senior": "platí po dobu sezóny.",
+        "isHeader": false
+      },
+      {
+        "name": "Peníze nevracíme.",
         "isHeader": false
       }
     ]

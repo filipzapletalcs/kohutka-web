@@ -35,7 +35,9 @@ export type PricingCategory =
   | 'sezonni'
   | 'jednotlive'
   | 'bodove'
-  | 'ostatni';
+  | 'ostatni'
+  | 'info_dulezite'
+  | 'slevy';
 
 export interface AgeCategory {
   category: string; // 'adult', 'child', 'junior', 'senior'
@@ -60,6 +62,8 @@ const PRICING_SHEET_URLS: Record<PricingCategory, string> = {
   jednotlive: import.meta.env.VITE_PRICING_JEDNOTLIVE_URL || '',
   bodove: import.meta.env.VITE_PRICING_BODOVE_URL || '',
   ostatni: import.meta.env.VITE_PRICING_OSTATNI_URL || '',
+  info_dulezite: import.meta.env.VITE_PRICING_INFO_DULEZITE_URL || '',
+  slevy: import.meta.env.VITE_PRICING_SLEVY_URL || '',
 };
 
 /**
@@ -536,5 +540,106 @@ export const fetchAgeCategoriesFromGoogleSheets = async (): Promise<AgeCategorie
       console.error('Všechny metody načítání věkových kategorií selhaly');
       throw sheetsError;
     }
+  }
+};
+
+/**
+ * Interface pro textová data (Informace, Slevy)
+ */
+export interface TextRow {
+  text: string;
+  isEmpty?: boolean;
+}
+
+/**
+ * Parsuje CSV s jedním sloupcem "Text" na pole TextRow
+ */
+const parseTextCSV = (csvText: string): TextRow[] => {
+  const lines = csvText.trim().split('\n');
+  const dataLines = lines.slice(1); // Přeskočíme header
+
+  const rows: TextRow[] = [];
+
+  for (const line of dataLines) {
+    const values = parseCSVLine(line);
+    const text = values[0]?.trim() || '';
+
+    rows.push({
+      text,
+      isEmpty: text === '',
+    });
+  }
+
+  return rows;
+};
+
+/**
+ * Načte textová data přímo z Google Sheets
+ */
+const fetchTextDataDirectFromGoogleSheets = async (
+  category: 'info_dulezite' | 'slevy'
+): Promise<TextRow[]> => {
+  const url = PRICING_SHEET_URLS[category];
+
+  if (!url) {
+    throw new Error(`URL pro kategorii "${category}" není definována v .env`);
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/csv',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const csvText = await response.text();
+
+    if (!csvText || csvText.trim() === '') {
+      throw new Error('Prázdná odpověď z Google Sheets');
+    }
+
+    return parseTextCSV(csvText);
+  } catch (error) {
+    console.error(`Chyba při načítání "${category}" z Google Sheets:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Načte textová data (info_dulezite, slevy)
+ * Cache strategie: In-memory → localStorage → Google Sheets
+ */
+export const fetchTextDataFromGoogleSheets = async (
+  category: 'info_dulezite' | 'slevy'
+): Promise<TextRow[]> => {
+  // 1. Zkus in-memory static data
+  await loadStaticPricingData();
+  if (staticPricingData && staticPricingData[category]) {
+    // Převeď PriceRow[] na TextRow[] (pokud je to uloženo jako PriceRow)
+    const data = staticPricingData[category];
+    if (Array.isArray(data) && data.length > 0 && 'text' in data[0]) {
+      return data as unknown as TextRow[];
+    }
+  }
+
+  // 2. Zkus localStorage cache
+  const cachedData = getCacheItem<TextRow[]>(`text_${category}`);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  try {
+    // 3. Načti z Google Sheets
+    const data = await fetchTextDataDirectFromGoogleSheets(category);
+    setCacheItem(`text_${category}`, data);
+    return data;
+  } catch (error) {
+    console.error(`Nepodařilo se načíst "${category}"`);
+    throw error;
   }
 };

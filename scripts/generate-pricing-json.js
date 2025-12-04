@@ -165,6 +165,28 @@ const parseAgeCategoriesCSV = (csvText) => {
 };
 
 /**
+ * Parsuje CSV s jedním sloupcem "Text" na pole TextRow
+ */
+const parseTextCSV = (csvText) => {
+  const lines = csvText.trim().split('\n');
+  const dataLines = lines.slice(1); // Přeskočíme header
+
+  const rows = [];
+
+  for (const line of dataLines) {
+    const values = parseCSVLine(line);
+    const text = values[0]?.trim() || '';
+
+    rows.push({
+      text,
+      isEmpty: text === '',
+    });
+  }
+
+  return rows;
+};
+
+/**
  * Načte data z Google Sheets
  */
 const fetchFromGoogleSheets = async (category) => {
@@ -182,6 +204,9 @@ const fetchFromGoogleSheets = async (category) => {
 
   if (category === 'info_vek') {
     return parseAgeCategoriesCSV(csvText);
+  }
+  if (category === 'info_dulezite' || category === 'slevy') {
+    return parseTextCSV(csvText);
   }
   return parseCSVToPriceRows(csvText);
 };
