@@ -22,8 +22,9 @@ import InteractiveMap from "@/components/InteractiveMap";
 import FacebookFeed from "@/components/FacebookFeed";
 import Footer from "@/components/Footer";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
+import { fetchWidgetSettings, type WidgetKey, type WidgetStatus } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.png";
 import logo from "@/assets/logo.png";
 
@@ -32,16 +33,47 @@ const Index = () => {
   const heroRef = useRef<HTMLDivElement>(null);
 
   // Fetch data with auto-refresh every 5 minutes
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: isLoadingApi } = useQuery({
     queryKey: ['holidayInfo'],
     queryFn: fetchHolidayInfoData,
     refetchInterval: 5 * 60 * 1000, // 5 minutes
     staleTime: 4 * 60 * 1000, // 4 minutes
   });
 
+  // Fetch widget settings from Supabase
+  const { data: widgetSettings = [], isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['widget-settings'],
+    queryFn: fetchWidgetSettings,
+    staleTime: 30 * 1000,
+  });
+
+  const isLoading = isLoadingApi || isLoadingSettings;
+
   const operation = data?.operation;
   const lifts = data?.lifts;
   const slopes = data?.slopes;
+
+  // Helper to get widget value (manual or auto)
+  const getWidgetValue = useMemo(() => {
+    return (key: WidgetKey, autoValue: string): string => {
+      const settings = widgetSettings.find((s) => s.widget_key === key);
+      if (settings?.mode === 'manual' && settings.manual_value) {
+        return settings.manual_value;
+      }
+      return autoValue;
+    };
+  }, [widgetSettings]);
+
+  // Helper to get widget status (manual or auto)
+  const getWidgetStatus = useMemo(() => {
+    return (key: WidgetKey, autoStatus: WidgetStatus): WidgetStatus => {
+      const settings = widgetSettings.find((s) => s.widget_key === key);
+      if (settings?.mode === 'manual' && settings.manual_status) {
+        return settings.manual_status;
+      }
+      return autoStatus;
+    };
+  }, [widgetSettings]);
 
   // Preload hero image
   useEffect(() => {
@@ -129,8 +161,8 @@ const Index = () => {
               <StatusWidget
                 icon={Mountain}
                 label="Skiareál"
-                value={operation?.operationText || "mimo provoz"}
-                status={operation?.isOpen ? "open" : "closed"}
+                value={getWidgetValue('skiareal', operation?.operationText || "mimo provoz")}
+                status={getWidgetStatus('skiareal', operation?.isOpen ? "open" : "closed")}
                 fullWidth
                 className="col-span-2 md:col-span-1"
               />
@@ -138,49 +170,41 @@ const Index = () => {
               <StatusWidget
                 icon={CableCar}
                 label="Vleky a lanovky"
-                value={`${lifts?.openCount || 0} z ${lifts?.totalCount || 0}`}
-                status={
-                  (lifts?.openCount || 0) > 0
-                    ? "open"
-                    : "closed"
-                }
+                value={getWidgetValue('vleky', `${lifts?.openCount || 0} z ${lifts?.totalCount || 0}`)}
+                status={getWidgetStatus('vleky', (lifts?.openCount || 0) > 0 ? "open" : "closed")}
               />
 
               <StatusWidget
                 icon={MountainSnow}
                 label="Sjezdovky"
-                value={`${slopes?.openCount || 0} z ${slopes?.totalCount || 0}`}
-                status={
-                  (slopes?.openCount || 0) > 0
-                    ? "open"
-                    : "closed"
-                }
+                value={getWidgetValue('sjezdovky', `${slopes?.openCount || 0} z ${slopes?.totalCount || 0}`)}
+                status={getWidgetStatus('sjezdovky', (slopes?.openCount || 0) > 0 ? "open" : "closed")}
               />
 
               <StatusWidget
                 icon={Navigation2}
                 label="Stav vozovky"
-                value="zasněžená"
-                status="partial"
+                value={getWidgetValue('vozovka', "N/A")}
+                status={getWidgetStatus('vozovka', "partial")}
               />
 
               <StatusWidget
                 icon={CloudSun}
                 label="Počasí"
-                value={operation?.temperature ? `${operation.temperature}°C` : "N/A"}
+                value={getWidgetValue('pocasi', operation?.temperature ? `${operation.temperature}°C` : "N/A")}
               />
 
               <StatusWidget
                 icon={(props) => <GiSnowboard {...props} />}
                 label="Skipark"
-                value={lifts?.skiParkOpen ? "otevřen" : "zavřen"}
-                status={lifts?.skiParkOpen ? "open" : "closed"}
+                value={getWidgetValue('skipark', lifts?.skiParkOpen ? "otevřen" : "zavřen")}
+                status={getWidgetStatus('skipark', lifts?.skiParkOpen ? "open" : "closed")}
               />
 
               <StatusWidget
                 icon={Snowflake}
                 label="Sníh"
-                value={operation?.snowHeight || "0 cm"}
+                value={getWidgetValue('snih', operation?.snowHeight || "0 cm")}
               />
             </div>
           )}

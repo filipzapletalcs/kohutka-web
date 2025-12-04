@@ -5,13 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-pricing-json.js",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "start": "node --env-file=.env server.js",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "generate-pricing": "node scripts/generate-pricing-json.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -43,6 +41,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@resvg/resvg-js": "^2.6.2",
+    "@supabase/supabase-js": "^2.86.2",
     "@tanstack/react-query": "^5.83.0",
     "@xmldom/xmldom": "^0.8.11",
     "class-variance-authority": "^0.7.1",
