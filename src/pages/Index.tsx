@@ -25,7 +25,7 @@ import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
 import { fetchWidgetSettings, type WidgetKey, type WidgetStatus } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, useRef, useMemo } from "react";
-import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.png";
+import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.webp";
 import logo from "@/assets/logo.png";
 
 const Index = () => {
