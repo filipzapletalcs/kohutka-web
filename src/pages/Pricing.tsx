@@ -2,7 +2,7 @@ import { useState, Fragment, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
-import { Info, Clock, Calendar, Ticket, Award, Coins, Package, FileText, Percent } from "lucide-react";
+import { Info, Clock, Calendar, Ticket, Award, Coins, Package, FileText, Percent, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -28,6 +28,7 @@ const iconMap: Record<string, any> = {
   Package,
   FileText,
   Percent,
+  Users,
 };
 
 // Helper pro "Rodinné jízdné" values
@@ -260,7 +261,7 @@ const Pricing2 = () => {
                   Ceník skipasů
                 </h1>
                 <p className="text-base md:text-lg text-muted-foreground font-medium">
-                  Sezóna 2025/2026 • <span className="text-primary font-semibold">Supabase Backend</span>
+                  Sezóna 2025/2026
                 </p>
               </div>
               <div className="flex-shrink-0 md:hidden">
