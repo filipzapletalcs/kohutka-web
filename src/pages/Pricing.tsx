@@ -684,7 +684,7 @@ const Pricing2 = () => {
             <Card className="glass p-12">
               <div className="text-center text-primary-foreground/70">
                 <Info className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">Načítám data ze Supabase...</p>
+                <p className="text-lg">Načítám ceník...</p>
               </div>
             </Card>
           )}
