@@ -20,7 +20,7 @@ const AboutUs = () => {
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
                 Vítejte v SKI CENTRUM KOHÚTKA – místě, kde si zima podává ruku s pohodou a zážitky!
-                Naše horské středisko se nachází v srdci Beskyd na pomezí České republiky a Slovenska.
+                Naše horské středisko se nachází v srdci Valašska na pomezí České republiky a Slovenska.
                 Nabízíme skvělé podmínky pro lyžování, snowboarding i rodinné radovánky na sněhu.
               </p>
               <p>
