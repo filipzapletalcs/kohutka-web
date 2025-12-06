@@ -1,4 +1,3 @@
-import { CloudSnow } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 
@@ -26,12 +25,11 @@ const Weather = () => {
   return (
     <section className="pt-6 pb-10 md:pt-8 md:pb-14 bg-muted/20">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="text-center mb-6 md:mb-10">
-          <div className="flex items-center justify-center gap-3 mb-3 md:mb-4">
-            <CloudSnow className="h-8 w-8 md:h-10 md:w-10 text-primary" />
-            <h2 className="text-2xl md:text-4xl font-bold">Předpověď počasí</h2>
-          </div>
-          <p className="text-base md:text-lg text-muted-foreground">
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
+            Předpověď počasí
+          </h2>
+          <p className="text-lg text-muted-foreground font-medium">
             {isMobile
               ? "Přehled počasí na další 3 dny"
               : "Aktuální počasí a předpověď na týden"}

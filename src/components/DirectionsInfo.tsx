@@ -6,8 +6,8 @@ const DirectionsInfo = () => {
     <section className="py-12 bg-muted/20">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="text-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Kudy k nám</h2>
-          <p className="text-lg text-muted-foreground">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">Kudy k nám</h2>
+          <p className="text-lg text-muted-foreground font-medium">
             Důležité informace pro vaši cestu
           </p>
         </div>

@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Map, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import mapaPNG from "@/assets/Ski_Centrum_Kohutka_Mapa.png";
 import mapaPDF from "@/assets/Ski_Centrum_Kohutka_Mapa.pdf";
 
@@ -9,12 +9,11 @@ const InteractiveMap = () => {
     <section className="pt-8 pb-20 bg-muted/30">
       <div className="container mx-auto max-w-7xl px-4">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Map className="h-8 w-8 md:h-10 md:w-10 text-primary" />
-            <h2 className="text-3xl md:text-4xl font-bold">Mapa areálu</h2>
-          </div>
-          <p className="text-lg text-muted-foreground">
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
+            Mapa areálu
+          </h2>
+          <p className="text-lg text-muted-foreground font-medium">
             Prozkoumejte všechny sjezdovky, vleky a lanovky v našem ski areálu
           </p>
         </div>

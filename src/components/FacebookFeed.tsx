@@ -69,10 +69,10 @@ const FacebookFeed = () => {
     <section className="pb-8 bg-muted/20">
       <div className="container mx-auto max-w-7xl px-4 mb-12">
         <div className="text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
             Novinky z Kohútky
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground font-medium">
             Aktuální příspěvky a novinky z našeho Facebooku
           </p>
         </div>

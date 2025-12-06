@@ -62,50 +62,69 @@ export const StatusWidget = ({
       "hover:scale-[1.02] hover:-translate-y-0.5",
       "transition-all duration-300 ease-out",
       "rounded-xl md:rounded-2xl",
-      fullWidth ? "p-4 md:p-6" : "p-3 md:p-5",
+      "p-3 md:p-5",
       config.cardBorder,
       config.cardShadow,
       className
     )}>
+      {/* Na mobilu fullWidth = horizontal layout */}
       <div className={cn(
-        "flex items-center text-center",
-        fullWidth ? "flex-row gap-4 space-y-0 justify-center md:flex-col md:space-y-3" : "flex-col space-y-2 md:space-y-3"
+        "text-center",
+        fullWidth ? "flex flex-row gap-4 items-center justify-center md:hidden" : "hidden"
       )}>
-        {/* Icon with gradient background and ring */}
         <div className={cn(
           "rounded-xl transition-all duration-300 flex-shrink-0",
-          "shadow-sm hover:shadow-md",
-          fullWidth ? "p-3 md:p-3" : "p-2 md:p-3",
+          "shadow-sm p-2",
+          "h-10 w-10 flex items-center justify-center",
           config.iconBg,
           config.iconRing
         )}>
-          <Icon className={cn(
-            "stroke-[2.5]",
-            fullWidth ? "h-6 w-6 md:h-7 md:w-7" : "h-5 w-5 md:h-7 md:w-7",
-            config.iconColor
-          )} />
+          <Icon className={cn("stroke-[2.5] h-5 w-5", config.iconColor)} />
         </div>
-
-        <div className={cn(
-          "flex flex-col",
-          fullWidth ? "items-start text-left md:items-center md:text-center" : "items-center text-center"
-        )}>
-          {/* Label */}
-          <div className={cn(
-            "text-gray-600 uppercase tracking-[0.1em] font-bold leading-tight",
-            fullWidth ? "text-xs mb-1 md:mb-0" : "text-[10px] md:text-xs mb-2 md:mb-0"
-          )}>
+        <div className="flex flex-col items-start text-left">
+          <div className="text-gray-600 uppercase tracking-[0.1em] font-bold text-xs">
             {label}
           </div>
-
-          {/* Value */}
-          <div className={cn(
-            "font-extrabold tracking-tight leading-none whitespace-nowrap",
-            fullWidth ? "text-xl md:text-2xl" : "text-lg md:text-2xl",
-            config.valueColor
-          )}>
+          <div className={cn("font-extrabold tracking-tight text-xl", config.valueColor)}>
             {value}
           </div>
+        </div>
+      </div>
+
+      {/* Desktop layout (a mobile pro non-fullWidth) - vždy stejný */}
+      <div className={cn(
+        "flex-col items-center text-center",
+        fullWidth ? "hidden md:flex" : "flex"
+      )}>
+        {/* Icon - fixed height */}
+        <div className={cn(
+          "rounded-xl transition-all duration-300",
+          "shadow-sm hover:shadow-md",
+          "p-2 md:p-3",
+          "h-10 w-10 md:h-14 md:w-14 flex items-center justify-center",
+          config.iconBg,
+          config.iconRing
+        )}>
+          <Icon className={cn("stroke-[2.5] h-5 w-5 md:h-7 md:w-7", config.iconColor)} />
+        </div>
+
+        {/* Label - fixed height */}
+        <div className={cn(
+          "text-gray-600 uppercase tracking-[0.1em] font-bold leading-tight",
+          "h-[2.5rem] flex items-center justify-center mt-2",
+          "text-[10px] md:text-xs"
+        )}>
+          {label}
+        </div>
+
+        {/* Value - fixed height */}
+        <div className={cn(
+          "font-extrabold tracking-tight leading-none whitespace-nowrap",
+          "h-[2rem] flex items-center justify-center",
+          "text-lg md:text-2xl",
+          config.valueColor
+        )}>
+          {value}
         </div>
       </div>
     </Card>

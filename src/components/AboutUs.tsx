@@ -5,9 +5,14 @@ const AboutUs = () => {
   return (
     <section className="pt-8 pb-20">
       <div className="container mx-auto max-w-7xl px-4">
-        <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
-          O nás
-        </h2>
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
+            O nás
+          </h2>
+          <p className="text-lg text-muted-foreground font-medium">
+            Poznejte SKI CENTRUM KOHÚTKA
+          </p>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-4 md:gap-8 items-stretch">
           {/* Text Content - LEFT */}

@@ -55,11 +55,11 @@ const Location = () => {
   return (
     <section className="pt-4 pb-20">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
             Kde nás najdete
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground font-medium">
             SKI CENTRUM KOHÚTKA v srdci Valašska
           </p>
         </div>

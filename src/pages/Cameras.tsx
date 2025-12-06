@@ -102,11 +102,11 @@ const Cameras = () => {
       <div className="min-h-screen pt-24 pb-12 bg-gradient-to-b from-background via-background to-muted/20">
         <div className="container mx-auto max-w-7xl px-4">
           {/* Header */}
-          <div className="mb-10 space-y-2">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <div className="text-center mb-10">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-gradient">
               Live Webkamery
             </h1>
-            <p className="text-muted-foreground text-base md:text-lg">
+            <p className="text-lg text-muted-foreground font-medium">
               Sledujte aktuální stav sjezdovek v reálném čase
             </p>
           </div>

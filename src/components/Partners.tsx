@@ -60,7 +60,7 @@ const Partners = () => {
 
     let scrollPos1 = 0;
     let scrollPos2 = 0;
-    const speed = 0.8; // pixels per frame
+    const speed = 0.4; // pixels per frame (slower)
     let wrapWidth1 = 0;
     let wrapWidth2 = 0;
 
@@ -177,7 +177,7 @@ const Partners = () => {
                     <img
                       src={partner.logo}
                       alt={partner.name}
-                      className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                      className="max-w-full max-h-full object-contain transition-all duration-500"
                     />
                   </div>
                 </div>
@@ -214,7 +214,7 @@ const Partners = () => {
                     <img
                       src={partner.logo}
                       alt={partner.name}
-                      className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                      className="max-w-full max-h-full object-contain transition-all duration-500"
                     />
                   </div>
                 </div>
