@@ -157,55 +157,61 @@ const Index = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-4">
-              {/* Main Status - Full width on mobile */}
-              <StatusWidget
-                icon={Mountain}
-                label="Skiareál"
-                value={getWidgetValue('skiareal', operation?.operationText || "mimo provoz")}
-                status={getWidgetStatus('skiareal', operation?.isOpen ? "open" : "closed")}
-                fullWidth
-                className="col-span-2 md:col-span-1"
-              />
+              {widgetSettings.map((widget) => {
+                const widgetConfig: Record<string, { icon: typeof Mountain; autoValue: string; autoStatus: WidgetStatus; fullWidth?: boolean }> = {
+                  skiareal: {
+                    icon: Mountain,
+                    autoValue: operation?.operationText || "mimo provoz",
+                    autoStatus: operation?.isOpen ? "open" : "closed",
+                    fullWidth: true,
+                  },
+                  vleky: {
+                    icon: CableCar,
+                    autoValue: `${lifts?.cableCarOpenCount || 0}/${lifts?.dragLiftOpenCount || 0}`,
+                    autoStatus: (lifts?.openCount || 0) > 0 ? "open" : "closed",
+                  },
+                  sjezdovky: {
+                    icon: MountainSnow,
+                    autoValue: `${slopes?.openCount || 0} z ${slopes?.totalCount || 0}`,
+                    autoStatus: (slopes?.openCount || 0) > 0 ? "open" : "closed",
+                  },
+                  skipark: {
+                    icon: GiSnowboard as typeof Mountain,
+                    autoValue: lifts?.skiParkOpen ? "V provozu" : "mimo provoz",
+                    autoStatus: lifts?.skiParkOpen ? "open" : "closed",
+                  },
+                  pocasi: {
+                    icon: CloudSun,
+                    autoValue: operation?.temperature ? `${operation.temperature}°C` : "N/A",
+                    autoStatus: null,
+                  },
+                  snih: {
+                    icon: Snowflake,
+                    autoValue: operation?.snowHeight || "0 cm",
+                    autoStatus: null,
+                  },
+                  vozovka: {
+                    icon: Navigation2,
+                    autoValue: "N/A",
+                    autoStatus: "partial",
+                  },
+                };
 
-              <StatusWidget
-                icon={CableCar}
-                label="Vleky a lanovky"
-                value={getWidgetValue('vleky', `${lifts?.openCount || 0} z ${lifts?.totalCount || 0}`)}
-                status={getWidgetStatus('vleky', (lifts?.openCount || 0) > 0 ? "open" : "closed")}
-              />
+                const config = widgetConfig[widget.widget_key];
+                if (!config) return null;
 
-              <StatusWidget
-                icon={MountainSnow}
-                label="Sjezdovky"
-                value={getWidgetValue('sjezdovky', `${slopes?.openCount || 0} z ${slopes?.totalCount || 0}`)}
-                status={getWidgetStatus('sjezdovky', (slopes?.openCount || 0) > 0 ? "open" : "closed")}
-              />
-
-              <StatusWidget
-                icon={Navigation2}
-                label="Stav vozovky"
-                value={getWidgetValue('vozovka', "N/A")}
-                status={getWidgetStatus('vozovka', "partial")}
-              />
-
-              <StatusWidget
-                icon={CloudSun}
-                label="Počasí"
-                value={getWidgetValue('pocasi', operation?.temperature ? `${operation.temperature}°C` : "N/A")}
-              />
-
-              <StatusWidget
-                icon={(props) => <GiSnowboard {...props} />}
-                label="Skipark"
-                value={getWidgetValue('skipark', lifts?.skiParkOpen ? "otevřen" : "zavřen")}
-                status={getWidgetStatus('skipark', lifts?.skiParkOpen ? "open" : "closed")}
-              />
-
-              <StatusWidget
-                icon={Snowflake}
-                label="Sníh"
-                value={getWidgetValue('snih', operation?.snowHeight || "0 cm")}
-              />
+                return (
+                  <StatusWidget
+                    key={widget.widget_key}
+                    icon={config.icon}
+                    label={widget.display_name || widget.widget_key}
+                    value={getWidgetValue(widget.widget_key, config.autoValue)}
+                    status={getWidgetStatus(widget.widget_key, config.autoStatus)}
+                    fullWidth={config.fullWidth}
+                    className={config.fullWidth ? "col-span-2 md:col-span-1" : undefined}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

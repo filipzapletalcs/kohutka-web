@@ -29,7 +29,7 @@ const DirectionsInfo = () => {
 
         <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-8">
           {/* Czech Route */}
-          <Card className="glass p-6 border-white/20 rounded-lg">
+          <Card className="glass p-6 border-white/20 rounded-lg h-full flex flex-col">
             <div className="flex items-start gap-4 mb-4">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="h-6 w-6 text-primary" />
@@ -41,10 +41,10 @@ const DirectionsInfo = () => {
                 </p>
               </div>
             </div>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4 flex-grow">
               Na Kohútku vede cesta z české (Nový Hrozenkov) i slovenské (Lazy pod Makytou) strany. Není tedy nutno v žádném případě přejíždět hranice obou republik.
             </p>
-            <div className="bg-primary/5 rounded-lg p-4">
+            <div className="bg-primary/5 rounded-lg p-4 mt-auto">
               <p className="text-sm font-semibold mb-2">Trasa z Prahy/Brna/Olomouce:</p>
               <p className="text-sm text-muted-foreground">
                 Praha → Brno → Olomouc → Hranice na Moravě → Valašské Meziříčí → Vsetín → <strong className="text-foreground">Nový Hrozenkov</strong> (směr Velké Karlovice) → V Novém Hrozenkově doprava do údolí Vranča → Kohútka
@@ -53,22 +53,22 @@ const DirectionsInfo = () => {
           </Card>
 
           {/* Slovak Route */}
-          <Card className="glass p-6 border-white/20 rounded-lg">
+          <Card className="glass p-6 border-white/20 rounded-lg h-full flex flex-col">
             <div className="flex items-start gap-4 mb-4">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-2">Príjazd zo Slovenska</h3>
+                <h3 className="text-xl font-bold mb-2">Příjezd ze Slovenska</h3>
                 <p className="text-sm text-muted-foreground">
-                  Cez Lazy pod Makytou
+                  Přes Lazy pod Makytou
                 </p>
               </div>
             </div>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4 flex-grow">
               Pouze klienti od Bytče na sever (Žilina, Martin, ...) mají výhodnější příjezd přes Makov a Velké Karlovice (ČR).
             </p>
-            <div className="bg-primary/5 rounded-lg p-4">
+            <div className="bg-primary/5 rounded-lg p-4 mt-auto">
               <p className="text-sm font-semibold mb-2">Trasa z Bratislavy:</p>
               <p className="text-sm text-muted-foreground">
                 Bratislava → Trnava → Trenčín → Púchov (doleva směr Zlín) → Lúky pod Makytou (doprava směr Lazy pod Makytou) → <strong className="text-foreground">Lazy pod Makytou</strong> → Čertov → Po místní komunikaci 6 km do kopce do lyžařského střediska

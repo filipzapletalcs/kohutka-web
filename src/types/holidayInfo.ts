@@ -107,6 +107,12 @@ export interface LiftStatus {
   openCount: number;
   totalCount: number;
   skiParkOpen: boolean;
+  // Lanovky (sedačkové/kabinkové) - type_code 1, 2
+  cableCarOpenCount: number;
+  cableCarTotalCount: number;
+  // Vleky - type_code 3, 4, 5, 6
+  dragLiftOpenCount: number;
+  dragLiftTotalCount: number;
 }
 
 export interface SlopeStatus {

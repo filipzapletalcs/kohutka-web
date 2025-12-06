@@ -74,6 +74,8 @@ export interface WidgetSettings {
   manual_status: WidgetStatus;
   manual_extra: Record<string, any> | null;
   updated_at: string;
+  sort_order: number;
+  display_name: string | null;
 }
 
 // API functions
@@ -214,7 +216,8 @@ export async function deleteCameraSettings(id: string): Promise<void> {
 export async function fetchWidgetSettings(): Promise<WidgetSettings[]> {
   const { data, error } = await supabase
     .from('widget_settings')
-    .select('*');
+    .select('*')
+    .order('sort_order');
 
   if (error) throw error;
   return data || [];

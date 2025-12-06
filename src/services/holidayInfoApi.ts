@@ -430,9 +430,18 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
   let totalCount = 0;
   let skiParkOpen = false;
 
+  // Lanovky (sedačkové/kabinkové) - type_code 1, 2
+  let cableCarOpenCount = 0;
+  let cableCarTotalCount = 0;
+
+  // Vleky - type_code 3, 4, 5, 6
+  let dragLiftOpenCount = 0;
+  let dragLiftTotalCount = 0;
+
   liftElements.forEach((liftEl) => {
     const statusCode = getXMLNumber(liftEl, 'status_code');
     const typeCode = getXMLNumber(liftEl, 'type_code');
+    const isOpen = statusCode === 1 || statusCode === 3;
 
     // Type 7 = Skipark for Children
     if (typeCode === 7) {
@@ -441,9 +450,23 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
       }
     } else {
       totalCount++;
-      // Status codes: 1,3 = open, 2 = closed
-      if (statusCode === 1 || statusCode === 3) {
+      if (isOpen) {
         openCount++;
+      }
+
+      // Lanovky (sedačkové, kabinkové) - type_code 1, 2
+      if (typeCode === 1 || typeCode === 2) {
+        cableCarTotalCount++;
+        if (isOpen) {
+          cableCarOpenCount++;
+        }
+      }
+      // Vleky - type_code 3, 4, 5, 6
+      else if (typeCode >= 3 && typeCode <= 6) {
+        dragLiftTotalCount++;
+        if (isOpen) {
+          dragLiftOpenCount++;
+        }
       }
     }
   });
@@ -452,6 +475,10 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
     openCount,
     totalCount,
     skiParkOpen,
+    cableCarOpenCount,
+    cableCarTotalCount,
+    dragLiftOpenCount,
+    dragLiftTotalCount,
   };
 }
 
@@ -563,6 +590,10 @@ export async function fetchHolidayInfoData() {
           openCount: 0,
           totalCount: 0,
           skiParkOpen: false,
+          cableCarOpenCount: 0,
+          cableCarTotalCount: 0,
+          dragLiftOpenCount: 0,
+          dragLiftTotalCount: 0,
         },
         slopes: {
           openCount: 0,
@@ -600,6 +631,10 @@ export async function fetchHolidayInfoData() {
         openCount: 0,
         totalCount: 0,
         skiParkOpen: false,
+        cableCarOpenCount: 0,
+        cableCarTotalCount: 0,
+        dragLiftOpenCount: 0,
+        dragLiftTotalCount: 0,
       },
       slopes: {
         openCount: 0,
