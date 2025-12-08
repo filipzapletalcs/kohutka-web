@@ -48,7 +48,7 @@ const Location = () => {
     {
       icon: ParkingCircle,
       title: "Parkování",
-      description: "K dispozici bezplatné parkoviště přímo u sjezdovek s dostatečnou kapacitou.",
+      description: "Placené parkování přímo u sjezdovek. Úhrada u obsluhy nebo v pokladnách areálu.",
     },
   ];
 
