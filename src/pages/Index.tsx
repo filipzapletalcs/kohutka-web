@@ -22,7 +22,7 @@ import InteractiveMap from "@/components/InteractiveMap";
 import FacebookFeed from "@/components/FacebookFeed";
 import Footer from "@/components/Footer";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
-import { fetchWidgetSettings, type WidgetKey, type WidgetStatus } from "@/lib/supabase";
+import { fetchWidgetSettings, fetchSiteSetting, type WidgetKey, type WidgetStatus } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, useRef, useMemo } from "react";
 import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.webp";
@@ -46,6 +46,15 @@ const Index = () => {
     queryFn: fetchWidgetSettings,
     staleTime: 30 * 1000,
   });
+
+  // Fetch Facebook feed visibility setting
+  const { data: facebookSetting } = useQuery({
+    queryKey: ['site-setting', 'facebook_feed_visible'],
+    queryFn: () => fetchSiteSetting('facebook_feed_visible'),
+    staleTime: 30 * 1000,
+  });
+
+  const showFacebookFeed = facebookSetting?.value?.visible !== false;
 
   const isLoading = isLoadingApi || isLoadingSettings;
 
@@ -290,7 +299,7 @@ const Index = () => {
       <Partners />
 
       {/* Facebook Feed Section */}
-      <FacebookFeed />
+      {showFacebookFeed && <FacebookFeed />}
 
       {/* Location Section */}
       <Location />

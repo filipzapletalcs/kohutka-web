@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchWidgetSettings,
   updateWidgetSettings,
+  updateWidgetOrder,
+  fetchSiteSetting,
+  updateSiteSetting,
   type WidgetSettings,
   type WidgetKey,
   type WidgetMode,
@@ -29,9 +32,12 @@ import {
   Navigation2,
   CloudSun,
   Loader2,
-  Save,
   RefreshCw,
   Info,
+  ChevronUp,
+  ChevronDown,
+  Save,
+  Facebook,
 } from 'lucide-react';
 import { GiSnowboard } from 'react-icons/gi';
 import { MountainSnow } from 'lucide-react';
@@ -104,10 +110,11 @@ const WIDGET_CONFIG: Record<WidgetKey, {
   },
 };
 
-const WIDGET_ORDER: WidgetKey[] = ['skiareal', 'vleky', 'sjezdovky', 'vozovka', 'pocasi', 'skipark', 'snih'];
-
 export default function AdminWidget() {
   const queryClient = useQueryClient();
+
+  // Local state for editing (prevents lag while typing)
+  const [localEdits, setLocalEdits] = useState<Record<WidgetKey, { value: string; status: WidgetStatus }>>({} as any);
 
   // Fetch widget settings
   const { data: widgetSettings = [], isLoading: isLoadingSettings } = useQuery({
@@ -115,6 +122,29 @@ export default function AdminWidget() {
     queryFn: fetchWidgetSettings,
     staleTime: 30 * 1000,
   });
+
+  // Fetch Facebook feed visibility setting
+  const { data: facebookSetting } = useQuery({
+    queryKey: ['site-setting', 'facebook_feed_visible'],
+    queryFn: () => fetchSiteSetting('facebook_feed_visible'),
+    staleTime: 30 * 1000,
+  });
+
+  const isFacebookFeedVisible = facebookSetting?.value?.visible !== false;
+
+  // Initialize local edits when widget settings load
+  useEffect(() => {
+    if (widgetSettings.length > 0) {
+      const edits: Record<WidgetKey, { value: string; status: WidgetStatus }> = {} as any;
+      widgetSettings.forEach((w) => {
+        edits[w.widget_key] = {
+          value: w.manual_value || '',
+          status: w.manual_status || 'closed',
+        };
+      });
+      setLocalEdits(edits);
+    }
+  }, [widgetSettings]);
 
   // Fetch current API data for preview
   const { data: apiData, isLoading: isLoadingApi, refetch: refetchApi } = useQuery({
@@ -136,6 +166,55 @@ export default function AdminWidget() {
       toast.error('Chyba při ukládání: ' + (error as Error).message);
     },
   });
+
+  // Order mutation
+  const orderMutation = useMutation({
+    mutationFn: updateWidgetOrder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['widget-settings'] });
+      toast.success('Pořadí uloženo');
+    },
+    onError: (error) => {
+      toast.error('Chyba při ukládání pořadí: ' + (error as Error).message);
+    },
+  });
+
+  // Facebook feed visibility mutation
+  const facebookMutation = useMutation({
+    mutationFn: (visible: boolean) => updateSiteSetting('facebook_feed_visible', { visible }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-setting', 'facebook_feed_visible'] });
+      toast.success('Nastavení uloženo');
+    },
+    onError: (error) => {
+      toast.error('Chyba při ukládání: ' + (error as Error).message);
+    },
+  });
+
+  // Get sorted widgets
+  const sortedWidgets = [...widgetSettings].sort((a, b) => a.sort_order - b.sort_order);
+
+  // Move widget up or down
+  const handleMoveWidget = async (key: WidgetKey, direction: 'up' | 'down') => {
+    const currentIndex = sortedWidgets.findIndex((w) => w.widget_key === key);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= sortedWidgets.length) return;
+
+    // Swap sort_order values
+    const newOrders = sortedWidgets.map((w, i) => {
+      if (i === currentIndex) {
+        return { widget_key: w.widget_key, sort_order: sortedWidgets[newIndex].sort_order };
+      }
+      if (i === newIndex) {
+        return { widget_key: w.widget_key, sort_order: sortedWidgets[currentIndex].sort_order };
+      }
+      return { widget_key: w.widget_key, sort_order: w.sort_order };
+    });
+
+    await orderMutation.mutateAsync(newOrders);
+  };
 
   // Get settings for a widget
   const getSettings = (key: WidgetKey): WidgetSettings | undefined => {
@@ -195,20 +274,42 @@ export default function AdminWidget() {
     });
   };
 
-  // Handle value change
-  const handleValueChange = async (key: WidgetKey, value: string) => {
+  // Handle local value change (no DB save)
+  const handleLocalValueChange = (key: WidgetKey, value: string) => {
+    setLocalEdits((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], value },
+    }));
+  };
+
+  // Handle local status change (no DB save)
+  const handleLocalStatusChange = (key: WidgetKey, status: WidgetStatus) => {
+    setLocalEdits((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], status },
+    }));
+  };
+
+  // Save to database
+  const handleSave = async (key: WidgetKey) => {
+    const edits = localEdits[key];
+    if (!edits) return;
+
     await updateMutation.mutateAsync({
       key,
-      updates: { manual_value: value },
+      updates: {
+        manual_value: edits.value,
+        manual_status: edits.status,
+      },
     });
   };
 
-  // Handle status change
-  const handleStatusChange = async (key: WidgetKey, status: WidgetStatus) => {
-    await updateMutation.mutateAsync({
-      key,
-      updates: { manual_status: status },
-    });
+  // Check if widget has unsaved changes
+  const hasUnsavedChanges = (key: WidgetKey): boolean => {
+    const widget = widgetSettings.find((w) => w.widget_key === key);
+    const local = localEdits[key];
+    if (!widget || !local) return false;
+    return (widget.manual_value || '') !== local.value || (widget.manual_status || 'closed') !== local.status;
   };
 
   const isLoading = isLoadingSettings || isLoadingApi;
@@ -264,6 +365,45 @@ export default function AdminWidget() {
         </CardContent>
       </Card>
 
+      {/* Facebook Feed Section Visibility */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                isFacebookFeedVisible ? 'bg-[#1877F2] text-white' : 'bg-gray-100 text-gray-600'
+              }`}>
+                <Facebook className="w-5 h-5" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Novinky z Kohútky (Facebook)</CardTitle>
+                <CardDescription className="text-xs">Sekce s příspěvky z Facebooku na hlavní stránce</CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-sm ${!isFacebookFeedVisible ? 'font-medium' : 'text-gray-500'}`}>
+                Skryto
+              </span>
+              <Switch
+                checked={isFacebookFeedVisible}
+                onCheckedChange={(checked) => facebookMutation.mutate(checked)}
+                disabled={facebookMutation.isPending}
+              />
+              <span className={`text-sm ${isFacebookFeedVisible ? 'font-medium' : 'text-gray-500'}`}>
+                Zobrazeno
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500">
+            {isFacebookFeedVisible
+              ? 'Sekce "Novinky z Kohútky" je aktuálně zobrazena na hlavní stránce.'
+              : 'Sekce "Novinky z Kohútky" je aktuálně skrytá na hlavní stránce.'}
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Loading */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
@@ -274,11 +414,12 @@ export default function AdminWidget() {
       {/* Widget cards */}
       {!isLoading && (
         <div className="grid gap-4 md:grid-cols-2">
-          {WIDGET_ORDER.map((key) => {
+          {sortedWidgets.map((widget, index) => {
+            const key = widget.widget_key;
             const config = WIDGET_CONFIG[key];
-            const settings = getSettings(key);
+            if (!config) return null;
             const apiValue = getApiValue(key);
-            const isManual = settings?.mode === 'manual';
+            const isManual = widget.mode === 'manual';
             const Icon = config.icon;
 
             return (
@@ -286,6 +427,27 @@ export default function AdminWidget() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                      {/* Order buttons */}
+                      <div className="flex flex-col gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleMoveWidget(key, 'up')}
+                          disabled={index === 0 || orderMutation.isPending}
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleMoveWidget(key, 'down')}
+                          disabled={index === sortedWidgets.length - 1 || orderMutation.isPending}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                      </div>
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                         isManual ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
                       }`}>
@@ -336,8 +498,8 @@ export default function AdminWidget() {
                         <Label htmlFor={`${key}-value`}>Manuální hodnota</Label>
                         <Input
                           id={`${key}-value`}
-                          value={settings?.manual_value || ''}
-                          onChange={(e) => handleValueChange(key, e.target.value)}
+                          value={localEdits[key]?.value || ''}
+                          onChange={(e) => handleLocalValueChange(key, e.target.value)}
                           placeholder={apiValue.value}
                         />
                       </div>
@@ -346,8 +508,8 @@ export default function AdminWidget() {
                         <div className="space-y-2">
                           <Label htmlFor={`${key}-status`}>Stav (barva)</Label>
                           <Select
-                            value={settings?.manual_status || 'closed'}
-                            onValueChange={(value) => handleStatusChange(key, value as WidgetStatus)}
+                            value={localEdits[key]?.status || 'closed'}
+                            onValueChange={(value) => handleLocalStatusChange(key, value as WidgetStatus)}
                           >
                             <SelectTrigger id={`${key}-status`}>
                               <SelectValue />
@@ -375,6 +537,16 @@ export default function AdminWidget() {
                           </Select>
                         </div>
                       )}
+
+                      {/* Save button */}
+                      <Button
+                        onClick={() => handleSave(key)}
+                        disabled={!hasUnsavedChanges(key) || updateMutation.isPending}
+                        className="w-full"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {updateMutation.isPending ? 'Ukládám...' : 'Uložit změny'}
+                      </Button>
                     </div>
                   )}
 
@@ -385,13 +557,13 @@ export default function AdminWidget() {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg">
                           {isManual || !config.canBeAuto
-                            ? settings?.manual_value || apiValue.value
+                            ? widget.manual_value || apiValue.value
                             : apiValue.value}
                         </span>
                         {config.hasStatus && (
                           getStatusBadge(
                             isManual || !config.canBeAuto
-                              ? settings?.manual_status
+                              ? widget.manual_status
                               : apiValue.status
                           )
                         )}

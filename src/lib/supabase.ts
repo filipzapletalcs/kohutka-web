@@ -237,3 +237,116 @@ export async function updateWidgetSettings(
   if (error) throw error;
   return data;
 }
+
+export async function updateWidgetOrder(
+  widgetOrders: { widget_key: WidgetKey; sort_order: number }[]
+): Promise<void> {
+  for (const { widget_key, sort_order } of widgetOrders) {
+    const { error } = await supabase
+      .from('widget_settings')
+      .update({ sort_order, updated_at: new Date().toISOString() })
+      .eq('widget_key', widget_key);
+
+    if (error) throw error;
+  }
+}
+
+// Slopes and Lifts Overrides
+export type SlopeLiftType = 'slope' | 'lift';
+export type SlopeLiftMode = 'auto' | 'manual';
+
+export interface SlopeLiftOverride {
+  id: string;
+  type: SlopeLiftType;
+  name: string;
+  is_open: boolean;
+  mode: SlopeLiftMode;
+  updated_at: string;
+}
+
+export async function fetchSlopesLiftsOverrides(): Promise<SlopeLiftOverride[]> {
+  const { data, error } = await supabase
+    .from('slopes_lifts_overrides')
+    .select('*')
+    .order('type')
+    .order('name');
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function upsertSlopeLiftOverride(
+  override: Omit<SlopeLiftOverride, 'updated_at'>
+): Promise<SlopeLiftOverride> {
+  const { data, error } = await supabase
+    .from('slopes_lifts_overrides')
+    .upsert({
+      ...override,
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateSlopeLiftOverride(
+  id: string,
+  updates: Partial<Pick<SlopeLiftOverride, 'is_open' | 'mode'>>
+): Promise<SlopeLiftOverride> {
+  const { data, error } = await supabase
+    .from('slopes_lifts_overrides')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Site Settings
+export interface SiteSetting {
+  key: string;
+  value: Record<string, any>;
+  updated_at: string;
+}
+
+export async function fetchSiteSettings(): Promise<SiteSetting[]> {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('*');
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchSiteSetting(key: string): Promise<SiteSetting | null> {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('*')
+    .eq('key', key)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+export async function updateSiteSetting(
+  key: string,
+  value: Record<string, any>
+): Promise<SiteSetting> {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .upsert({
+      key,
+      value,
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}

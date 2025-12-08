@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
+import { fetchSlopesLiftsOverrides, type SlopeLiftOverride } from "@/lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Loader2, Mountain, Cable, CircleCheck, CircleX } from "lucide-react";
 
@@ -51,6 +52,29 @@ const SlopesAndLifts = () => {
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
   });
 
+  // Fetch manual overrides
+  const { data: overrides = [] } = useQuery({
+    queryKey: ["slopes-lifts-overrides"],
+    queryFn: fetchSlopesLiftsOverrides,
+    staleTime: 30 * 1000,
+  });
+
+  // Get override for an item
+  const getOverride = (type: 'slope' | 'lift', id: number): SlopeLiftOverride | undefined => {
+    return overrides.find((o) => o.id === `${type}_${id}`);
+  };
+
+  // Get effective status considering manual override
+  const getEffectiveStatusCode = (type: 'slope' | 'lift', id: number, apiStatusCode: number): number => {
+    const override = getOverride(type, id);
+    if (override && override.mode === 'manual') {
+      // Return status code based on manual override
+      // is_open true = 1 (open), is_open false = 2 (closed)
+      return override.is_open ? 1 : 2;
+    }
+    return apiStatusCode;
+  };
+
   if (isLoading) {
     return (
       <section className="pt-8 pb-20 bg-muted/20">
@@ -79,14 +103,20 @@ const SlopesAndLifts = () => {
 
   const { slopesDetailed = [], liftsDetailed = [] } = data;
 
-  // Calculate totals
+  // Calculate totals (using effective status with overrides)
   const totalSlopes = slopesDetailed.length;
-  const openSlopes = slopesDetailed.filter(s => s.status_code !== 2 && s.status_code !== 3).length;
+  const openSlopes = slopesDetailed.filter(s => {
+    const effectiveCode = getEffectiveStatusCode('slope', s.id, s.status_code);
+    return effectiveCode !== 2 && effectiveCode !== 3;
+  }).length;
   const totalSlopesLength = slopesDetailed.reduce((sum, s) => sum + s.length, 0);
   const totalSlopesExceed = slopesDetailed.reduce((sum, s) => sum + s.exceed, 0);
 
   const totalLifts = liftsDetailed.filter(l => l.type_code !== 7).length; // Exclude skipark
-  const openLifts = liftsDetailed.filter(l => l.type_code !== 7 && l.status_code !== 2).length;
+  const openLifts = liftsDetailed.filter(l => {
+    const effectiveCode = getEffectiveStatusCode('lift', l.id, l.status_code);
+    return l.type_code !== 7 && effectiveCode !== 2;
+  }).length;
   const totalLiftsLength = liftsDetailed.reduce((sum, l) => sum + l.length, 0);
   const totalCapacity = liftsDetailed.reduce((sum, l) => sum + l.capacity, 0);
 
@@ -144,7 +174,8 @@ const SlopesAndLifts = () => {
                       );
                     }
 
-                    const status = getStatusInfo(slope.status_code, slope.status_text);
+                    const effectiveStatusCode = getEffectiveStatusCode('slope', slope.id, slope.status_code);
+                    const status = getStatusInfo(effectiveStatusCode, slope.status_text);
                     const StatusIcon = status.icon;
 
                     return (
@@ -231,7 +262,8 @@ const SlopesAndLifts = () => {
                       );
                     }
 
-                    const status = getStatusInfo(lift.status_code, lift.status_text);
+                    const effectiveStatusCode = getEffectiveStatusCode('lift', lift.id, lift.status_code);
+                    const status = getStatusInfo(effectiveStatusCode, lift.status_text);
                     const StatusIcon = status.icon;
 
                     return (

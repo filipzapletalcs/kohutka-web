@@ -12,6 +12,7 @@ import {
   Mountain,
   ExternalLink,
   Loader2,
+  Cable,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ const navItems = [
   { name: 'Ceník', path: '/admin/cenik', icon: DollarSign },
   { name: 'Kamery', path: '/admin/kamery', icon: Camera },
   { name: 'Widgety', path: '/admin/widget', icon: Gauge },
+  { name: 'Sjezdovky', path: '/admin/sjezdovky', icon: Cable },
 ];
 
 export default function AdminLayout() {

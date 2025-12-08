@@ -305,7 +305,10 @@ const Pricing2 = () => {
 
           {/* Dropdown - Mobile */}
           <div className="mb-8 md:hidden sticky top-16 z-40 -mx-4 px-4 pt-4 pb-2 bg-background/95 backdrop-blur-md">
-            <Select value={activeTab} onValueChange={(value) => setActiveTab(value as PricingTab)}>
+            <Select value={activeTab} onValueChange={(value) => {
+              setActiveTab(value as PricingTab);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}>
               <SelectTrigger className="w-full bg-white/98 text-gray-900 border-2 border-primary/20 h-14 text-lg shadow-lg hover:bg-white hover:border-primary/40 transition-all duration-200 rounded-xl">
                 <SelectValue>
                   {(() => {
@@ -588,25 +591,37 @@ const Pricing2 = () => {
                             /* Rodinné jízdné - speciální zobrazení */
                             <div className="space-y-2">
                               <div className="flex justify-between items-center py-2.5 border-b border-gray-150">
-                                <span className="text-sm font-semibold text-gray-800">1+2 <span className="text-xs text-gray-500">(1 dosp. + 2 děti)</span></span>
+                                <div>
+                                  <span className="text-sm font-semibold text-gray-800">1+2</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(1 dosp. + 2 děti)</p>
+                                </div>
                                 <span className="text-xl font-bold text-primary">
                                   {row.adult !== null && <>{row.adult} <span className="text-xs text-gray-600">Kč</span></>}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center py-2.5 border-b border-gray-150">
-                                <span className="text-sm font-semibold text-gray-800">2+1 <span className="text-xs text-gray-500">(2 dosp. + 1 dítě)</span></span>
+                                <div>
+                                  <span className="text-sm font-semibold text-gray-800">2+1</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(2 dosp. + 1 dítě)</p>
+                                </div>
                                 <span className="text-xl font-bold text-primary">
                                   {row.child !== null && <>{row.child} <span className="text-xs text-gray-600">Kč</span></>}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center py-2.5 border-b border-gray-150">
-                                <span className="text-sm font-semibold text-gray-800">2+2 <span className="text-xs text-gray-500">(2 dosp. + 2 děti)</span></span>
+                                <div>
+                                  <span className="text-sm font-semibold text-gray-800">2+2</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(2 dosp. + 2 děti)</p>
+                                </div>
                                 <span className="text-xl font-bold text-primary">
                                   {row.junior !== null && <>{row.junior} <span className="text-xs text-gray-600">Kč</span></>}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center py-2.5">
-                                <span className="text-sm font-semibold text-gray-800">2+3 <span className="text-xs text-gray-500">(2 dosp. + 3 děti)</span></span>
+                                <div>
+                                  <span className="text-sm font-semibold text-gray-800">2+3</span>
+                                  <p className="text-xs text-gray-500 mt-0.5">(2 dosp. + 3 děti)</p>
+                                </div>
                                 <span className="text-xl font-bold text-primary">
                                   {row.senior !== null && <>{row.senior} <span className="text-xs text-gray-600">Kč</span></>}
                                 </span>
