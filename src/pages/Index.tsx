@@ -146,7 +146,7 @@ const Index = () => {
       <section className="py-12 -mt-20 relative z-20">
         <div className="container mx-auto max-w-7xl px-4">
           {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-2.5">
               {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                 <div key={i} className="glass p-4 rounded-lg">
                   <Skeleton className="h-8 w-8 mx-auto mb-2" />
@@ -156,7 +156,7 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-2.5">
               {widgetSettings.map((widget) => {
                 const widgetConfig: Record<string, { icon: typeof Mountain; autoValue: string; autoStatus: WidgetStatus; fullWidth?: boolean }> = {
                   skiareal: {

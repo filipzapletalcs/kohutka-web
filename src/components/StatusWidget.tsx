@@ -62,7 +62,7 @@ export const StatusWidget = ({
       "hover:scale-[1.02] hover:-translate-y-0.5",
       "transition-all duration-300 ease-out",
       "rounded-xl md:rounded-2xl",
-      "p-2 md:p-5",
+      "p-3 px-2 md:p-5",
       config.cardBorder,
       config.cardShadow,
       className
@@ -70,22 +70,22 @@ export const StatusWidget = ({
       {/* Na mobilu fullWidth = horizontal layout */}
       <div className={cn(
         "text-center",
-        fullWidth ? "flex flex-row gap-3 items-center justify-center md:hidden" : "hidden"
+        fullWidth ? "flex flex-row gap-4 items-center justify-center py-2 md:hidden" : "hidden"
       )}>
         <div className={cn(
-          "rounded-lg transition-all duration-300 flex-shrink-0",
-          "shadow-sm p-1.5",
-          "h-9 w-9 flex items-center justify-center",
+          "rounded-xl transition-all duration-300 flex-shrink-0",
+          "shadow-sm p-2",
+          "h-14 w-14 flex items-center justify-center",
           config.iconBg,
           config.iconRing
         )}>
-          <Icon className={cn("stroke-[2.5] h-5 w-5", config.iconColor)} />
+          <Icon className={cn("stroke-[2.5] h-8 w-8", config.iconColor)} />
         </div>
         <div className="flex flex-col items-start text-left">
-          <div className="text-gray-600 uppercase tracking-[0.08em] font-bold text-[10px]">
+          <div className="text-gray-600 uppercase tracking-[0.08em] font-bold text-xs">
             {label}
           </div>
-          <div className={cn("font-extrabold tracking-tight text-lg", config.valueColor)}>
+          <div className={cn("font-extrabold tracking-tight text-2xl", config.valueColor)}>
             {value}
           </div>
         </div>
@@ -100,19 +100,19 @@ export const StatusWidget = ({
         <div className={cn(
           "rounded-lg md:rounded-xl transition-all duration-300",
           "shadow-sm hover:shadow-md",
-          "p-1.5 md:p-3",
-          "h-8 w-8 md:h-14 md:w-14 flex items-center justify-center",
+          "p-2 md:p-3",
+          "h-11 w-11 md:h-14 md:w-14 flex items-center justify-center",
           config.iconBg,
           config.iconRing
         )}>
-          <Icon className={cn("stroke-[2.5] h-4 w-4 md:h-7 md:w-7", config.iconColor)} />
+          <Icon className={cn("stroke-[2.5] h-6 w-6 md:h-7 md:w-7", config.iconColor)} />
         </div>
 
         {/* Label - fixed height */}
         <div className={cn(
           "text-gray-600 uppercase tracking-[0.08em] md:tracking-[0.1em] font-bold leading-tight",
-          "h-[1.75rem] md:h-[2.5rem] flex items-center justify-center mt-1 md:mt-2",
-          "text-[9px] md:text-xs"
+          "h-[2rem] md:h-[2.5rem] flex items-center justify-center mt-1.5 md:mt-2",
+          "text-[10px] md:text-xs"
         )}>
           {label}
         </div>
@@ -120,8 +120,8 @@ export const StatusWidget = ({
         {/* Value - fixed height */}
         <div className={cn(
           "font-extrabold tracking-tight leading-none whitespace-nowrap",
-          "h-[1.25rem] md:h-[2rem] flex items-center justify-center",
-          "text-base md:text-2xl",
+          "h-[1.5rem] md:h-[2rem] flex items-center justify-center",
+          "text-lg md:text-xl",
           config.valueColor
         )}>
           {value}
