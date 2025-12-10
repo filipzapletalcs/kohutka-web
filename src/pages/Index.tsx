@@ -20,6 +20,7 @@ import AboutUs from "@/components/AboutUs";
 import SlopesAndLifts from "@/components/SlopesAndLifts";
 import InteractiveMap from "@/components/InteractiveMap";
 import FacebookFeed from "@/components/FacebookFeed";
+import GoSkiPromo from "@/components/GoSkiPromo";
 import Footer from "@/components/Footer";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
 import { fetchWidgetSettings, fetchSiteSetting, type WidgetKey, type WidgetStatus } from "@/lib/supabase";
@@ -295,11 +296,14 @@ const Index = () => {
         </div>
       </section> */}
 
-      {/* Partners Section */}
-      <Partners />
-
       {/* Facebook Feed Section */}
       {showFacebookFeed && <FacebookFeed />}
+
+      {/* GoSki Promo Section */}
+      <GoSkiPromo />
+
+      {/* Partners Section */}
+      <Partners />
 
       {/* Location Section */}
       <Location />
