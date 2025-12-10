@@ -7,7 +7,7 @@ import {
   Phone,
   ExternalLink,
 } from "lucide-react";
-import heroImage from "@/assets/Mira-Foto-01-1920x700-1.webp";
+import heroImage from "@/assets/P01Slider-Slide03.jpg";
 
 const services = [
   {
