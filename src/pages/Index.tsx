@@ -296,11 +296,11 @@ const Index = () => {
         </div>
       </section> */}
 
-      {/* Facebook Feed Section */}
-      {showFacebookFeed && <FacebookFeed />}
-
       {/* GoSki Promo Section */}
       <GoSkiPromo />
+
+      {/* Facebook Feed Section */}
+      {showFacebookFeed && <FacebookFeed />}
 
       {/* Partners Section */}
       <Partners />

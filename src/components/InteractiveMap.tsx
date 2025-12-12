@@ -6,7 +6,7 @@ import mapaPDF from "@/assets/Ski_Centrum_Kohutka_Mapa.pdf";
 
 const InteractiveMap = () => {
   return (
-    <section className="pt-8 pb-20 bg-muted/30">
+    <section className="pt-8 pb-10 bg-muted/30">
       <div className="container mx-auto max-w-7xl px-4">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8">

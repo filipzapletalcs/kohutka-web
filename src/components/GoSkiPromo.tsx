@@ -7,7 +7,7 @@ import {
   Phone,
   ExternalLink,
 } from "lucide-react";
-import heroImage from "@/assets/P01Slider-Slide03.jpg";
+import heroImage from "@/assets/WhatsApp Image 2025-12-10 at 22.51.08.jpeg";
 
 const services = [
   {
@@ -29,7 +29,7 @@ const services = [
 
 const GoSkiPromo = () => {
   return (
-    <section className="py-16 md:py-20 bg-muted/20">
+    <section className="pt-8 pb-16 md:pt-10 md:pb-20 bg-muted/20">
       <div className="container mx-auto max-w-7xl px-4">
         {/* Header */}
         <div className="text-center mb-8 md:mb-12">

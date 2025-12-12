@@ -350,3 +350,56 @@ export async function updateSiteSetting(
   if (error) throw error;
   return data;
 }
+
+// HolidayInfo Cache
+export interface HolidayInfoCache {
+  id: string;
+  is_open: boolean;
+  operation_text: string | null;
+  opertime: string | null;
+  temperature: string | null;
+  weather: string | null;
+  snow_height: string | null;
+  lifts_open_count: number;
+  lifts_total_count: number;
+  skipark_open: boolean;
+  cable_car_open_count: number;
+  cable_car_total_count: number;
+  drag_lift_open_count: number;
+  drag_lift_total_count: number;
+  slopes_open_count: number;
+  slopes_total_count: number;
+  slopes_detailed: any[];
+  lifts_detailed: any[];
+  updated_at: string;
+}
+
+export async function fetchHolidayInfoCache(): Promise<HolidayInfoCache | null> {
+  const { data, error } = await supabase
+    .from('holidayinfo_cache')
+    .select('*')
+    .eq('id', 'main')
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching holidayinfo cache:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function updateHolidayInfoCache(
+  cache: Omit<HolidayInfoCache, 'id' | 'updated_at'>
+): Promise<void> {
+  const { error } = await supabase
+    .from('holidayinfo_cache')
+    .upsert({
+      id: 'main',
+      ...cache,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error('Error updating holidayinfo cache:', error);
+  }
+}
