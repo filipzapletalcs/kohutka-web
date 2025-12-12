@@ -71,13 +71,13 @@ const Navigation = () => {
           {/* Mobile menu button */}
           <Button
             variant="ghost"
-            size="icon"
-            className="min-[1195px]:hidden text-primary-foreground hover:bg-primary-foreground/15 transition-all duration-200"
+            className="min-[1195px]:hidden text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-all duration-200 p-2"
+            style={{ width: '34px', height: '34px' }}
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Zavřít menu" : "Otevřít menu"}
             aria-expanded={isOpen}
           >
-            {isOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+            {isOpen ? <X style={{ width: '24px', height: '24px', color: 'white' }} strokeWidth={2} /> : <Menu style={{ width: '24px', height: '24px', color: 'white' }} strokeWidth={2} />}
           </Button>
         </div>
 

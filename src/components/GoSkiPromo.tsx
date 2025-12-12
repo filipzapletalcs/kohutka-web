@@ -52,14 +52,6 @@ const GoSkiPromo = () => {
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
-              {/* Overlay badge */}
-              <div className="absolute top-4 left-4">
-                <div className="glass px-4 py-2 rounded-full border-white/30">
-                  <span className="text-sm font-semibold text-primary">
-                    Partner areálu
-                  </span>
-                </div>
-              </div>
             </div>
           </Card>
 
@@ -119,6 +111,11 @@ const GoSkiPromo = () => {
                       </a>
                     </Button>
                   </div>
+
+                  {/* Disclaimer */}
+                  <p className="text-xs text-muted-foreground mt-4 italic">
+                    * Služby jsou zajišťovány externí firmou
+                  </p>
                 </div>
               </div>
             </Card>
