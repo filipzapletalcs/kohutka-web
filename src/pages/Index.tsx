@@ -100,8 +100,9 @@ const Index = () => {
     <div className="min-h-screen">
       <Navigation />
 
-      {/* Hero Section */}
-      <div ref={heroRef} className="relative min-h-[80vh] md:h-[110vh] overflow-hidden">
+      <main>
+        {/* Hero Section */}
+        <div ref={heroRef} className="relative min-h-[80vh] md:h-[110vh] overflow-hidden">
         {/* Loading skeleton */}
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 animate-pulse" />
@@ -316,8 +317,11 @@ const Index = () => {
 
         {/* Location Section */}
         <Location />
+      </Suspense>
+      </main>
 
-        {/* Footer */}
+      {/* Footer */}
+      <Suspense fallback={null}>
         <Footer />
       </Suspense>
     </div>
