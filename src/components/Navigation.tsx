@@ -26,7 +26,7 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-[68px]">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3" aria-label="Přejít na úvodní stránku">
-            <img src={logo} alt="SKI CENTRUM KOHÚTKA logo" className="h-16 md:h-12 w-auto" />
+            <img src={logo} alt="SKI CENTRUM KOHÚTKA logo" className="h-16 md:h-12 w-auto" width={64} height={64} />
             <span className="font-bold text-xl hidden sm:inline text-primary-foreground" aria-hidden="true">SKI CENTRUM KOHÚTKA</span>
           </Link>
 

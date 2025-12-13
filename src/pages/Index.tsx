@@ -13,21 +13,23 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusWidget } from "@/components/StatusWidget";
 import Navigation from "@/components/Navigation";
-import Partners from "@/components/Partners";
-import Location from "@/components/Location";
-import Weather from "@/components/Weather";
-import AboutUs from "@/components/AboutUs";
-import SlopesAndLifts from "@/components/SlopesAndLifts";
-import InteractiveMap from "@/components/InteractiveMap";
-import FacebookFeed from "@/components/FacebookFeed";
-import GoSkiPromo from "@/components/GoSkiPromo";
-import Footer from "@/components/Footer";
 import { fetchHolidayInfoData } from "@/services/holidayInfoApi";
 import { fetchWidgetSettings, fetchSiteSetting, type WidgetKey, type WidgetStatus } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { lazy, Suspense, useEffect, useState, useRef, useMemo } from "react";
 import heroImage1 from "@/assets/Mira-Foto-01-1920x700-1.webp";
 import logo from "@/assets/logo.png";
+
+// Lazy load components below the fold
+const AboutUs = lazy(() => import("@/components/AboutUs"));
+const Weather = lazy(() => import("@/components/Weather"));
+const SlopesAndLifts = lazy(() => import("@/components/SlopesAndLifts"));
+const InteractiveMap = lazy(() => import("@/components/InteractiveMap"));
+const GoSkiPromo = lazy(() => import("@/components/GoSkiPromo"));
+const FacebookFeed = lazy(() => import("@/components/FacebookFeed"));
+const Partners = lazy(() => import("@/components/Partners"));
+const Location = lazy(() => import("@/components/Location"));
+const Footer = lazy(() => import("@/components/Footer"));
 
 const Index = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -127,6 +129,8 @@ const Index = () => {
                   src={logo}
                   alt="SKI CENTRUM KOHÚTKA Logo"
                   className="h-48 md:h-96 w-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+                  width={512}
+                  height={512}
                   fetchPriority="high"
                 />
               </div>
@@ -228,17 +232,20 @@ const Index = () => {
         </div>
       </section>
 
-      {/* About Section */}
-      <AboutUs />
+      {/* Lazy loaded sections */}
+      <Suspense fallback={<div className="h-96 animate-pulse bg-muted/20" />}>
+        {/* About Section */}
+        <AboutUs />
 
-      {/* Weather Section */}
-      <Weather />
+        {/* Weather Section */}
+        <Weather />
 
-      {/* Slopes and Lifts Section */}
-      <SlopesAndLifts />
+        {/* Slopes and Lifts Section */}
+        <SlopesAndLifts />
 
-      {/* Interactive Map Section */}
-      <InteractiveMap />
+        {/* Interactive Map Section */}
+        <InteractiveMap />
+      </Suspense>
 
       {/* Camera Preview Section - COMMENTED OUT */}
       {/* <section className="pt-8 pb-20 bg-muted/30">
@@ -297,20 +304,22 @@ const Index = () => {
         </div>
       </section> */}
 
-      {/* GoSki Promo Section */}
-      <GoSkiPromo />
+      <Suspense fallback={<div className="h-64 animate-pulse bg-muted/20" />}>
+        {/* GoSki Promo Section */}
+        <GoSkiPromo />
 
-      {/* Facebook Feed Section */}
-      {showFacebookFeed && <FacebookFeed />}
+        {/* Facebook Feed Section */}
+        {showFacebookFeed && <FacebookFeed />}
 
-      {/* Partners Section */}
-      <Partners />
+        {/* Partners Section */}
+        <Partners />
 
-      {/* Location Section */}
-      <Location />
+        {/* Location Section */}
+        <Location />
 
-      {/* Footer */}
-      <Footer />
+        {/* Footer */}
+        <Footer />
+      </Suspense>
     </div>
   );
 };

@@ -178,6 +178,9 @@ const Partners = () => {
                       src={partner.logo}
                       alt={partner.name}
                       className="max-w-full max-h-full object-contain transition-all duration-500"
+                      width={310}
+                      height={72}
+                      loading="lazy"
                     />
                   </div>
                 </div>
@@ -215,6 +218,9 @@ const Partners = () => {
                       src={partner.logo}
                       alt={partner.name}
                       className="max-w-full max-h-full object-contain transition-all duration-500"
+                      width={310}
+                      height={72}
+                      loading="lazy"
                     />
                   </div>
                 </div>
