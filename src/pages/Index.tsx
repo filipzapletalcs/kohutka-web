@@ -127,6 +127,7 @@ const Index = () => {
                   src={logo}
                   alt="SKI CENTRUM KOHÚTKA Logo"
                   className="h-48 md:h-96 w-auto drop-shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+                  fetchPriority="high"
                 />
               </div>
 

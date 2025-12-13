@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import mapaPNG from "@/assets/Ski_Centrum_Kohutka_Mapa.png";
+import mapaWebP from "@/assets/Ski_Centrum_Kohutka_Mapa.webp";
 import mapaPDF from "@/assets/Ski_Centrum_Kohutka_Mapa.pdf";
 
 const InteractiveMap = () => {
@@ -22,7 +22,7 @@ const InteractiveMap = () => {
         <Card className="glass overflow-hidden border-white/20 rounded-lg">
           <div className="w-full bg-white">
             <img
-              src={mapaPNG}
+              src={mapaWebP}
               alt="Mapa SKI CENTRUM KOHÚTKA"
               className="w-full h-full object-contain"
               loading="lazy"
