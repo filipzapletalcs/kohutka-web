@@ -35,7 +35,7 @@ const DirectionsInfo = () => {
                 <MapPin className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-2">Příjezd z České strany</h3>
+                <h3 className="text-xl font-bold mb-2">Příjezd z české strany</h3>
                 <p className="text-sm text-muted-foreground">
                   Přes Nový Hrozenkov
                 </p>
