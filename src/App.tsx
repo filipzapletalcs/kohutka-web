@@ -18,6 +18,7 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminCameras from "./pages/admin/AdminCameras";
 import AdminWidget from "./pages/admin/AdminWidget";
 import AdminSlopesLifts from "./pages/admin/AdminSlopesLifts";
+import AdminAutopost from "./pages/admin/AdminAutopost";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="kamery" element={<AdminCameras />} />
               <Route path="widget" element={<AdminWidget />} />
               <Route path="sjezdovky" element={<AdminSlopesLifts />} />
+              <Route path="autopost" element={<AdminAutopost />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

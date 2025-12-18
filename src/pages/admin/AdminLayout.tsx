@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Loader2,
   Cable,
+  Share2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ const navItems = [
   { name: 'Kamery', path: '/admin/kamery', icon: Camera },
   { name: 'Widgety', path: '/admin/widget', icon: Gauge },
   { name: 'Sjezdovky', path: '/admin/sjezdovky', icon: Cable },
+  { name: 'Auto-posting', path: '/admin/autopost', icon: Share2 },
 ];
 
 export default function AdminLayout() {

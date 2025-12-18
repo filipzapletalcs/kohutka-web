@@ -403,3 +403,87 @@ export async function updateHolidayInfoCache(
     console.error('Error updating holidayinfo cache:', error);
   }
 }
+
+// Autopost Settings
+export type AutopostScheduleType = 'disabled' | 'daily' | 'twice_daily';
+
+export interface AutopostSettings {
+  id: string;
+  enabled: boolean;
+  schedule_type: AutopostScheduleType;
+  morning_time: string;
+  afternoon_time: string;
+  custom_caption: string | null;
+  hashtags: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AutopostHistory {
+  id: string;
+  platform: string;
+  status: 'success' | 'failed' | 'pending';
+  post_id: string | null;
+  caption: string | null;
+  error_message: string | null;
+  data_snapshot: Record<string, any> | null;
+  created_at: string;
+}
+
+// Fetch autopost settings (single row)
+export async function fetchAutopostSettings(): Promise<AutopostSettings | null> {
+  const { data, error } = await supabase
+    .from('autopost_settings')
+    .select('*')
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+// Update autopost settings
+export async function updateAutopostSettings(
+  updates: Partial<Omit<AutopostSettings, 'id' | 'created_at'>>
+): Promise<AutopostSettings> {
+  // First get the current settings to get the id
+  const current = await fetchAutopostSettings();
+  if (!current) {
+    throw new Error('Autopost settings not found');
+  }
+
+  const { data, error } = await supabase
+    .from('autopost_settings')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', current.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Fetch autopost history
+export async function fetchAutopostHistory(limit = 20): Promise<AutopostHistory[]> {
+  const { data, error } = await supabase
+    .from('autopost_history')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Create autopost history entry
+export async function createAutopostHistoryEntry(
+  entry: Omit<AutopostHistory, 'id' | 'created_at'>
+): Promise<AutopostHistory> {
+  const { data, error } = await supabase
+    .from('autopost_history')
+    .insert(entry)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}

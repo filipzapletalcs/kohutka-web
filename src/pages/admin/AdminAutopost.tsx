@@ -1,0 +1,349 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  fetchAutopostSettings,
+  updateAutopostSettings,
+  fetchAutopostHistory,
+  type AutopostSettings,
+  type AutopostScheduleType,
+} from '@/lib/supabase';
+import { fetchHolidayInfoData } from '@/services/holidayInfoApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3 } from 'lucide-react';
+import { toast } from 'sonner';
+import logo from '@/assets/logo.png';
+import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
+import type { ManualOverrides, StatusImageData } from '@/components/admin/autopost/types';
+
+const DEFAULT_CAPTION = 'Denni report z Kohutky! Aktualni podminky na sjezdovkach.';
+
+export default function AdminAutopost() {
+  const queryClient = useQueryClient();
+
+  const [formState, setFormState] = useState({
+    enabled: false,
+    schedule_type: 'disabled' as AutopostScheduleType,
+    morning_time: '07:00',
+    afternoon_time: '14:00',
+    custom_caption: DEFAULT_CAPTION,
+    hashtags: '#kohutka #lyze #skiing #beskydy #zima',
+  });
+
+  const [manualOverrides, setManualOverrides] = useState<ManualOverrides>({
+    enabled: false,
+    temperature: '',
+    liftsOpen: '',
+    liftsTotal: '',
+    slopesOpen: '',
+    slopesTotal: '',
+    snowHeight: '',
+    isOpen: false,
+  });
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['autopost-settings'],
+    queryFn: fetchAutopostSettings,
+  });
+
+  const { data: holidayData, isLoading: isLoadingData, refetch, isRefetching } = useQuery({
+    queryKey: ['holiday-info-autopost'],
+    queryFn: fetchHolidayInfoData,
+    staleTime: 60 * 1000,
+  });
+
+  const { data: history = [] } = useQuery({
+    queryKey: ['autopost-history'],
+    queryFn: () => fetchAutopostHistory(10),
+  });
+
+  useEffect(() => {
+    if (settings) {
+      setFormState({
+        enabled: settings.enabled,
+        schedule_type: settings.schedule_type,
+        morning_time: settings.morning_time,
+        afternoon_time: settings.afternoon_time,
+        custom_caption: settings.custom_caption || DEFAULT_CAPTION,
+        hashtags: settings.hashtags,
+      });
+    }
+  }, [settings]);
+
+  const updateMutation = useMutation({
+    mutationFn: (updates: Partial<AutopostSettings>) => updateAutopostSettings(updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['autopost-settings'] });
+      toast.success('Nastaveni ulozeno');
+    },
+    onError: (error) => toast.error('Chyba: ' + (error as Error).message),
+  });
+
+  const handleSave = () => updateMutation.mutate(formState);
+
+  const hasChanges = settings && (
+    formState.enabled !== settings.enabled ||
+    formState.schedule_type !== settings.schedule_type ||
+    formState.morning_time !== settings.morning_time ||
+    formState.afternoon_time !== settings.afternoon_time ||
+    formState.custom_caption !== (settings.custom_caption || DEFAULT_CAPTION) ||
+    formState.hashtags !== settings.hashtags
+  );
+
+  // Preview data - use manual if enabled, otherwise API
+  const previewData: StatusImageData = {
+    isOpen: manualOverrides.enabled ? manualOverrides.isOpen : holidayData?.operation?.isOpen || false,
+    temperature: manualOverrides.enabled && manualOverrides.temperature ? manualOverrides.temperature : holidayData?.operation?.temperature || '--',
+    liftsOpen: manualOverrides.enabled && manualOverrides.liftsOpen ? parseInt(manualOverrides.liftsOpen) : holidayData?.lifts?.openCount || 0,
+    liftsTotal: manualOverrides.enabled && manualOverrides.liftsTotal ? parseInt(manualOverrides.liftsTotal) : holidayData?.lifts?.totalCount || 0,
+    slopesOpen: manualOverrides.enabled && manualOverrides.slopesOpen ? parseInt(manualOverrides.slopesOpen) : holidayData?.slopes?.openCount || 0,
+    slopesTotal: manualOverrides.enabled && manualOverrides.slopesTotal ? parseInt(manualOverrides.slopesTotal) : holidayData?.slopes?.totalCount || 0,
+    snowHeight: manualOverrides.enabled && manualOverrides.snowHeight ? manualOverrides.snowHeight : holidayData?.operation?.snowHeight || '--',
+    operatingHours: holidayData?.operation?.opertime || undefined,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Auto-posting na Facebook</h2>
+          <p className="text-gray-600 mt-1">Automaticke publikovani dennich reportu</p>
+        </div>
+        <Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
+          {isRefetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+          Obnovit
+        </Button>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Left - Preview */}
+        <div className="space-y-4">
+          {/* Facebook Mockup */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Nahled prispevku</CardTitle>
+              {manualOverrides.enabled && (
+                <Badge variant="outline" className="w-fit text-orange-600 border-orange-300">
+                  <Edit3 className="w-3 h-3 mr-1" /> Manualni hodnoty
+                </Badge>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="bg-white rounded-lg shadow-lg border overflow-hidden max-w-sm mx-auto">
+                {/* FB Header */}
+                <div className="p-3 flex items-center gap-3">
+                  <img src={logo} alt="Kohutka" className="w-10 h-10 rounded-full object-contain bg-primary/10" />
+                  <div>
+                    <div className="font-semibold text-sm">SKI CENTRUM KOHUTKA</div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <span>Prave ted</span> · <Globe className="w-3 h-3" />
+                    </div>
+                  </div>
+                </div>
+                {/* Caption */}
+                <div className="px-3 pb-2">
+                  <p className="text-sm">{formState.custom_caption}</p>
+                  <p className="text-sm text-blue-600 mt-1">{formState.hashtags}</p>
+                </div>
+                {/* Image Preview */}
+                {isLoadingData ? (
+                  <div className="aspect-[1080/1350] bg-gray-200 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  </div>
+                ) : (
+                  <StatusImagePreview data={previewData} />
+                )}
+                {/* FB Reactions */}
+                <div className="px-3 py-2 border-t flex items-center justify-around text-gray-600 text-sm">
+                  <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1 rounded">
+                    <ThumbsUp className="w-4 h-4" /> Libi se
+                  </button>
+                  <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1 rounded">
+                    <MessageCircle className="w-4 h-4" /> Komentar
+                  </button>
+                  <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1 rounded">
+                    <Share2 className="w-4 h-4" /> Sdilet
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* API Data */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                Aktualni API data
+                {holidayData?.fromCache && <Badge variant="outline" className="text-yellow-600">Cache</Badge>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {holidayData ? (
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="p-2 bg-gray-50 rounded flex items-center gap-2">
+                    <Badge className={holidayData.operation?.isOpen ? 'bg-green-500' : 'bg-red-500'}>
+                      {holidayData.operation?.isOpen ? 'Otevreno' : 'Zavreno'}
+                    </Badge>
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded">
+                    <Thermometer className="w-4 h-4 inline mr-1" /> {holidayData.operation?.temperature || '--'}°C
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded">
+                    <Cable className="w-4 h-4 inline mr-1" /> Vleky: {holidayData.lifts?.openCount}/{holidayData.lifts?.totalCount}
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded">
+                    <Mountain className="w-4 h-4 inline mr-1" /> Sjezdovky: {holidayData.slopes?.openCount}/{holidayData.slopes?.totalCount}
+                  </div>
+                  <div className="p-2 bg-gray-50 rounded col-span-2">
+                    <Snowflake className="w-4 h-4 inline mr-1" /> Snih: {holidayData.operation?.snowHeight || '--'}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">Data nejsou k dispozici</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Manual Overrides */}
+          <Card className={manualOverrides.enabled ? 'border-orange-300 bg-orange-50/50' : ''}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Edit3 className="w-5 h-5 text-orange-500" /> Manualni hodnoty
+                </CardTitle>
+                <Switch checked={manualOverrides.enabled} onCheckedChange={(v) => setManualOverrides({ ...manualOverrides, enabled: v })} />
+              </div>
+            </CardHeader>
+            {manualOverrides.enabled && (
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Areal otevren</Label>
+                  <Switch checked={manualOverrides.isOpen} onCheckedChange={(v) => setManualOverrides({ ...manualOverrides, isOpen: v })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Teplota</Label><Input placeholder={holidayData?.operation?.temperature || '-5'} value={manualOverrides.temperature} onChange={(e) => setManualOverrides({ ...manualOverrides, temperature: e.target.value })} /></div>
+                  <div><Label className="text-xs">Snih</Label><Input placeholder={holidayData?.operation?.snowHeight || '30 cm'} value={manualOverrides.snowHeight} onChange={(e) => setManualOverrides({ ...manualOverrides, snowHeight: e.target.value })} /></div>
+                  <div><Label className="text-xs">Vleky otevreno</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.openCount || 0)} value={manualOverrides.liftsOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsOpen: e.target.value })} /></div>
+                  <div><Label className="text-xs">Vleky celkem</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.totalCount || 6)} value={manualOverrides.liftsTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsTotal: e.target.value })} /></div>
+                  <div><Label className="text-xs">Sjezdovky otevreno</Label><Input type="number" min="0" placeholder={String(holidayData?.slopes?.openCount || 0)} value={manualOverrides.slopesOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, slopesOpen: e.target.value })} /></div>
+                  <div><Label className="text-xs">Sjezdovky celkem</Label><Input type="number" min="0" placeholder={String(holidayData?.slopes?.totalCount || 9)} value={manualOverrides.slopesTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, slopesTotal: e.target.value })} /></div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
+        {/* Right - Settings */}
+        <div className="space-y-4">
+          {/* Enable/Disable */}
+          <Card className={formState.enabled ? 'border-green-500/50 bg-green-50/50' : ''}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Auto-posting</CardTitle>
+                <Switch checked={formState.enabled} onCheckedChange={(v) => setFormState({ ...formState, enabled: v })} />
+              </div>
+              <CardDescription>
+                {formState.enabled ? (
+                  <span className="text-green-700">Aktivni - {formState.schedule_type === 'daily' ? `denne v ${formState.morning_time}` : formState.schedule_type === 'twice_daily' ? `2x denne` : 'vypnuto'}</span>
+                ) : 'Vypnuto'}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          {/* Schedule */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2"><Calendar className="w-5 h-5" /> Plan publikace</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <RadioGroup value={formState.schedule_type} onValueChange={(v) => setFormState({ ...formState, schedule_type: v as AutopostScheduleType })}>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="disabled" id="disabled" /><Label htmlFor="disabled">Vypnuto</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="daily" id="daily" /><Label htmlFor="daily">Denne rano</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="twice_daily" id="twice_daily" /><Label htmlFor="twice_daily">2x denne</Label></div>
+              </RadioGroup>
+              {formState.schedule_type !== 'disabled' && (
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Rano</Label><Input type="time" value={formState.morning_time} onChange={(e) => setFormState({ ...formState, morning_time: e.target.value })} /></div>
+                  {formState.schedule_type === 'twice_daily' && (
+                    <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Odpoledne</Label><Input type="time" value={formState.afternoon_time} onChange={(e) => setFormState({ ...formState, afternoon_time: e.target.value })} /></div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Caption */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Text prispevku</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div><Label>Popisek</Label><Textarea value={formState.custom_caption} onChange={(e) => setFormState({ ...formState, custom_caption: e.target.value })} rows={2} /></div>
+              <div><Label>Hashtags</Label><Input value={formState.hashtags} onChange={(e) => setFormState({ ...formState, hashtags: e.target.value })} /></div>
+            </CardContent>
+          </Card>
+
+          {/* Save */}
+          <Button onClick={handleSave} disabled={!hasChanges || updateMutation.isPending} className="w-full" size="lg">
+            {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Ulozit nastaveni
+          </Button>
+        </div>
+      </div>
+
+      {/* History */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Historie publikaci</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {history.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+              <p>Zatim zadne publikace</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Platforma</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {history.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{new Date(item.created_at).toLocaleString('cs-CZ')}</TableCell>
+                    <TableCell><Badge variant="outline">{item.platform}</Badge></TableCell>
+                    <TableCell>
+                      <Badge className={item.status === 'success' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'}>
+                        {item.status === 'success' ? 'OK' : item.status === 'failed' ? 'Chyba' : 'Ceka'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
