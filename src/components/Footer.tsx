@@ -1,4 +1,5 @@
 import { Phone, Mail, MapPin, Facebook, Instagram } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const googleMapsLink = "https://www.google.com/maps/dir//SKI+CENTRUM+KOH%C3%9ATKA,+a.s.+Nov%C3%BD+Hrozenkov+241+756+04+Nov%C3%BD+Hrozenkov/@49.2951606,18.230488,14z";
@@ -114,9 +115,17 @@ const Footer = () => {
       <div className="border-t border-primary-foreground/30 bg-black/10 relative z-10">
         <div className="container mx-auto max-w-7xl px-4 py-5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-sm">
-            <p className="opacity-90 text-center md:text-left font-medium">
-              © 2025 SKI CENTRUM KOHÚTKA, a.s. - Lyžařské středisko v srdci Valašska
-            </p>
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
+              <p className="opacity-90 text-center md:text-left font-medium">
+                © 2025 SKI CENTRUM KOHÚTKA, a.s. - Lyžařské středisko v srdci Valašska
+              </p>
+              <Link
+                to="/cookies"
+                className="opacity-85 hover:opacity-100 hover:text-accent transition-all duration-200 font-medium"
+              >
+                Zásady cookies
+              </Link>
+            </div>
             <a
               href="https://effistream.eu/"
               target="_blank"

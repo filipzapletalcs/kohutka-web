@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Cameras from "./pages/Cameras";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
+import Cookies from "./pages/Cookies";
 import ApiDebug from "./pages/ApiDebug";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/kamery" element={<Cameras />} />
             <Route path="/cenik" element={<Pricing />} />
             <Route path="/kontakt" element={<Contact />} />
+            <Route path="/cookies" element={<Cookies />} />
             <Route path="/debug" element={<ApiDebug />} />
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
