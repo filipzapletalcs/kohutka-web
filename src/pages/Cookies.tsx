@@ -58,7 +58,6 @@ const Cookies = () => {
                     <li>Uchovávání informací o přihlášení</li>
                     <li>Zajištění bezpečného připojení</li>
                     <li>Správné načítání obsahu stránek</li>
-                    <li>Funkčnost nákupního košíku (e-shop skipasy)</li>
                   </ul>
                 </div>
                 <p className="text-sm italic">
