@@ -1,6 +1,31 @@
 <!doctype html>
 <html lang="cs">
   <head>
+    <!-- Google Consent Mode V2 - Default Settings (must be before GTM) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+
+      // Set default consent to denied for EU compliance
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied',
+        'functionality_storage': 'granted',
+        'personalization_storage': 'denied',
+        'security_storage': 'granted',
+        'wait_for_update': 500
+      });
+
+      // Enable URL passthrough for better conversion tracking
+      gtag('set', 'url_passthrough', true);
+
+      // Enable ads data redaction when consent denied
+      gtag('set', 'ads_data_redaction', true);
+    </script>
+    <!-- End Google Consent Mode V2 -->
+
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],

@@ -20,6 +20,7 @@ import AdminCameras from "./pages/admin/AdminCameras";
 import AdminWidget from "./pages/admin/AdminWidget";
 import AdminSlopesLifts from "./pages/admin/AdminSlopesLifts";
 import AdminAutopost from "./pages/admin/AdminAutopost";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           }}
         >
           <ScrollToTop />
+          <CookieConsent />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/kamery" element={<Cameras />} />
