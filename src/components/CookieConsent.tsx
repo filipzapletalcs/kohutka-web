@@ -8,62 +8,70 @@ declare global {
   }
 }
 
-// Cookie consent types for Consent Mode V2
+// Cookie consent types
 interface ConsentSettings {
   analytics: boolean;
   marketing: boolean;
-  personalization: boolean;
+  preferences: boolean;
 }
 
-const CONSENT_COOKIE_NAME = "cookie_consent";
-const CONSENT_VERSION = "1";
+const CONSENT_STORAGE_KEY = "cookieConsent_v1";
 
-// Helper function to get gtag
+// Helper function for gtag
 const gtag = (...args: unknown[]) => {
-  if (typeof window !== "undefined" && window.dataLayer) {
-    window.dataLayer.push(args);
-  }
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(args);
 };
 
-// Update Google Consent Mode
-const updateGoogleConsent = (settings: ConsentSettings) => {
-  gtag("consent", "update", {
-    ad_storage: settings.marketing ? "granted" : "denied",
-    ad_user_data: settings.marketing ? "granted" : "denied",
-    ad_personalization: settings.marketing ? "granted" : "denied",
-    analytics_storage: settings.analytics ? "granted" : "denied",
-    personalization_storage: settings.personalization ? "granted" : "denied",
+// Update Google Consent Mode V2 and push event to dataLayer
+const setConsent = (marketing: boolean, analytics: boolean, preferences: boolean) => {
+  window.dataLayer = window.dataLayer || [];
+
+  // Build consent payload
+  const payload = {
+    ad_storage: marketing ? "granted" : "denied",
+    ad_user_data: marketing ? "granted" : "denied",
+    ad_personalization: marketing ? "granted" : "denied",
+    analytics_storage: analytics ? "granted" : "denied",
+    personalization_storage: preferences ? "granted" : "denied",
+    functionality_storage: "granted",
+    security_storage: "granted",
+  };
+
+  // Call gtag consent update
+  gtag("consent", "update", payload);
+
+  // Save to localStorage
+  const saved = {
+    marketing: !!marketing,
+    analytics: !!analytics,
+    preferences: !!preferences,
+    ts: new Date().getTime(),
+  };
+  localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(saved));
+
+  // Push consent_updated event to dataLayer
+  window.dataLayer.push({
+    event: "consent_updated",
+    marketing: saved.marketing,
+    analytics: saved.analytics,
+    preferences: saved.preferences,
   });
 };
 
-// Save consent to cookie
-const saveConsent = (settings: ConsentSettings) => {
-  const consentData = {
-    version: CONSENT_VERSION,
-    timestamp: new Date().toISOString(),
-    settings,
-  };
-  document.cookie = `${CONSENT_COOKIE_NAME}=${encodeURIComponent(
-    JSON.stringify(consentData)
-  )}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
-};
-
-// Load consent from cookie
+// Load consent from localStorage
 const loadConsent = (): ConsentSettings | null => {
-  if (typeof document === "undefined") return null;
-
-  const cookies = document.cookie.split(";");
-  const consentCookie = cookies.find((c) =>
-    c.trim().startsWith(`${CONSENT_COOKIE_NAME}=`)
-  );
-
-  if (!consentCookie) return null;
+  if (typeof window === "undefined") return null;
 
   try {
-    const value = decodeURIComponent(consentCookie.split("=")[1]);
-    const data = JSON.parse(value);
-    if (data.version !== CONSENT_VERSION) return null;
-    return data.settings;
+    const raw = localStorage.getItem(CONSENT_STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    return {
+      analytics: !!saved.analytics,
+      marketing: !!saved.marketing,
+      preferences: !!saved.preferences,
+    };
   } catch {
     return null;
   }
@@ -75,46 +83,35 @@ const CookieConsent = () => {
   const [settings, setSettings] = useState<ConsentSettings>({
     analytics: false,
     marketing: false,
-    personalization: false,
+    preferences: false,
   });
 
   useEffect(() => {
     const savedConsent = loadConsent();
     if (savedConsent) {
       setSettings(savedConsent);
-      updateGoogleConsent(savedConsent);
+      // Apply saved consent on load
+      setConsent(savedConsent.marketing, savedConsent.analytics, savedConsent.preferences);
     } else {
       setIsVisible(true);
     }
   }, []);
 
+  // Accept all cookies
   const acceptAll = () => {
-    const newSettings: ConsentSettings = {
-      analytics: true,
-      marketing: true,
-      personalization: true,
-    };
-    setSettings(newSettings);
-    saveConsent(newSettings);
-    updateGoogleConsent(newSettings);
+    setConsent(true, true, true);
     setIsVisible(false);
   };
 
+  // Reject all optional cookies
   const rejectAll = () => {
-    const newSettings: ConsentSettings = {
-      analytics: false,
-      marketing: false,
-      personalization: false,
-    };
-    setSettings(newSettings);
-    saveConsent(newSettings);
-    updateGoogleConsent(newSettings);
+    setConsent(false, false, false);
     setIsVisible(false);
   };
 
+  // Save custom settings
   const saveSettings = () => {
-    saveConsent(settings);
-    updateGoogleConsent(settings);
+    setConsent(settings.marketing, settings.analytics, settings.preferences);
     setIsVisible(false);
     setShowDetails(false);
   };
@@ -194,17 +191,17 @@ const CookieConsent = () => {
                   }`} />
                 </button>
               </div>
-              {/* Personalization */}
+              {/* Preferences */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Personalizační</span>
+                <span className="text-sm text-gray-700">Preferenční</span>
                 <button
-                  onClick={() => setSettings((s) => ({ ...s, personalization: !s.personalization }))}
+                  onClick={() => setSettings((s) => ({ ...s, preferences: !s.preferences }))}
                   className={`w-10 h-5 rounded-full relative transition-colors ${
-                    settings.personalization ? "bg-primary" : "bg-gray-300"
+                    settings.preferences ? "bg-primary" : "bg-gray-300"
                   }`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${
-                    settings.personalization ? "right-0.5" : "left-0.5"
+                    settings.preferences ? "right-0.5" : "left-0.5"
                   }`} />
                 </button>
               </div>

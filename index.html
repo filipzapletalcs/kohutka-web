@@ -18,6 +18,32 @@
         'wait_for_update': 500
       });
 
+      // Apply saved choice from localStorage (if exists)
+      try {
+        var raw = localStorage.getItem('cookieConsent_v1');
+        var saved = raw ? JSON.parse(raw) : null;
+
+        if (saved) {
+          gtag('consent', 'update', {
+            'ad_storage': saved.marketing ? 'granted' : 'denied',
+            'ad_user_data': saved.marketing ? 'granted' : 'denied',
+            'ad_personalization': saved.marketing ? 'granted' : 'denied',
+            'analytics_storage': saved.analytics ? 'granted' : 'denied',
+            'personalization_storage': saved.preferences ? 'granted' : 'denied',
+            'functionality_storage': 'granted',
+            'security_storage': 'granted'
+          });
+
+          // Push consent_updated event
+          window.dataLayer.push({
+            'event': 'consent_updated',
+            'marketing': saved.marketing,
+            'analytics': saved.analytics,
+            'preferences': saved.preferences
+          });
+        }
+      } catch (e) {}
+
       // Enable URL passthrough for better conversion tracking
       gtag('set', 'url_passthrough', true);
 
