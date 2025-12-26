@@ -392,10 +392,20 @@ export function parseOperationStatus(xmlDoc: Document): OperationStatus {
   const weather = getXMLText(locInfoWinter, 'weather_0700_text');
   const tempDefault = getXMLText(locInfoWinter, 'temp_0700');
 
-  // Try to get temperature from camera 3122 (peak camera)
-  const peakCam = xmlDoc.querySelector('loc_cams > cam[id="3122"]');
-  const tempPeak = peakCam ? getXMLText(peakCam, 'temp') : '';
-  const temperature = tempPeak || tempDefault;
+  // Try to get temperature from "Chata Kohútka" panorama camera (ID 2122)
+  let temperature = '';
+  const chataKohutkaCam = xmlDoc.querySelector('loc_cams > cam[id="2122"]');
+  if (chataKohutkaCam) {
+    const lastImage = chataKohutkaCam.querySelector('media > last_image');
+    if (lastImage) {
+      temperature = getXMLText(lastImage, 'temp');
+    }
+  }
+
+  // Fallback to default temperature from weather report
+  if (!temperature) {
+    temperature = tempDefault;
+  }
 
   // Snow height
   const snowMin = getXMLText(locInfoWinter, 'snowheight_slopes_min');
