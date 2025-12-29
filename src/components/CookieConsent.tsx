@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-// Extend Window interface for dataLayer
+// Extend Window interface for dataLayer and gtag
 declare global {
   interface Window {
-    dataLayer: unknown[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dataLayer: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    gtag: (...args: any[]) => void;
   }
 }
 
@@ -17,18 +20,25 @@ interface ConsentSettings {
 
 const CONSENT_STORAGE_KEY = "cookieConsent_v1";
 
-// Helper function for gtag
-const gtag = (...args: unknown[]) => {
+// Initialize gtag function globally - MUST use function() and arguments, not arrow function
+// GTM requires the arguments object, not an array
+const initGtag = () => {
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(args);
+  if (!window.gtag) {
+    window.gtag = function() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer.push(arguments);
+    };
+  }
 };
 
 // Update Google Consent Mode V2 and push event to dataLayer
 const setConsent = (marketing: boolean, analytics: boolean, preferences: boolean) => {
-  window.dataLayer = window.dataLayer || [];
+  // Initialize gtag if not already done
+  initGtag();
 
-  // Build consent payload
-  const payload = {
+  // Build consent payload for Consent Mode V2
+  const consentPayload = {
     ad_storage: marketing ? "granted" : "denied",
     ad_user_data: marketing ? "granted" : "denied",
     ad_personalization: marketing ? "granted" : "denied",
@@ -38,10 +48,11 @@ const setConsent = (marketing: boolean, analytics: boolean, preferences: boolean
     security_storage: "granted",
   };
 
-  // Call gtag consent update
-  gtag("consent", "update", payload);
+  // CRITICAL: Call gtag consent update - this is what GTM needs to see
+  // Must use window.gtag which pushes arguments object (not array)
+  window.gtag("consent", "update", consentPayload);
 
-  // Save to localStorage
+  // Save to localStorage for persistence
   const saved = {
     marketing: !!marketing,
     analytics: !!analytics,
@@ -50,7 +61,7 @@ const setConsent = (marketing: boolean, analytics: boolean, preferences: boolean
   };
   localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(saved));
 
-  // Push consent_updated event to dataLayer
+  // Push consent_updated event to dataLayer (for custom triggers)
   window.dataLayer.push({
     event: "consent_updated",
     marketing: saved.marketing,
