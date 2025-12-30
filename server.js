@@ -9,6 +9,29 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Valid SPA routes (must match React Router routes in App.tsx)
+const VALID_ROUTES = new Set([
+  '/',
+  '/kamery',
+  '/cenik',
+  '/kontakt',
+  '/cookies',
+  '/debug',
+  '/admin',
+  '/admin/login',
+  '/admin/cenik',
+  '/admin/kamery',
+  '/admin/widget',
+  '/admin/sjezdovky',
+  '/admin/autopost',
+]);
+
+// Legacy URLs from old site that should return 410 Gone
+const LEGACY_PREFIXES = [
+  '/aktuality',
+  // Add more legacy prefixes here as needed
+];
+
 // Wrap everything in async IIFE to ensure correct order
 (async () => {
   // FIRST: Global request logger - this MUST run before everything else
@@ -109,13 +132,39 @@ const PORT = process.env.PORT || 3000;
   // Serve static files from dist directory
   app.use(express.static(path.join(__dirname, 'dist')));
 
-  // SPA fallback - serve index.html for all other routes
+  // SPA fallback with proper HTTP status codes for SEO
   app.use((req, res, next) => {
-    console.log(`🔄 SPA Fallback: ${req.method} ${req.url}`);
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'), (err) => {
-      if (err) {
-        next(err);
-      }
+    // Normalize path: remove trailing slash (except for root)
+    const requestPath = req.path === '/' ? '/' : req.path.replace(/\/+$/, '');
+    const indexHtml = path.join(__dirname, 'dist', 'index.html');
+
+    // Check if it's a legacy URL (410 Gone)
+    const isLegacy = LEGACY_PREFIXES.some(prefix => requestPath.startsWith(prefix));
+    if (isLegacy) {
+      console.log(`⛔ Legacy URL (410 Gone): ${req.method} ${req.url}`);
+      res.status(410);
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.sendFile(indexHtml, (err) => {
+        if (err) next(err);
+      });
+    }
+
+    // Check if it's a valid SPA route (200 OK)
+    if (VALID_ROUTES.has(requestPath)) {
+      console.log(`✅ Valid SPA route (200): ${req.method} ${req.url}`);
+      return res.sendFile(indexHtml, (err) => {
+        if (err) next(err);
+      });
+    }
+
+    // Unknown route - return 404 Not Found
+    console.log(`❌ Not found (404): ${req.method} ${req.url}`);
+    res.status(404);
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(indexHtml, (err) => {
+      if (err) next(err);
     });
   });
 
