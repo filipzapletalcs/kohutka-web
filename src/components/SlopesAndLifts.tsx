@@ -129,10 +129,10 @@ const SlopesAndLifts = () => {
   const totalSlopesLength = slopesDetailed.reduce((sum, s) => sum + s.length, 0);
   const totalSlopesExceed = slopesDetailed.reduce((sum, s) => sum + s.exceed, 0);
 
-  const totalLifts = liftsDetailed.filter(l => l.type_code !== 7).length; // Exclude skipark
+  const totalLifts = liftsDetailed.length; // Včetně skiparku
   const openLifts = liftsDetailed.filter(l => {
     const effectiveCode = getEffectiveStatusCode('lift', l.id, l.status_code);
-    return l.type_code !== 7 && (effectiveCode === 1 || effectiveCode === 3);
+    return effectiveCode === 1 || effectiveCode === 3;
   }).length;
   const totalLiftsLength = liftsDetailed.reduce((sum, l) => sum + l.length, 0);
   const totalCapacity = liftsDetailed.reduce((sum, l) => sum + l.capacity, 0);

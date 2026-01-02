@@ -1,90 +1,94 @@
 import { Phone, Mail, MapPin, Facebook, Instagram } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const googleMapsLink = "https://www.google.com/maps/dir//SKI+CENTRUM+KOH%C3%9ATKA,+a.s.+Nov%C3%BD+Hrozenkov+241+756+04+Nov%C3%BD+Hrozenkov/@49.2951606,18.230488,14z";
 
   return (
-    <footer className="bg-primary text-primary-foreground">
+    <footer className="bg-gradient text-primary-foreground relative overflow-hidden">
+      {/* Subtle overlay pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.05),transparent_50%)]" />
+
       {/* Main Footer Content */}
-      <div className="container mx-auto max-w-7xl px-4 py-8 md:py-12">
+      <div className="container mx-auto max-w-7xl px-4 py-10 md:py-14 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {/* Column 1: Company Info & Address */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold mb-4">SKI CENTRUM KOHÚTKA</h3>
+            <h3 className="text-xl font-bold mb-5 tracking-wide">SKI CENTRUM KOHÚTKA</h3>
             <a
               href={googleMapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-start gap-3 hover:text-accent transition-colors group"
+              className="flex items-start gap-3 hover:text-accent transition-all duration-200 group hover:translate-x-1"
             >
-              <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5 group-hover:text-accent" />
+              <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5 group-hover:text-accent transition-colors" />
               <div>
-                <p className="font-medium">Nový Hrozenkov 241</p>
+                <p className="font-semibold">Nový Hrozenkov 241</p>
                 <p className="text-sm opacity-90">756 04 Nový Hrozenkov</p>
-                <p className="text-xs opacity-70 mt-1">Klikněte pro navigaci</p>
+                <p className="text-xs opacity-80 mt-1 group-hover:opacity-100 transition-opacity">Klikněte pro navigaci</p>
               </div>
             </a>
           </div>
 
           {/* Column 2: Contact Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold mb-4">Kontakt</h3>
+            <h3 className="text-xl font-bold mb-5 tracking-wide">Kontakt</h3>
 
             {/* Ski Centrum */}
-            <div className="space-y-2">
-              <p className="text-sm font-semibold opacity-90">Ski Centrum</p>
+            <div className="space-y-2.5">
+              <p className="text-sm font-bold opacity-95">SkI CENTRUM KOHÚTKA</p>
               <a
                 href="tel:+420725005725"
-                className="flex items-center gap-2 hover:text-accent transition-colors text-sm"
+                className="flex items-center gap-2.5 hover:text-accent transition-all duration-200 text-sm hover:translate-x-1 group"
               >
-                <Phone className="h-4 w-4 flex-shrink-0" />
-                +420 725 005 725
+                <Phone className="h-4 w-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">+420 725 005 725</span>
               </a>
               <a
                 href="mailto:ski@kohutka.ski"
-                className="flex items-center gap-2 hover:text-accent transition-colors text-sm"
+                className="flex items-center gap-2.5 hover:text-accent transition-all duration-200 text-sm hover:translate-x-1 group"
               >
-                <Mail className="h-4 w-4 flex-shrink-0" />
-                ski@kohutka.ski
+                <Mail className="h-4 w-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">ski@kohutka.ski</span>
               </a>
             </div>
 
             {/* Infocentrum */}
-            <div className="space-y-2 pt-2">
-              <p className="text-sm font-semibold opacity-90">Infocentrum</p>
+            <div className="space-y-2.5 pt-3">
+              <p className="text-sm font-bold opacity-95">Infocentrum</p>
               <a
                 href="tel:+420571160800"
-                className="flex items-center gap-2 hover:text-accent transition-colors text-sm"
+                className="flex items-center gap-2.5 hover:text-accent transition-all duration-200 text-sm hover:translate-x-1 group"
               >
-                <Phone className="h-4 w-4 flex-shrink-0" />
-                +420 571 160 800
+                <Phone className="h-4 w-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">+420 571 160 800</span>
               </a>
               <a
                 href="mailto:infocentrum@kohutka.info"
-                className="flex items-center gap-2 hover:text-accent transition-colors text-sm"
+                className="flex items-center gap-2.5 hover:text-accent transition-all duration-200 text-sm hover:translate-x-1 group"
               >
-                <Mail className="h-4 w-4 flex-shrink-0" />
-                infocentrum@kohutka.info
+                <Mail className="h-4 w-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">infocentrum@kohutka.info</span>
               </a>
             </div>
           </div>
 
           {/* Column 3: Social Media */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold mb-4">Sledujte nás</h3>
-            <div className="space-y-3">
+            <h3 className="text-xl font-bold mb-5 tracking-wide">Sledujte nás</h3>
+            <div className="space-y-4">
               <a
                 href="https://www.facebook.com/SKI.CENTRUM.KOHUTKA"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 hover:text-accent transition-colors group"
+                className="flex items-center gap-3 hover:text-accent transition-all duration-200 group hover:translate-x-1"
               >
-                <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <div className="w-11 h-11 rounded-full bg-[#1877F2] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-all duration-200 shadow-lg group-hover:shadow-xl">
                   <Facebook className="h-5 w-5 text-white" fill="currentColor" />
                 </div>
                 <div>
-                  <p className="font-semibold">Facebook</p>
-                  <p className="text-xs opacity-70">SKI.CENTRUM.KOHUTKA</p>
+                  <p className="font-bold">Facebook</p>
+                  <p className="text-xs opacity-80 group-hover:opacity-100 transition-opacity">SKI.CENTRUM.KOHUTKA</p>
                 </div>
               </a>
 
@@ -92,14 +96,14 @@ const Footer = () => {
                 href="https://www.instagram.com/ski_centrum_kohutka"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 hover:text-accent transition-colors group"
+                className="flex items-center gap-3 hover:text-accent transition-all duration-200 group hover:translate-x-1"
               >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-all duration-200 shadow-lg group-hover:shadow-xl">
                   <Instagram className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold">Instagram</p>
-                  <p className="text-xs opacity-70">@ski_centrum_kohutka</p>
+                  <p className="font-bold">Instagram</p>
+                  <p className="text-xs opacity-80 group-hover:opacity-100 transition-opacity">@ski_centrum_kohutka</p>
                 </div>
               </a>
             </div>
@@ -108,19 +112,35 @@ const Footer = () => {
       </div>
 
       {/* Bottom Bar: Copyright & EffiStream */}
-      <div className="border-t border-primary-foreground/20">
-        <div className="container mx-auto max-w-7xl px-4 py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-sm">
-            <p className="opacity-80 text-center md:text-left">
-              © 2025 SKI CENTRUM KOHÚTKA, a.s. - Lyžařské středisko v srdci Valašska
-            </p>
+      <div className="border-t border-primary-foreground/30 bg-black/10 relative z-10">
+        <div className="container mx-auto max-w-7xl px-4 py-5">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-sm">
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
+              <p className="opacity-90 text-center md:text-left font-medium">
+                © 2026 SKI CENTRUM KOHÚTKA, a.s. - Lyžařské středisko v srdci Valašska
+              </p>
+              <span className="hidden md:inline opacity-50">|</span>
+              <Link
+                to="/cookies"
+                className="opacity-85 hover:opacity-100 hover:text-accent transition-all duration-200 font-medium"
+              >
+                Zásady cookies
+              </Link>
+              <span className="hidden md:inline opacity-50">|</span>
+              <Link
+                to="/ochrana-udaju"
+                className="opacity-85 hover:opacity-100 hover:text-accent transition-all duration-200 font-medium"
+              >
+                Ochrana osobních údajů
+              </Link>
+            </div>
             <a
               href="https://effistream.eu/"
               target="_blank"
               rel="noopener noreferrer"
-              className="opacity-80 hover:opacity-100 hover:text-accent transition-all font-medium"
+              className="opacity-85 hover:opacity-100 hover:text-accent transition-all duration-200 font-semibold hover:translate-x-1 inline-block"
             >
-              Powered by EffiStream
+              Powered by EffiStream →
             </a>
           </div>
         </div>
