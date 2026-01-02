@@ -13,14 +13,14 @@ const Weather = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Meteoblue "three" widget based on your snippet
+  // Meteoblue "three" widget - Kohútka (49.296N, 18.229E, 878m)
   // Mobile: 3 dny (kompaktní náhled)
   const mobileWidgetUrl =
-    "https://www.meteoblue.com/cs/weather/widget/three/nov%c3%bd-hrozenkov_czechia_3069308?geoloc=fixed&nocurrent=0&noforecast=0&days=3&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image&user_key=69fc26ded3c243c7&embed_key=e7c3668d2023e303&sig=47fcb56ceb3694a5c47d17bad12fc0ce226453ab22463d71863de2072f1f5791";
+    "https://www.meteoblue.com/cs/po%C4%8Das%C3%AD/widget/three/Koh%C3%BAtka_49.296N18.229E878_Europe%2FPrague?geoloc=fixed&nocurrent=0&noforecast=0&days=3&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image&user_key=69fc26ded3c243c7&embed_key=2a96f0909419f56b&sig=3ae2055847592d6e0c718ca0a9a6fbbb8053a106f31f40571a5619515ac21429";
 
   // Desktop: 7 dní, stejný design, jen delší horizontální přehled
   const desktopWidgetUrl =
-    "https://www.meteoblue.com/cs/weather/widget/three/nov%c3%bd-hrozenkov_czechia_3069308?geoloc=fixed&nocurrent=0&noforecast=0&days=7&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image&user_key=69fc26ded3c243c7&embed_key=e7c3668d2023e303&sig=47fcb56ceb3694a5c47d17bad12fc0ce226453ab22463d71863de2072f1f5791";
+    "https://www.meteoblue.com/cs/po%C4%8Das%C3%AD/widget/three/Koh%C3%BAtka_49.296N18.229E878_Europe%2FPrague?geoloc=fixed&nocurrent=0&noforecast=0&days=7&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=image&user_key=69fc26ded3c243c7&embed_key=2a96f0909419f56b&sig=3ae2055847592d6e0c718ca0a9a6fbbb8053a106f31f40571a5619515ac21429";
 
   return (
     <section className="pt-6 pb-10 md:pt-8 md:pb-14 bg-muted/20">
@@ -41,10 +41,10 @@ const Weather = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm md:text-base">
-                  Nový Hrozenkov / Kohútka
+                  Kohútka (878 m n. m.)
                 </h3>
                 <p className="text-xs text-gray-600">
-                  Meteoblue grafická předpověď, horská oblast Valašsko
+                  Meteoblue grafická předpověď, Valašsko
                 </p>
               </div>
             </div>

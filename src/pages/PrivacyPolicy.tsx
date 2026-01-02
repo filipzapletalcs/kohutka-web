@@ -128,10 +128,6 @@ const PrivacyPolicy = () => {
                         <td className="p-3">Plnění smlouvy (čl. 6 odst. 1 písm. b)</td>
                       </tr>
                       <tr>
-                        <td className="p-3">Prodej skipasů a vstupenek</td>
-                        <td className="p-3">Plnění smlouvy (čl. 6 odst. 1 písm. b)</td>
-                      </tr>
-                      <tr>
                         <td className="p-3">Odpovědi na dotazy a požadavky</td>
                         <td className="p-3">Oprávněný zájem (čl. 6 odst. 1 písm. f)</td>
                       </tr>
@@ -238,10 +234,6 @@ const PrivacyPolicy = () => {
                     <li className="flex items-start gap-2">
                       <span className="text-primary font-bold">•</span>
                       <span><strong>Údaje z kontaktních formulářů:</strong> po dobu vyřízení vašeho dotazu + 2 roky</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary font-bold">•</span>
-                      <span><strong>Údaje z nákupu skipasů:</strong> po dobu trvání smluvního vztahu + zákonná archivační doba (10 let)</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary font-bold">•</span>
