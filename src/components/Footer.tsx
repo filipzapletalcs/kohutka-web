@@ -125,6 +125,13 @@ const Footer = () => {
               >
                 Zásady cookies
               </Link>
+              <span className="hidden md:inline opacity-50">|</span>
+              <Link
+                to="/ochrana-udaju"
+                className="opacity-85 hover:opacity-100 hover:text-accent transition-all duration-200 font-medium"
+              >
+                Ochrana osobních údajů
+              </Link>
             </div>
             <a
               href="https://effistream.eu/"
