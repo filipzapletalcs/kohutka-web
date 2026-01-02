@@ -470,15 +470,15 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
         openCount++;
       }
 
-      // Lanovky (sedačkové, kabinkové) - type_code 1, 2
-      if (typeCode === 1 || typeCode === 2) {
+      // Lanovky (sedačkové, kabinkové, čtyřsedačky) - type_code 1, 2, 4
+      if (typeCode === 1 || typeCode === 2 || typeCode === 4) {
         cableCarTotalCount++;
         if (isOpen) {
           cableCarOpenCount++;
         }
       }
-      // Vleky - type_code 3, 4, 5, 6
-      else if (typeCode >= 3 && typeCode <= 6) {
+      // Vleky - type_code 3, 5, 6
+      else if (typeCode === 3 || typeCode === 5 || typeCode === 6) {
         dragLiftTotalCount++;
         if (isOpen) {
           dragLiftOpenCount++;

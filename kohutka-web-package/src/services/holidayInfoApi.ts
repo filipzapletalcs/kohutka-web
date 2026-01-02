@@ -1,4 +1,5 @@
 import { OperationStatus, LiftStatus, SlopeStatus, Camera, Slope, Lift } from '@/types/holidayInfo';
+import { fetchHolidayInfoCache, updateHolidayInfoCache } from '@/lib/supabase';
 
 const API_URL = 'https://exports.holidayinfo.cz/xml_export.php?dc=c9ixxlejab5d4mrr&localias=kohutka';
 
@@ -266,18 +267,18 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     }
   });
 
-  // Add custom cameras from data.kohutka.ski (for archive time filtering)
-  // Note: data.kohutka.ski doesn't have valid HTTPS certificate, must use HTTP
+  // Velká sjezdovka - Live stream from i2net
   cameras.push({
-    id: 'kohutka-p0',
+    id: 'live-velka-sjezdovka',
     name: 'Velká sjezdovka',
-    description: 'Náhled na Velkou sjezdovku z horní stanice',
+    description: 'Live stream z velké sjezdovky',
     location: 'Horní stanice',
-    source: 'archive',
+    hasLiveStream: true,
+    liveStreamUrl: 'https://streamer.i2net.cz/live/kohutka02_.m3u8',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P0_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P0_nahled.jpg',
+        url: 'https://webcams.i2net.cz/obr/kohutka-02.jpg',
+        url_preview: 'https://webcams.i2net.cz/obr/kohutka-02.jpg',
         temp: '',
         date: '',
         time: '',
@@ -368,8 +369,9 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     const getPriority = (camera: Camera) => {
       if (camera.id === '2122') return 1; // Chata Kohútka (panorama) - first
       if (camera.id === 'live-kohutka') return 2; // Kohútka live stream - second
-      if (camera.id === 'live-mala-kohutka') return 3; // Malá Kohútka live stream - third
-      return 4; // All other cameras
+      if (camera.id === 'live-velka-sjezdovka') return 3; // Velká sjezdovka live stream - third
+      if (camera.id === 'live-mala-kohutka') return 4; // Malá Kohútka live stream - fourth
+      return 5; // All other cameras
     };
 
     return getPriority(a) - getPriority(b);
@@ -390,17 +392,32 @@ export function parseOperationStatus(xmlDoc: Document): OperationStatus {
   const weather = getXMLText(locInfoWinter, 'weather_0700_text');
   const tempDefault = getXMLText(locInfoWinter, 'temp_0700');
 
-  // Try to get temperature from camera 3122 (peak camera)
-  const peakCam = xmlDoc.querySelector('loc_cams > cam[id="3122"]');
-  const tempPeak = peakCam ? getXMLText(peakCam, 'temp') : '';
-  const temperature = tempPeak || tempDefault;
+  // Try to get temperature from "Chata Kohútka" panorama camera (ID 2122)
+  let temperature = '';
+  const chataKohutkaCam = xmlDoc.querySelector('loc_cams > cam[id="2122"]');
+  if (chataKohutkaCam) {
+    const lastImage = chataKohutkaCam.querySelector('media > last_image');
+    if (lastImage) {
+      temperature = getXMLText(lastImage, 'temp');
+    }
+  }
+
+  // Fallback to default temperature from weather report
+  if (!temperature) {
+    temperature = tempDefault;
+  }
 
   // Snow height
   const snowMin = getXMLText(locInfoWinter, 'snowheight_slopes_min');
   const snowMax = getXMLText(locInfoWinter, 'snowheight_slopes_max');
   let snowHeight = '';
   if (snowMin && snowMax) {
-    snowHeight = `${snowMin} - ${snowMax} cm`;
+    // If both values are the same, show just one (e.g., "0 cm" instead of "0 - 0 cm")
+    if (snowMin === snowMax) {
+      snowHeight = `${snowMin} cm`;
+    } else {
+      snowHeight = `${snowMin} - ${snowMax} cm`;
+    }
   } else if (snowMin) {
     snowHeight = `${snowMin} cm`;
   } else if (snowMax) {
@@ -429,9 +446,18 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
   let totalCount = 0;
   let skiParkOpen = false;
 
+  // Lanovky (sedačkové/kabinkové) - type_code 1, 2
+  let cableCarOpenCount = 0;
+  let cableCarTotalCount = 0;
+
+  // Vleky - type_code 3, 4, 5, 6
+  let dragLiftOpenCount = 0;
+  let dragLiftTotalCount = 0;
+
   liftElements.forEach((liftEl) => {
     const statusCode = getXMLNumber(liftEl, 'status_code');
     const typeCode = getXMLNumber(liftEl, 'type_code');
+    const isOpen = statusCode === 1 || statusCode === 3;
 
     // Type 7 = Skipark for Children
     if (typeCode === 7) {
@@ -440,9 +466,23 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
       }
     } else {
       totalCount++;
-      // Status codes: 1,3 = open, 2 = closed
-      if (statusCode === 1 || statusCode === 3) {
+      if (isOpen) {
         openCount++;
+      }
+
+      // Lanovky (sedačkové, kabinkové, čtyřsedačky) - type_code 1, 2, 4
+      if (typeCode === 1 || typeCode === 2 || typeCode === 4) {
+        cableCarTotalCount++;
+        if (isOpen) {
+          cableCarOpenCount++;
+        }
+      }
+      // Vleky - type_code 3, 5, 6
+      else if (typeCode === 3 || typeCode === 5 || typeCode === 6) {
+        dragLiftTotalCount++;
+        if (isOpen) {
+          dragLiftOpenCount++;
+        }
       }
     }
   });
@@ -451,6 +491,10 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
     openCount,
     totalCount,
     skiParkOpen,
+    cableCarOpenCount,
+    cableCarTotalCount,
+    dragLiftOpenCount,
+    dragLiftTotalCount,
   };
 }
 
@@ -531,6 +575,115 @@ export function parseLifts(xmlDoc: Document): Lift[] {
 }
 
 /**
+ * Build fallback data from Supabase cache
+ */
+async function getFallbackFromCache() {
+  try {
+    const cache = await fetchHolidayInfoCache();
+    if (cache) {
+      console.log('Using cached HolidayInfo data from', cache.updated_at);
+      return {
+        cameras: FALLBACK_CAMERAS,
+        operation: {
+          isOpen: cache.is_open,
+          operationText: cache.operation_text || 'mimo provoz',
+          opertime: cache.opertime || '',
+          temperature: cache.temperature || '',
+          weather: cache.weather || '',
+          snowHeight: cache.snow_height || '',
+        },
+        lifts: {
+          openCount: cache.lifts_open_count,
+          totalCount: cache.lifts_total_count,
+          skiParkOpen: cache.skipark_open,
+          cableCarOpenCount: cache.cable_car_open_count,
+          cableCarTotalCount: cache.cable_car_total_count,
+          dragLiftOpenCount: cache.drag_lift_open_count,
+          dragLiftTotalCount: cache.drag_lift_total_count,
+        },
+        slopes: {
+          openCount: cache.slopes_open_count,
+          totalCount: cache.slopes_total_count,
+        },
+        slopesDetailed: cache.slopes_detailed || [],
+        liftsDetailed: cache.lifts_detailed || [],
+        rawXML: '',
+        fromCache: true,
+        cacheUpdatedAt: cache.updated_at,
+      };
+    }
+  } catch (cacheError) {
+    console.error('Error fetching cache:', cacheError);
+  }
+
+  // No cache available, return hardcoded fallback
+  return {
+    cameras: FALLBACK_CAMERAS,
+    operation: {
+      isOpen: false,
+      operationText: 'Data nedostupná',
+      opertime: '',
+      temperature: '',
+      weather: '',
+      snowHeight: '',
+    },
+    lifts: {
+      openCount: 0,
+      totalCount: 0,
+      skiParkOpen: false,
+      cableCarOpenCount: 0,
+      cableCarTotalCount: 0,
+      dragLiftOpenCount: 0,
+      dragLiftTotalCount: 0,
+    },
+    slopes: {
+      openCount: 0,
+      totalCount: 0,
+    },
+    slopesDetailed: [],
+    liftsDetailed: [],
+    rawXML: '',
+    fromCache: false,
+  };
+}
+
+/**
+ * Save data to Supabase cache
+ */
+async function saveToCache(data: {
+  operation: OperationStatus;
+  lifts: LiftStatus;
+  slopes: SlopeStatus;
+  slopesDetailed: Slope[];
+  liftsDetailed: Lift[];
+}) {
+  try {
+    await updateHolidayInfoCache({
+      is_open: data.operation.isOpen,
+      operation_text: data.operation.operationText,
+      opertime: data.operation.opertime,
+      temperature: data.operation.temperature,
+      weather: data.operation.weather,
+      snow_height: data.operation.snowHeight,
+      lifts_open_count: data.lifts.openCount,
+      lifts_total_count: data.lifts.totalCount,
+      skipark_open: data.lifts.skiParkOpen,
+      cable_car_open_count: data.lifts.cableCarOpenCount,
+      cable_car_total_count: data.lifts.cableCarTotalCount,
+      drag_lift_open_count: data.lifts.dragLiftOpenCount,
+      drag_lift_total_count: data.lifts.dragLiftTotalCount,
+      slopes_open_count: data.slopes.openCount,
+      slopes_total_count: data.slopes.totalCount,
+      slopes_detailed: data.slopesDetailed,
+      lifts_detailed: data.liftsDetailed,
+    });
+    console.log('HolidayInfo data saved to cache');
+  } catch (error) {
+    console.error('Error saving to cache:', error);
+  }
+}
+
+/**
  * Fetch and parse all Holiday Info data
  */
 export async function fetchHolidayInfoData() {
@@ -547,66 +700,32 @@ export async function fetchHolidayInfoData() {
         .map(el => el.textContent)
         .join(', ');
       console.error('Holiday Info API returned error:', errors);
-      // Return fallback data instead of throwing
-      return {
-        cameras: FALLBACK_CAMERAS,
-        operation: {
-          isOpen: false,
-          operationText: 'mimo provoz',
-          opertime: '',
-          temperature: '',
-          weather: '',
-          snowHeight: '',
-        },
-        lifts: {
-          openCount: 0,
-          totalCount: 0,
-          skiParkOpen: false,
-        },
-        slopes: {
-          openCount: 0,
-          totalCount: 0,
-        },
-        slopesDetailed: [],
-        liftsDetailed: [],
-        rawXML: xmlText,
-      };
+      // Try to get cached data
+      return await getFallbackFromCache();
     }
+
+    const operation = parseOperationStatus(xmlDoc);
+    const lifts = parseLiftStatus(xmlDoc);
+    const slopes = parseSlopeStatus(xmlDoc);
+    const slopesDetailed = parseSlopes(xmlDoc);
+    const liftsDetailed = parseLifts(xmlDoc);
+
+    // Save to cache (don't await to not block the response)
+    saveToCache({ operation, lifts, slopes, slopesDetailed, liftsDetailed });
 
     return {
       cameras: parseCameras(xmlDoc),
-      operation: parseOperationStatus(xmlDoc),
-      lifts: parseLiftStatus(xmlDoc),
-      slopes: parseSlopeStatus(xmlDoc),
-      slopesDetailed: parseSlopes(xmlDoc),
-      liftsDetailed: parseLifts(xmlDoc),
+      operation,
+      lifts,
+      slopes,
+      slopesDetailed,
+      liftsDetailed,
       rawXML: xmlText,
+      fromCache: false,
     };
   } catch (error) {
     console.error('Error fetching Holiday Info data:', error);
-    // Return fallback data on any error
-    return {
-      cameras: FALLBACK_CAMERAS,
-      operation: {
-        isOpen: false,
-        operationText: 'Data nedostupná',
-        opertime: '',
-        temperature: '',
-        weather: '',
-        snowHeight: '',
-      },
-      lifts: {
-        openCount: 0,
-        totalCount: 0,
-        skiParkOpen: false,
-      },
-      slopes: {
-        openCount: 0,
-        totalCount: 0,
-      },
-      slopesDetailed: [],
-      liftsDetailed: [],
-      rawXML: '',
-    };
+    // Try to get cached data
+    return await getFallbackFromCache();
   }
 }
