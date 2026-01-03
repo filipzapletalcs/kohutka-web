@@ -167,6 +167,21 @@ All colors MUST be HSL.
   }
 }
 
+@layer components {
+  /* Fix for Norton browser and other browsers with CSS variable rendering issues */
+  /* Explicitly set accent button background to avoid transparency flashing */
+  .bg-accent {
+    background-color: hsl(88 95% 65%) !important;
+    background-color: hsl(var(--accent)) !important;
+  }
+
+  .bg-accent:hover,
+  .hover\:bg-accent\/90:hover {
+    background-color: hsl(88 95% 58%) !important;
+    background-color: hsl(var(--accent) / 0.9) !important;
+  }
+}
+
 @layer utilities {
   .text-gradient {
     background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
