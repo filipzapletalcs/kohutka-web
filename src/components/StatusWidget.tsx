@@ -50,7 +50,7 @@ export const StatusWidget = ({
     iconBg: "bg-gradient-to-br from-primary/5 to-primary/10",
     iconColor: "text-primary",
     iconRing: "ring-2 ring-primary/20",
-    valueColor: "text-gray-900",
+    valueColor: "text-primary",
     cardBorder: "border-gray-200/50",
     cardShadow: "shadow-gray-100/50",
   };
