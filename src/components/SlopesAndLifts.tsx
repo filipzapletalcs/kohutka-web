@@ -22,26 +22,36 @@ function getDifficultyColor(diffCode: number): string {
 }
 
 /**
- * Get status icon and color based on status_code
- * Status codes from API: 1 = N/A, 2 = Out of service, 3 = Closed
+ * Get status icon and color based on status_code and type
+ *
+ * Slopes (sjezdovky): status_code 2,6 = Otevřena, 3 = Zavřena
+ * Lifts (vleky): status_code 1,3 = v provozu, 2 = mimo provoz
  */
-function getStatusInfo(statusCode: number, statusText: string) {
-  // When closed (status_code 2 or 3), show red X
-  if (statusCode === 2 || statusCode === 3) {
+function getStatusInfo(statusCode: number, statusText: string, type: 'slope' | 'lift') {
+  let isOpen: boolean;
+
+  if (type === 'slope') {
+    // Slopes: status_code 2 or 6 = open
+    isOpen = statusCode === 2 || statusCode === 6;
+  } else {
+    // Lifts: status_code 1 or 3 = open
+    isOpen = statusCode === 1 || statusCode === 3;
+  }
+
+  if (isOpen) {
     return {
-      icon: CircleX,
-      color: "text-red-500",
-      bgColor: "bg-red-500/10",
-      text: statusText || "zavřeno",
+      icon: CircleCheck,
+      color: "text-green-500",
+      bgColor: "bg-green-500/10",
+      text: statusText || "otevřeno",
     };
   }
 
-  // When open (status_code 1 or other), show green check
   return {
-    icon: CircleCheck,
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
-    text: statusText || "otevřeno",
+    icon: CircleX,
+    color: "text-red-500",
+    bgColor: "bg-red-500/10",
+    text: statusText || "zavřeno",
   };
 }
 
@@ -60,17 +70,22 @@ const SlopesAndLifts = () => {
   });
 
   // Get override for an item
-  const getOverride = (type: 'slope' | 'lift', id: number): SlopeLiftOverride | undefined => {
+  const getOverride = (type: 'slope' | 'lift', id: string): SlopeLiftOverride | undefined => {
     return overrides.find((o) => o.id === `${type}_${id}`);
   };
 
   // Get effective status considering manual override
-  const getEffectiveStatusCode = (type: 'slope' | 'lift', id: number, apiStatusCode: number): number => {
+  const getEffectiveStatusCode = (type: 'slope' | 'lift', id: string, apiStatusCode: number): number => {
     const override = getOverride(type, id);
     if (override && override.mode === 'manual') {
       // Return status code based on manual override
-      // is_open true = 1 (open), is_open false = 2 (closed)
-      return override.is_open ? 1 : 2;
+      // Slopes: 2 = open, 3 = closed
+      // Lifts: 1 = open, 2 = closed
+      if (type === 'slope') {
+        return override.is_open ? 2 : 3;
+      } else {
+        return override.is_open ? 1 : 2;
+      }
     }
     return apiStatusCode;
   };
@@ -104,18 +119,20 @@ const SlopesAndLifts = () => {
   const { slopesDetailed = [], liftsDetailed = [] } = data;
 
   // Calculate totals (using effective status with overrides)
+  // Slopes: status_code 2,6 = open
+  // Lifts: status_code 1,3 = open
   const totalSlopes = slopesDetailed.length;
   const openSlopes = slopesDetailed.filter(s => {
     const effectiveCode = getEffectiveStatusCode('slope', s.id, s.status_code);
-    return effectiveCode !== 2 && effectiveCode !== 3;
+    return effectiveCode === 2 || effectiveCode === 6;
   }).length;
   const totalSlopesLength = slopesDetailed.reduce((sum, s) => sum + s.length, 0);
   const totalSlopesExceed = slopesDetailed.reduce((sum, s) => sum + s.exceed, 0);
 
-  const totalLifts = liftsDetailed.filter(l => l.type_code !== 7).length; // Exclude skipark
+  const totalLifts = liftsDetailed.length; // Včetně skiparku
   const openLifts = liftsDetailed.filter(l => {
     const effectiveCode = getEffectiveStatusCode('lift', l.id, l.status_code);
-    return l.type_code !== 7 && effectiveCode !== 2;
+    return effectiveCode === 1 || effectiveCode === 3;
   }).length;
   const totalLiftsLength = liftsDetailed.reduce((sum, l) => sum + l.length, 0);
   const totalCapacity = liftsDetailed.reduce((sum, l) => sum + l.capacity, 0);
@@ -175,7 +192,7 @@ const SlopesAndLifts = () => {
                     }
 
                     const effectiveStatusCode = getEffectiveStatusCode('slope', slope.id, slope.status_code);
-                    const status = getStatusInfo(effectiveStatusCode, slope.status_text);
+                    const status = getStatusInfo(effectiveStatusCode, slope.status_text, 'slope');
                     const StatusIcon = status.icon;
 
                     return (
@@ -263,7 +280,7 @@ const SlopesAndLifts = () => {
                     }
 
                     const effectiveStatusCode = getEffectiveStatusCode('lift', lift.id, lift.status_code);
-                    const status = getStatusInfo(effectiveStatusCode, lift.status_text);
+                    const status = getStatusInfo(effectiveStatusCode, lift.status_text, 'lift');
                     const StatusIcon = status.icon;
 
                     return (

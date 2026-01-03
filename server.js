@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import cron from 'node-cron';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +18,7 @@ const VALID_ROUTES = new Set([
   '/cenik',
   '/kontakt',
   '/cookies',
+  '/ochrana-udaju',
   '/debug',
   '/admin',
   '/admin/login',
@@ -174,11 +177,120 @@ const LEGACY_PREFIXES = [
     res.status(500).json({ error: 'Internal Server Error' });
   });
 
+  // ===== AUTO-POST SCHEDULER =====
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://qtnchzadjrmgfvhfzpzh.supabase.co';
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0bmNoemFkanJtZ2Z2aGZ6cHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzYyNDAsImV4cCI6MjA4MDQ1MjI0MH0.gaCkl1hs_RKpbtHbSOMGbkAa4dCPgh6erEq524lSDk0';
+
+  let scheduledJobs = [];
+
+  async function updateSchedule() {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data: settings, error } = await supabase
+        .from('autopost_settings')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('[Autopost] Failed to fetch settings:', error.message);
+        return;
+      }
+
+      if (!settings) {
+        console.log('[Autopost] No settings found');
+        return;
+      }
+
+      // Clear existing jobs
+      scheduledJobs.forEach((job) => job.stop());
+      scheduledJobs = [];
+
+      if (!settings.enabled || settings.schedule_type === 'disabled') {
+        console.log('[Autopost] Disabled');
+        return;
+      }
+
+      const { morning_time, afternoon_time, schedule_type, custom_caption, hashtags } = settings;
+
+      // Parse times (format: "HH:MM")
+      const [morningHour, morningMin] = morning_time.split(':').map(Number);
+
+      // Morning post
+      const morningCron = `${morningMin} ${morningHour} * * *`;
+      const morningJob = cron.schedule(
+        morningCron,
+        () => {
+          executeAutopost(custom_caption, hashtags);
+        },
+        { timezone: 'Europe/Prague' }
+      );
+      scheduledJobs.push(morningJob);
+      console.log(`[Autopost] Scheduled morning post at ${morning_time} (cron: ${morningCron})`);
+
+      // Afternoon post (if twice_daily)
+      if (schedule_type === 'twice_daily') {
+        const [afternoonHour, afternoonMin] = afternoon_time.split(':').map(Number);
+        const afternoonCron = `${afternoonMin} ${afternoonHour} * * *`;
+        const afternoonJob = cron.schedule(
+          afternoonCron,
+          () => {
+            executeAutopost(custom_caption, hashtags);
+          },
+          { timezone: 'Europe/Prague' }
+        );
+        scheduledJobs.push(afternoonJob);
+        console.log(
+          `[Autopost] Scheduled afternoon post at ${afternoon_time} (cron: ${afternoonCron})`
+        );
+      }
+    } catch (error) {
+      console.error('[Autopost] Scheduler error:', error.message);
+    }
+  }
+
+  async function executeAutopost(caption, hashtags) {
+    console.log(`[Autopost] Executing at ${new Date().toISOString()}`);
+    try {
+      const response = await fetch(`http://localhost:${PORT}/api/facebook-post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption, hashtags }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        console.log(`[Autopost] Success! Post ID: ${result.postId}`);
+      } else {
+        console.error(`[Autopost] Failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('[Autopost] Execution failed:', error.message);
+    }
+  }
+
+  async function initAutopostScheduler() {
+    console.log('[Autopost] Initializing scheduler...');
+    await updateSchedule();
+
+    // Check for settings changes every 5 minutes
+    cron.schedule('*/5 * * * *', async () => {
+      console.log('[Autopost] Refreshing schedule from database...');
+      await updateSchedule();
+    });
+  }
+
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 🚀 Server is running!
 📍 URL: http://localhost:${PORT}
 🏥 Health: http://localhost:${PORT}/health
     `);
+
+    // Initialize autopost scheduler after server starts
+    setTimeout(() => {
+      initAutopostScheduler();
+    }, 2000);
   });
 })();

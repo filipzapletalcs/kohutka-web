@@ -117,8 +117,9 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-sm">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
               <p className="opacity-90 text-center md:text-left font-medium">
-                © 2025 SKI CENTRUM KOHÚTKA, a.s. - Lyžařské středisko v srdci Valašska
+                © 2026 SKI CENTRUM KOHÚTKA, a.s. - Lyžařské středisko v srdci Valašska
               </p>
+              <span className="hidden md:inline opacity-50">|</span>
               <Link
                 to="/cookies"
                 className="opacity-85 hover:opacity-100 hover:text-accent transition-all duration-200 font-medium"

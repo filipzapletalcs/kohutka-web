@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3 } from 'lucide-react';
+import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
@@ -88,6 +88,43 @@ export default function AdminAutopost() {
 
   const handleSave = () => updateMutation.mutate(formState);
 
+  // Mutation for manual posting
+  const postMutation = useMutation({
+    mutationFn: async ({ draft, testMode }: { draft?: boolean; testMode?: boolean }) => {
+      const response = await fetch('/api/facebook-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caption: formState.custom_caption,
+          hashtags: formState.hashtags,
+          draft,
+          testMode,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Posting failed');
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['autopost-history'] });
+      if (data.testMode) {
+        toast.success('Test OK! Obrazek vygenerovan.');
+      } else if (data.mode === 'draft') {
+        toast.success('Draft vytvoren! Najdes ho v Meta Business Suite.', {
+          action: {
+            label: 'Otevrit Meta',
+            onClick: () => window.open('https://business.facebook.com/latest/content_calendar', '_blank'),
+          },
+        });
+      } else {
+        toast.success('Prispevek publikovan na Facebook!');
+      }
+    },
+    onError: (error) => toast.error('Chyba: ' + (error as Error).message),
+  });
+
   const hasChanges = settings && (
     formState.enabled !== settings.enabled ||
     formState.schedule_type !== settings.schedule_type ||
@@ -98,11 +135,13 @@ export default function AdminAutopost() {
   );
 
   // Preview data - use manual if enabled, otherwise API
+  // LANOVKY/VLEKY format: cableCarOpenCount/dragLiftOpenCount (e.g., 1/4)
+  // This matches landing page widget exactly
   const previewData: StatusImageData = {
     isOpen: manualOverrides.enabled ? manualOverrides.isOpen : holidayData?.operation?.isOpen || false,
     temperature: manualOverrides.enabled && manualOverrides.temperature ? manualOverrides.temperature : holidayData?.operation?.temperature || '--',
-    liftsOpen: manualOverrides.enabled && manualOverrides.liftsOpen ? parseInt(manualOverrides.liftsOpen) : holidayData?.lifts?.openCount || 0,
-    liftsTotal: manualOverrides.enabled && manualOverrides.liftsTotal ? parseInt(manualOverrides.liftsTotal) : holidayData?.lifts?.totalCount || 0,
+    liftsOpen: manualOverrides.enabled && manualOverrides.liftsOpen ? parseInt(manualOverrides.liftsOpen) : holidayData?.lifts?.cableCarOpenCount || 0,
+    liftsTotal: manualOverrides.enabled && manualOverrides.liftsTotal ? parseInt(manualOverrides.liftsTotal) : holidayData?.lifts?.dragLiftOpenCount || 0,
     slopesOpen: manualOverrides.enabled && manualOverrides.slopesOpen ? parseInt(manualOverrides.slopesOpen) : holidayData?.slopes?.openCount || 0,
     slopesTotal: manualOverrides.enabled && manualOverrides.slopesTotal ? parseInt(manualOverrides.slopesTotal) : holidayData?.slopes?.totalCount || 0,
     snowHeight: manualOverrides.enabled && manualOverrides.snowHeight ? manualOverrides.snowHeight : holidayData?.operation?.snowHeight || '--',
@@ -205,7 +244,7 @@ export default function AdminAutopost() {
                     <Thermometer className="w-4 h-4 inline mr-1" /> {holidayData.operation?.temperature || '--'}°C
                   </div>
                   <div className="p-2 bg-gray-50 rounded">
-                    <Cable className="w-4 h-4 inline mr-1" /> Vleky: {holidayData.lifts?.openCount}/{holidayData.lifts?.totalCount}
+                    <Cable className="w-4 h-4 inline mr-1" /> Lanovky/Vleky: {holidayData.lifts?.cableCarOpenCount}/{holidayData.lifts?.dragLiftOpenCount}
                   </div>
                   <div className="p-2 bg-gray-50 rounded">
                     <Mountain className="w-4 h-4 inline mr-1" /> Sjezdovky: {holidayData.slopes?.openCount}/{holidayData.slopes?.totalCount}
@@ -239,8 +278,8 @@ export default function AdminAutopost() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label className="text-xs">Teplota</Label><Input placeholder={holidayData?.operation?.temperature || '-5'} value={manualOverrides.temperature} onChange={(e) => setManualOverrides({ ...manualOverrides, temperature: e.target.value })} /></div>
                   <div><Label className="text-xs">Snih</Label><Input placeholder={holidayData?.operation?.snowHeight || '30 cm'} value={manualOverrides.snowHeight} onChange={(e) => setManualOverrides({ ...manualOverrides, snowHeight: e.target.value })} /></div>
-                  <div><Label className="text-xs">Vleky otevreno</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.openCount || 0)} value={manualOverrides.liftsOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsOpen: e.target.value })} /></div>
-                  <div><Label className="text-xs">Vleky celkem</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.totalCount || 6)} value={manualOverrides.liftsTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsTotal: e.target.value })} /></div>
+                  <div><Label className="text-xs">Lanovky (otevrene)</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.cableCarOpenCount || 0)} value={manualOverrides.liftsOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsOpen: e.target.value })} /></div>
+                  <div><Label className="text-xs">Vleky (otevrene)</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.dragLiftOpenCount || 0)} value={manualOverrides.liftsTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsTotal: e.target.value })} /></div>
                   <div><Label className="text-xs">Sjezdovky otevreno</Label><Input type="number" min="0" placeholder={String(holidayData?.slopes?.openCount || 0)} value={manualOverrides.slopesOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, slopesOpen: e.target.value })} /></div>
                   <div><Label className="text-xs">Sjezdovky celkem</Label><Input type="number" min="0" placeholder={String(holidayData?.slopes?.totalCount || 9)} value={manualOverrides.slopesTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, slopesTotal: e.target.value })} /></div>
                 </div>
@@ -296,6 +335,71 @@ export default function AdminAutopost() {
             <CardContent className="space-y-3">
               <div><Label>Popisek</Label><Textarea value={formState.custom_caption} onChange={(e) => setFormState({ ...formState, custom_caption: e.target.value })} rows={2} /></div>
               <div><Label>Hashtags</Label><Input value={formState.hashtags} onChange={(e) => setFormState({ ...formState, hashtags: e.target.value })} /></div>
+            </CardContent>
+          </Card>
+
+          {/* Manual Posting */}
+          <Card className="border-blue-200 bg-blue-50/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Send className="w-5 h-5 text-blue-600" /> Rucni publikace
+              </CardTitle>
+              <CardDescription>
+                Otestuj nebo publikuj prispevek rucne
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => postMutation.mutate({ testMode: true })}
+                  disabled={postMutation.isPending}
+                  className="w-full"
+                >
+                  {postMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Eye className="w-4 h-4 mr-2" />
+                  )}
+                  Test
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => postMutation.mutate({ draft: true })}
+                  disabled={postMutation.isPending}
+                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+                >
+                  {postMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileEdit className="w-4 h-4 mr-2" />
+                  )}
+                  Vytvorit draft
+                </Button>
+              </div>
+              <Button
+                onClick={() => postMutation.mutate({})}
+                disabled={postMutation.isPending}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {postMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Publikovat nyni
+              </Button>
+              <p className="text-xs text-gray-500 text-center">
+                Draft najdes v{' '}
+                <a
+                  href="https://business.facebook.com/latest/content_calendar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                >
+                  Meta Business Suite <ExternalLink className="w-3 h-3" />
+                </a>
+              </p>
             </CardContent>
           </Card>
 
