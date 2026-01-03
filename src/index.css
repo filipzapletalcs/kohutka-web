@@ -29,7 +29,9 @@ All colors MUST be HSL.
     --muted-foreground: 210 25% 48%;
 
     /* Fresh snow green accent - slightly more saturated */
-    --accent: 88 95% 65%;
+    /* Using --ski-accent to avoid Norton extension overriding --accent */
+    --ski-accent: 88 95% 65%;
+    --accent: var(--ski-accent);
     --accent-foreground: 210 65% 12%;
 
     --destructive: 0 84% 60%;
@@ -83,7 +85,8 @@ All colors MUST be HSL.
     --muted: 210 40% 18%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 88 100% 63%;
+    --ski-accent: 88 100% 63%;
+    --accent: var(--ski-accent);
     --accent-foreground: 210 60% 10%;
 
     --destructive: 0 84% 60%;
@@ -168,17 +171,17 @@ All colors MUST be HSL.
 }
 
 @layer components {
-  /* Fix for Norton browser and other browsers with CSS variable rendering issues */
-  /* Explicitly set accent button background to avoid transparency flashing */
+  /* Fix for Norton browser extension which overrides --accent variable */
+  /* Using --ski-accent which Norton doesn't touch, with hardcoded fallback */
   .bg-accent {
-    background-color: hsl(88 95% 65%) !important;
-    background-color: hsl(var(--accent)) !important;
+    background-color: #a3e635 !important; /* Hardcoded green fallback */
+    background-color: hsl(var(--ski-accent)) !important;
   }
 
   .bg-accent:hover,
   .hover\:bg-accent\/90:hover {
-    background-color: hsl(88 95% 58%) !important;
-    background-color: hsl(var(--accent) / 0.9) !important;
+    background-color: #94d82d !important; /* Slightly darker for hover */
+    background-color: hsl(var(--ski-accent) / 0.9) !important;
   }
 }
 
