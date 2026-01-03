@@ -62,6 +62,7 @@ const Navigation = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="ml-3 inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-lg font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02]"
+              style={{ backgroundColor: '#a3e635' }}
             >
               <Ticket className="h-5 w-5" />
               Koupit skipas online
@@ -119,6 +120,7 @@ const Navigation = () => {
               rel="noopener noreferrer"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-center gap-2 w-full bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-lg font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200"
+              style={{ backgroundColor: '#a3e635' }}
             >
               <Ticket className="h-5 w-5" />
               Koupit skipas online
