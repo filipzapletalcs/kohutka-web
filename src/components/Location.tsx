@@ -29,7 +29,7 @@ const Location = () => {
     {
       icon: Clock,
       label: "Provozní doba",
-      value: "Denně 8:00 - 16:00",
+      value: "Denně 8:30 - 16:00",
       link: null,
     },
   ];
