@@ -280,7 +280,7 @@ export function createStatusTemplate(data) {
                   style: { display: 'flex', gap: '12px' },
                   children: [
                     StatCard({ icon: ICONS.thermometer(COLORS.secondary), label: 'Teplota', value: temperature }),
-                    StatCard({ icon: ICONS.lift(hasLifts ? COLORS.open : COLORS.primary), label: 'Lanovky/Vleky', value: `${liftsOpen}/${liftsTotal}`, highlight: hasLifts }),
+                    StatCard({ icon: ICONS.lift(hasLifts ? COLORS.open : COLORS.primary), label: 'Lanovky/vleky', value: `${liftsOpen}/${liftsTotal}`, highlight: hasLifts }),
                   ]
                 }
               },

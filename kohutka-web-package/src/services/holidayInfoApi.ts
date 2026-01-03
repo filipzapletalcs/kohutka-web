@@ -450,7 +450,7 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
   let cableCarOpenCount = 0;
   let cableCarTotalCount = 0;
 
-  // Vleky - type_code 3, 4, 5, 6
+  // Vleky včetně skiparku - type_code 3, 5, 6, 7
   let dragLiftOpenCount = 0;
   let dragLiftTotalCount = 0;
 
@@ -459,30 +459,31 @@ export function parseLiftStatus(xmlDoc: Document): LiftStatus {
     const typeCode = getXMLNumber(liftEl, 'type_code');
     const isOpen = statusCode === 1 || statusCode === 3;
 
-    // Type 7 = Skipark for Children
+    // Skipark (type 7) - sledujeme zvlášť pro widget
     if (typeCode === 7) {
-      if (statusCode !== 2) { // 2 = out of operation
+      if (isOpen) {
         skiParkOpen = true;
       }
-    } else {
-      totalCount++;
-      if (isOpen) {
-        openCount++;
-      }
+    }
 
-      // Lanovky (sedačkové, kabinkové, čtyřsedačky) - type_code 1, 2, 4
-      if (typeCode === 1 || typeCode === 2 || typeCode === 4) {
-        cableCarTotalCount++;
-        if (isOpen) {
-          cableCarOpenCount++;
-        }
+    // Všechny lifty počítáme do celkového počtu
+    totalCount++;
+    if (isOpen) {
+      openCount++;
+    }
+
+    // Lanovky (sedačkové, kabinkové, čtyřsedačky) - type_code 1, 2, 4
+    if (typeCode === 1 || typeCode === 2 || typeCode === 4) {
+      cableCarTotalCount++;
+      if (isOpen) {
+        cableCarOpenCount++;
       }
-      // Vleky - type_code 3, 5, 6
-      else if (typeCode === 3 || typeCode === 5 || typeCode === 6) {
-        dragLiftTotalCount++;
-        if (isOpen) {
-          dragLiftOpenCount++;
-        }
+    }
+    // Vleky včetně skiparku - type_code 3, 5, 6, 7
+    else if (typeCode === 3 || typeCode === 5 || typeCode === 6 || typeCode === 7) {
+      dragLiftTotalCount++;
+      if (isOpen) {
+        dragLiftOpenCount++;
       }
     }
   });
