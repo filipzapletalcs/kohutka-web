@@ -84,7 +84,7 @@ function StatCard({ icon, label, value, highlight }) {
         justifyContent: 'center',
         backgroundColor: COLORS.white,
         borderRadius: '20px',
-        padding: '24px 16px',
+        padding: '18px 14px',
         flex: 1,
         boxShadow: highlight
           ? `0 6px 24px rgba(140, 240, 92, 0.3), inset 0 0 0 3px ${COLORS.open}`
@@ -116,7 +116,7 @@ function StatCard({ icon, label, value, highlight }) {
           type: 'div',
           props: {
             style: {
-              fontSize: '42px',
+              fontSize: '36px',
               fontWeight: 900,
               color: highlight ? COLORS.open : COLORS.primary,
               lineHeight: 1,
@@ -199,13 +199,13 @@ export function createStatusTemplate(data) {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '40px 32px 24px',
+              padding: '24px 32px 16px',
             },
             children: [
               // Logo
               LOGO_BASE64 ? {
                 type: 'img',
-                props: { src: LOGO_BASE64, width: 220, height: 180, style: { objectFit: 'contain' } }
+                props: { src: LOGO_BASE64, width: 160, height: 130, style: { objectFit: 'contain' } }
               } : null,
               // Název
               {
@@ -233,13 +233,13 @@ export function createStatusTemplate(data) {
             style: {
               display: 'flex',
               justifyContent: 'center',
-              padding: '16px 32px',
+              padding: '8px 32px',
             },
             children: [{
               type: 'div',
               props: {
                 style: {
-                  fontSize: '36px',
+                  fontSize: '28px',
                   fontWeight: 900,
                   color: COLORS.white,
                   textTransform: 'uppercase',
@@ -256,7 +256,7 @@ export function createStatusTemplate(data) {
         {
           type: 'div',
           props: {
-            style: { display: 'flex', justifyContent: 'center', marginBottom: '24px' },
+            style: { display: 'flex', justifyContent: 'center', marginBottom: '16px' },
             children: [StatusBadge({ isOpen })]
           }
         },
@@ -308,8 +308,8 @@ export function createStatusTemplate(data) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '12px',
-              margin: '20px 32px 0',
-              padding: '16px 24px',
+              margin: '12px 32px 0',
+              padding: '12px 20px',
               backgroundColor: 'rgba(255, 255, 255, 0.12)',
               borderRadius: '16px',
             },
@@ -328,7 +328,7 @@ export function createStatusTemplate(data) {
             style: {
               display: 'flex',
               justifyContent: 'center',
-              padding: '24px 32px',
+              padding: '16px 32px',
             },
             children: [{
               type: 'div',
@@ -337,7 +337,7 @@ export function createStatusTemplate(data) {
                   display: 'flex',
                   alignItems: 'center',
                   backgroundColor: COLORS.accent,
-                  padding: '16px 36px',
+                  padding: '14px 32px',
                   borderRadius: '14px',
                   boxShadow: '0 8px 28px rgba(140, 240, 92, 0.4)',
                 },
@@ -357,7 +357,7 @@ export function createStatusTemplate(data) {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '14px 32px',
+              padding: '12px 32px',
               backgroundColor: 'rgba(0, 0, 0, 0.25)',
             },
             children: [
