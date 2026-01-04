@@ -24,7 +24,7 @@ export default function StatusImagePage() {
 
   return (
     <>
-      {/* Reset all margins/paddings for screenshot */}
+      {/* Reset all margins/paddings for screenshot and hide cookie banner */}
       <style>{`
         html, body, #root {
           margin: 0 !important;
@@ -32,18 +32,34 @@ export default function StatusImagePage() {
           overflow: hidden !important;
           background: transparent !important;
         }
+        /* Hide cookie consent banner and notifications for Puppeteer screenshot */
+        [data-sonner-toaster],
+        .cookie-consent,
+        [class*="cookie"],
+        [class*="Cookie"],
+        [id*="cookie"],
+        [id*="Cookie"],
+        .fixed.bottom-0,
+        .fixed.bottom-4,
+        .fixed.inset-0,
+        .fixed.z-\\[9999\\],
+        [class*="max-w-sm"].fixed {
+          display: none !important;
+          visibility: hidden !important;
+        }
       `}</style>
       <div
         id="status-image-container"
         style={{
-          width: 1080,
-          height: 1350,
+          width: '1080px',
+          height: '1350px',
           margin: 0,
           padding: 0,
           overflow: 'hidden',
           position: 'absolute',
           top: 0,
           left: 0,
+          fontSize: '39px', // Scale factor to fit 1080x1350 (56px gave 1918px height, need 1350px)
         }}
       >
         <StatusImagePreview data={data} />

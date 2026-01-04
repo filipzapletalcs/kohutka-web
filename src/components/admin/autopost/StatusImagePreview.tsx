@@ -23,32 +23,47 @@ function StatCard({ icon, label, value, highlight }: {
 }) {
   return (
     <div
-      className="flex flex-col items-center justify-center rounded-[16px] p-3 flex-1"
       style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '1em',
+        padding: '0.8em 0.5em',
+        flex: '1 1 0',
         backgroundColor: COLORS.white,
         boxShadow: highlight
-          ? `0 4px 16px rgba(140, 240, 92, 0.3), inset 0 0 0 2px ${COLORS.open}`
-          : '0 4px 16px rgba(22, 58, 94, 0.12)',
+          ? `0 0.3em 1em rgba(140, 240, 92, 0.35), inset 0 0 0 0.15em ${COLORS.open}`
+          : '0 0.3em 1em rgba(22, 58, 94, 0.15)',
       }}
     >
-      <div className="mb-1">{icon}</div>
+      <div style={{ marginBottom: '0.3em' }}>{icon}</div>
       <div
-        className="text-[9px] font-bold uppercase tracking-wider mb-0.5"
-        style={{ color: COLORS.mediumGray }}
+        style={{
+          fontSize: '0.55em',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          marginBottom: '0.15em',
+          color: COLORS.mediumGray,
+        }}
       >
         {label}
       </div>
       <div
-        className="text-xl font-black leading-none"
-        style={{ color: highlight ? COLORS.open : COLORS.primary }}
+        style={{
+          fontSize: '1.4em',
+          fontWeight: 900,
+          lineHeight: 1,
+          whiteSpace: 'nowrap',
+          color: highlight ? COLORS.open : COLORS.primary,
+        }}
       >
         {value}
       </div>
     </div>
   );
 }
-
-const ICON_SIZE = 28;
 
 export default function StatusImagePreview({ data }: { data: StatusImageData }) {
   const { isOpen, temperature, liftsOpen, liftsTotal, slopesOpen, slopesTotal, snowHeight, operatingHours } = data;
@@ -62,95 +77,179 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
     month: 'long'
   }).toUpperCase();
 
+  // Icon size relative to container - will scale with font-size
+  const iconSize = '1.8em';
+
   return (
     <div
-      className="w-full h-full flex flex-col"
       style={{
-        aspectRatio: '1080/1350',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         background: `linear-gradient(180deg, ${COLORS.gradientStart} 0%, ${COLORS.gradientEnd} 100%)`,
         fontFamily: 'Inter, system-ui, sans-serif',
+        // fontSize inherited from parent - enables resolution independence
+        boxSizing: 'border-box',
       }}
     >
+      {/* Inner container - full width with padding */}
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
       {/* Header - Logo */}
-      <div className="flex flex-col items-center pt-4 pb-2 px-3">
-        <img src={logo} alt="Kohutka" className="h-16 w-auto object-contain" />
-        <div
-          className="text-[10px] font-bold tracking-[3px] uppercase mt-1"
-          style={{ color: COLORS.secondary }}
-        >
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        paddingTop: '1.5em',
+        paddingBottom: '0.5em',
+      }}>
+        <img src={logo} alt="Kohutka" style={{ height: '4em', width: 'auto', objectFit: 'contain' }} />
+        <div style={{
+          fontSize: '0.6em',
+          fontWeight: 700,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          marginTop: '0.4em',
+          color: COLORS.secondary,
+        }}>
           SKI CENTRUM KOHUTKA
         </div>
       </div>
 
       {/* Date */}
-      <div className="text-center px-3 py-1">
-        <div
-          className="text-base font-black uppercase tracking-wide"
-          style={{ color: COLORS.white }}
-        >
+      <div style={{ textAlign: 'center', padding: '0.3em 1em' }}>
+        <div style={{
+          fontSize: '1.1em',
+          fontWeight: 900,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: COLORS.white,
+        }}>
           {dateStr}
         </div>
       </div>
 
       {/* Status Badge */}
-      <div className="flex justify-center py-2">
-        <div
-          className="flex items-center gap-2 px-6 py-1.5 rounded-full"
-          style={{
-            backgroundColor: isOpen ? COLORS.open : COLORS.closed,
-            boxShadow: `0 8px 24px ${isOpen ? 'rgba(140, 240, 92, 0.5)' : 'rgba(233, 72, 72, 0.5)'}`,
-          }}
-        >
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{
-              backgroundColor: COLORS.white,
-              boxShadow: '0 0 8px rgba(255,255,255,0.8)',
-            }}
-          />
-          <div
-            className="text-base font-black tracking-wider"
-            style={{ color: isOpen ? COLORS.darkText : COLORS.white }}
-          >
-            {isOpen ? 'OTEVRENO' : 'ZAVRENO'}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0.6em 0' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4em',
+          padding: '0.4em 1.5em',
+          borderRadius: '9999px',
+          backgroundColor: isOpen ? COLORS.open : COLORS.closed,
+          boxShadow: `0 0.4em 1.2em ${isOpen ? 'rgba(140, 240, 92, 0.5)' : 'rgba(233, 72, 72, 0.5)'}`,
+        }}>
+          <div style={{
+            width: '0.4em',
+            height: '0.4em',
+            borderRadius: '50%',
+            backgroundColor: COLORS.white,
+            boxShadow: '0 0 0.4em rgba(255,255,255,0.8)',
+          }} />
+          <div style={{
+            fontSize: '0.9em',
+            fontWeight: 900,
+            letterSpacing: '0.1em',
+            color: isOpen ? COLORS.darkText : COLORS.white,
+          }}>
+            {isOpen ? 'OTEVŘENO' : 'ZAVŘENO'}
           </div>
         </div>
       </div>
 
       {/* Stats Grid 2x2 */}
-      <div className="flex-1 flex flex-col gap-2 px-3 py-2 min-h-0">
-        <div className="flex gap-2 flex-1 min-h-0">
-          <StatCard icon={<Thermometer size={ICON_SIZE} color={COLORS.secondary} />} label="Teplota" value={temperature || '--'} />
-          <StatCard icon={<CableCar size={ICON_SIZE} color={hasLifts ? COLORS.open : COLORS.primary} />} label="Lanovky/vleky" value={`${liftsOpen}/${liftsTotal}`} highlight={hasLifts} />
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5em',
+        padding: '0.8em 1em',
+      }}>
+        <div style={{ display: 'flex', gap: '0.5em' }}>
+          <StatCard
+            icon={<Thermometer size={iconSize} color={COLORS.secondary} />}
+            label="Teplota"
+            value={temperature || '--'}
+          />
+          <StatCard
+            icon={<CableCar size={iconSize} color={hasLifts ? COLORS.open : COLORS.primary} />}
+            label="Lanovky/vleky"
+            value={`${liftsOpen}/${liftsTotal}`}
+            highlight={hasLifts}
+          />
         </div>
-        <div className="flex gap-2 flex-1 min-h-0">
-          <StatCard icon={<Mountain size={ICON_SIZE} color={hasSlopes ? COLORS.open : COLORS.primary} />} label="Sjezdovky" value={`${slopesOpen}/${slopesTotal}`} highlight={hasSlopes} />
-          <StatCard icon={<Snowflake size={ICON_SIZE} color={COLORS.secondary} />} label="Snih" value={snowHeight || '--'} />
+        <div style={{ display: 'flex', gap: '0.5em' }}>
+          <StatCard
+            icon={<Mountain size={iconSize} color={hasSlopes ? COLORS.open : COLORS.primary} />}
+            label="Sjezdovky"
+            value={`${slopesOpen}/${slopesTotal}`}
+            highlight={hasSlopes}
+          />
+          <StatCard
+            icon={<Snowflake size={iconSize} color={COLORS.secondary} />}
+            label="Snih"
+            value={snowHeight || '--'}
+          />
         </div>
       </div>
 
       {/* Operating Hours */}
       {operatingHours && (
-        <div className="mx-3 mb-1 flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg" style={{ backgroundColor: 'rgba(255, 255, 255, 0.12)' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div style={{
+          margin: '0 1em 0.3em',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.3em',
+          padding: '0.4em 0.8em',
+          borderRadius: '0.5em',
+          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+        }}>
+          <svg width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke={COLORS.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
           </svg>
-          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.8)' }}>Provozni doba:</span>
-          <span className="text-xs font-bold" style={{ color: COLORS.white }}>{operatingHours}</span>
+          <span style={{ fontSize: '0.55em', color: 'rgba(255,255,255,0.8)' }}>Provozni doba:</span>
+          <span style={{ fontSize: '0.65em', fontWeight: 700, color: COLORS.white }}>{operatingHours}</span>
         </div>
       )}
 
+      {/* Spacer to push content down */}
+      <div style={{ flex: 1 }} />
+
       {/* CTA Button */}
-      <div className="flex justify-center py-2 px-3">
-        <div className="flex items-center px-5 py-1.5 rounded-lg" style={{ backgroundColor: COLORS.accent, boxShadow: '0 6px 20px rgba(140, 240, 92, 0.4)' }}>
-          <span className="text-xs font-bold" style={{ color: COLORS.darkText }}>Vice na kohutka.ski</span>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0.5em 1em' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0.4em 1.2em',
+          borderRadius: '0.5em',
+          backgroundColor: COLORS.accent,
+          boxShadow: '0 0.3em 1em rgba(140, 240, 92, 0.4)',
+        }}>
+          <span style={{ fontSize: '0.7em', fontWeight: 700, color: COLORS.darkText }}>Vice na kohutka.ski</span>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between items-center px-3 py-1.5" style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}>
-        <span className="text-[10px] font-semibold" style={{ color: COLORS.white }}>www.kohutka.ski</span>
-        <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Data: holidayinfo.cz</span>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0.5em 1em',
+        backgroundColor: 'rgba(0, 0, 0, 0.25)',
+        marginTop: 'auto',
+      }}>
+        <span style={{ fontSize: '0.6em', fontWeight: 600, color: COLORS.white }}>www.kohutka.ski</span>
+        <span style={{ fontSize: '0.45em', color: 'rgba(255,255,255,0.6)' }}>Data: holidayinfo.cz</span>
+      </div>
       </div>
     </div>
   );

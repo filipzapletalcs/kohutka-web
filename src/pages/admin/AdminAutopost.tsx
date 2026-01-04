@@ -219,7 +219,9 @@ export default function AdminAutopost() {
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                   </div>
                 ) : (
-                  <StatusImagePreview data={previewData} />
+                  <div style={{ fontSize: '13px' }}>
+                    <StatusImagePreview data={previewData} />
+                  </div>
                 )}
                 {/* FB Reactions */}
                 <div className="px-3 py-2 border-t flex items-center justify-around text-gray-600 text-sm">
