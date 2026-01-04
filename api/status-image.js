@@ -1,65 +1,54 @@
 /**
  * API Endpoint pro generování status obrázků pro sociální sítě
+ * Používá Puppeteer pro screenshot React komponenty - 100% identické s admin náhledem
  *
  * GET /api/status-image
  * Query params:
- *   - format: 'png' | 'svg' (default: 'png')
- *   - width: number (default: 1080 pro 4:5)
- *   - height: number (default: 1350 pro 4:5)
+ *   - format: 'png' (default)
+ *   - width: number (default: 1080)
+ *   - height: number (default: 1350)
  */
 
-import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import {
-  createStatusTemplate,
-  DEFAULT_WIDTH,
-  DEFAULT_HEIGHT,
-} from '../src/templates/StatusImageTemplate.js';
+import puppeteer from 'puppeteer';
 
 // Holiday Info API config
 const HOLIDAYINFO_API = 'https://exports.holidayinfo.cz/xml_export.php';
 const HOLIDAYINFO_DC = process.env.HOLIDAYINFO_DC || 'c9ixxlejab5d4mrr';
 
-// Font cache
-let fonts = null;
+// Browser instance cache (pro rychlejší generování)
+let browserInstance = null;
+
+const DEFAULT_WIDTH = 1080;
+const DEFAULT_HEIGHT = 1350;
 
 /**
- * Načte fonty pro Satori
+ * Získá nebo vytvoří Puppeteer browser instanci
  */
-function loadFonts() {
-  if (fonts) return fonts;
-
-  const fontsDir = join(process.cwd(), 'public/fonts');
-
-  try {
-    fonts = [
-      {
-        name: 'Inter',
-        data: readFileSync(join(fontsDir, 'Inter-Regular.ttf')),
-        weight: 400,
-        style: 'normal',
-      },
-      {
-        name: 'Inter',
-        data: readFileSync(join(fontsDir, 'Inter-Bold.ttf')),
-        weight: 700,
-        style: 'normal',
-      },
-      {
-        name: 'Inter',
-        data: readFileSync(join(fontsDir, 'Inter-Black.ttf')),
-        weight: 900,
-        style: 'normal',
-      },
-    ];
-  } catch (error) {
-    console.error('Failed to load fonts:', error);
-    throw new Error('Fonts not found. Please ensure fonts are in public/fonts/');
+async function getBrowser() {
+  if (browserInstance && browserInstance.isConnected()) {
+    return browserInstance;
   }
 
-  return fonts;
+  const launchOptions = {
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-web-security',
+      '--font-render-hinting=none',
+    ],
+  };
+
+  // Na produkci (Linux VPS) použij systémový Chromium
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+
+  browserInstance = await puppeteer.launch(launchOptions);
+
+  return browserInstance;
 }
 
 /**
@@ -87,29 +76,23 @@ async function fetchStatusData() {
   const operationCode = parseInt(getXMLText(locInfoWinter, 'operation_code')) || 2;
   const isOpen = operationCode === 3 || operationCode === 4;
 
-  // Count LANOVKY/VLEKY - IDENTICAL to landing page widget format
-  // Format: cableCarOpenCount/dragLiftOpenCount (e.g., 1/4)
-  // Type codes: 1,2,4 = lanovky (sedačkové), 3,5,6,7 = vleky (včetně skiparku)
+  // Count LANOVKY/VLEKY
   const lifts = xmlDoc.getElementsByTagName('lift');
-  let cableCarOpen = 0;  // lanovky otevřené
-  let dragLiftOpen = 0;  // vleky otevřené (včetně skiparku)
+  let cableCarOpen = 0;
+  let dragLiftOpen = 0;
 
   for (let i = 0; i < lifts.length; i++) {
     const typeCode = parseInt(getXMLText(lifts[i], 'type_code'));
     const statusCode = parseInt(getXMLText(lifts[i], 'status_code'));
-    const isOpen = statusCode === 1 || statusCode === 3;
+    const liftIsOpen = statusCode === 1 || statusCode === 3;
 
-    // Lanovky (sedačkové, kabinkové): type 1, 2, 4
     if (typeCode === 1 || typeCode === 2 || typeCode === 4) {
-      if (isOpen) cableCarOpen++;
-    }
-    // Vleky včetně skiparku: type 3, 5, 6, 7
-    else if (typeCode === 3 || typeCode === 5 || typeCode === 6 || typeCode === 7) {
-      if (isOpen) dragLiftOpen++;
+      if (liftIsOpen) cableCarOpen++;
+    } else if (typeCode === 3 || typeCode === 5 || typeCode === 6 || typeCode === 7) {
+      if (liftIsOpen) dragLiftOpen++;
     }
   }
 
-  // liftsOpen = lanovky otevřené, liftsTotal = vleky otevřené (same as landing page)
   const liftsOpen = cableCarOpen;
   const liftsTotal = dragLiftOpen;
 
@@ -122,7 +105,7 @@ async function fetchStatusData() {
     if (statusCode === 2 || statusCode === 6) slopesOpen++;
   }
 
-  // Temperature from camera (prefer cam 2122 - Chata Kohútka panorama, same as landing page)
+  // Temperature from camera
   const cams = xmlDoc.getElementsByTagName('cam');
   let temperature = '';
   for (let i = 0; i < cams.length; i++) {
@@ -132,7 +115,6 @@ async function fetchStatusData() {
       break;
     }
   }
-  // Fallback to first camera if 2122 not found
   if (!temperature && cams.length > 0) {
     const lastImage = cams[0].getElementsByTagName('last_image')[0];
     temperature = getXMLText(lastImage, 'temp');
@@ -161,12 +143,6 @@ async function fetchStatusData() {
     temperature: temperature ? `${temperature}°C` : 'N/A',
     snowHeight: snowHeight || 'N/A',
     operatingHours,
-    date: new Date().toLocaleDateString('cs-CZ', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }),
   };
 }
 
@@ -186,41 +162,63 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  let page = null;
+
   try {
-    // Parse query params (default 4:5 pro Facebook)
     const width = parseInt(req.query.width) || DEFAULT_WIDTH;
     const height = parseInt(req.query.height) || DEFAULT_HEIGHT;
-    const format = req.query.format || 'png';
-
-    // Load fonts
-    const fontData = loadFonts();
 
     // Fetch current data
     const statusData = await fetchStatusData();
 
-    // Create template
-    const template = createStatusTemplate(statusData);
+    // Build URL s query params
+    // V produkci použij SITE_URL env variable, jinak localhost
+    const baseUrl = process.env.SITE_URL || `http://localhost:${process.env.PORT || 3000}`;
+    const params = new URLSearchParams({
+      isOpen: String(statusData.isOpen),
+      temperature: statusData.temperature,
+      liftsOpen: String(statusData.liftsOpen),
+      liftsTotal: String(statusData.liftsTotal),
+      slopesOpen: String(statusData.slopesOpen),
+      slopesTotal: String(statusData.slopesTotal),
+      snowHeight: statusData.snowHeight,
+      operatingHours: statusData.operatingHours || '',
+    });
+    const pageUrl = `${baseUrl}/status-image-render?${params.toString()}`;
 
-    // Generate SVG
-    const svg = await satori(template, {
+    // Get browser and create page
+    const browser = await getBrowser();
+    page = await browser.newPage();
+
+    // Set viewport to exact dimensions
+    await page.setViewport({
       width,
       height,
-      fonts: fontData,
+      deviceScaleFactor: 1,
     });
 
-    // Return SVG if requested
-    if (format === 'svg') {
-      res.setHeader('Content-Type', 'image/svg+xml');
-      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
-      return res.send(svg);
-    }
-
-    // Convert to PNG
-    const resvg = new Resvg(svg, {
-      fitTo: { mode: 'width', value: width },
+    // Navigate to the render page
+    await page.goto(pageUrl, {
+      waitUntil: 'networkidle0',
+      timeout: 30000,
     });
-    const pngData = resvg.render();
-    const pngBuffer = pngData.asPng();
+
+    // Wait for the container to be ready
+    await page.waitForSelector('#status-image-container', { timeout: 10000 });
+
+    // Small delay to ensure fonts and images are loaded
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Take screenshot of the container
+    const element = await page.$('#status-image-container');
+    const pngBuffer = await element.screenshot({
+      type: 'png',
+      omitBackground: false,
+    });
+
+    // Close page (keep browser running)
+    await page.close();
+    page = null;
 
     // Return PNG
     const filename = `kohutka-status-${new Date().toISOString().split('T')[0]}.png`;
@@ -231,6 +229,16 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Status image generation error:', error);
+
+    // Close page if error
+    if (page) {
+      try {
+        await page.close();
+      } catch {
+        // ignore
+      }
+    }
+
     res.status(500).json({
       error: 'Failed to generate image',
       message: error.message,
@@ -238,3 +246,10 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Cleanup browser on process exit
+process.on('exit', () => {
+  if (browserInstance) {
+    browserInstance.close().catch(() => {});
+  }
+});

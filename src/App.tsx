@@ -21,6 +21,7 @@ import AdminCameras from "./pages/admin/AdminCameras";
 import AdminWidget from "./pages/admin/AdminWidget";
 import AdminSlopesLifts from "./pages/admin/AdminSlopesLifts";
 import AdminAutopost from "./pages/admin/AdminAutopost";
+import StatusImagePage from "./pages/StatusImagePage";
 import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,8 @@ const App = () => (
             <Route path="/cookies" element={<Cookies />} />
             <Route path="/ochrana-udaju" element={<PrivacyPolicy />} />
             <Route path="/debug" element={<ApiDebug />} />
+            {/* Screenshot page for Puppeteer - no layout/UI */}
+            <Route path="/status-image-render" element={<StatusImagePage />} />
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>

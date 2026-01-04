@@ -86,9 +86,18 @@ export default async function handler(req, res) {
     const fullCaption = [caption || defaultCaption, '', hashtags || defaultHashtags].join('\n');
 
     // Determine post mode
+    // Note: "draft" mode now creates a scheduled post 15 min in future
+    // because FB API's published=false creates Ad Posts, not real drafts
     const isDraft = draft === true;
     const isScheduled = scheduledTime && !isDraft;
-    const modeLabel = isDraft ? 'DRAFT' : isScheduled ? 'SCHEDULED' : 'PUBLISH';
+
+    // For draft mode, schedule 2 days into the future
+    let effectiveScheduledTime = scheduledTime;
+    if (isDraft) {
+      effectiveScheduledTime = Math.floor(Date.now() / 1000) + (2 * 24 * 60 * 60); // 2 days from now
+    }
+
+    const modeLabel = isDraft ? 'SCHEDULED_DRAFT' : isScheduled ? 'SCHEDULED' : 'PUBLISH';
 
     console.log(`[Facebook Post] Starting post process (mode: ${modeLabel})...`);
     console.log(`[Facebook Post] Caption: ${fullCaption.substring(0, 50)}...`);
@@ -140,12 +149,14 @@ export default async function handler(req, res) {
     formData.append('message', fullCaption);
     formData.append('access_token', accessToken);
 
-    // Draft mode - create unpublished post
+    // Draft mode - create scheduled post 15 min in future (appears in Scheduled section)
     if (isDraft) {
+      formData.append('scheduled_publish_time', String(effectiveScheduledTime));
       formData.append('published', 'false');
-      console.log(`[Facebook Post] Creating as DRAFT (unpublished)`);
+      const scheduledDate = new Date(effectiveScheduledTime * 1000).toLocaleString('cs-CZ');
+      console.log(`[Facebook Post] Creating as SCHEDULED DRAFT for: ${scheduledDate}`);
     }
-    // Scheduled mode - schedule for future publication
+    // Scheduled mode - schedule for specified future time
     else if (isScheduled) {
       formData.append('scheduled_publish_time', String(scheduledTime));
       formData.append('published', 'false');
@@ -197,7 +208,8 @@ export default async function handler(req, res) {
     // Build success message based on mode
     let message = 'Posted successfully to Facebook';
     if (isDraft) {
-      message = 'Draft created! Find it in Meta Business Suite to publish.';
+      const scheduledDate = new Date(effectiveScheduledTime * 1000).toLocaleString('cs-CZ');
+      message = `Příspěvek naplánován na ${scheduledDate}. Najdeš ho v Meta Business Suite → Scheduled, kde ho můžeš publikovat ihned nebo upravit.`;
     } else if (isScheduled) {
       const scheduledDate = new Date(scheduledTime * 1000).toLocaleString('cs-CZ');
       message = `Post scheduled for ${scheduledDate}`;

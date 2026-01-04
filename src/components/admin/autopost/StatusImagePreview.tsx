@@ -64,7 +64,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
 
   return (
     <div
-      className="w-full flex flex-col"
+      className="w-full h-full flex flex-col"
       style={{
         aspectRatio: '1080/1350',
         background: `linear-gradient(180deg, ${COLORS.gradientStart} 0%, ${COLORS.gradientEnd} 100%)`,

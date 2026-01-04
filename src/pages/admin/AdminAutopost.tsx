@@ -23,7 +23,20 @@ import logo from '@/assets/logo.png';
 import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
 import type { ManualOverrides, StatusImageData } from '@/components/admin/autopost/types';
 
-const DEFAULT_CAPTION = 'Denni report z Kohutky! Aktualni podminky na sjezdovkach.';
+const MONTH_NAMES = [
+  'ledna', 'února', 'března', 'dubna', 'května', 'června',
+  'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'
+];
+
+function generateCaption(): string {
+  const today = new Date();
+  const day = today.getDate();
+  const month = MONTH_NAMES[today.getMonth()];
+
+  return `Dnes je ${day}. ${month} a takhle to vypadá na Kohútce! ⛷️`;
+}
+
+const DEFAULT_CAPTION = generateCaption();
 
 export default function AdminAutopost() {
   const queryClient = useQueryClient();
@@ -81,7 +94,7 @@ export default function AdminAutopost() {
     mutationFn: (updates: Partial<AutopostSettings>) => updateAutopostSettings(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['autopost-settings'] });
-      toast.success('Nastaveni ulozeno');
+      toast.success('Nastavení uloženo');
     },
     onError: (error) => toast.error('Chyba: ' + (error as Error).message),
   });
@@ -110,16 +123,16 @@ export default function AdminAutopost() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['autopost-history'] });
       if (data.testMode) {
-        toast.success('Test OK! Obrazek vygenerovan.');
+        toast.success('Test OK! Obrázek vygenerován.');
       } else if (data.mode === 'draft') {
-        toast.success('Draft vytvoren! Najdes ho v Meta Business Suite.', {
+        toast.success('Draft vytvořen! Najdeš ho v Meta Business Suite.', {
           action: {
-            label: 'Otevrit Meta',
+            label: 'Otevřít Meta',
             onClick: () => window.open('https://business.facebook.com/latest/content_calendar', '_blank'),
           },
         });
       } else {
-        toast.success('Prispevek publikovan na Facebook!');
+        toast.success('Příspěvek publikován na Facebook!');
       }
     },
     onError: (error) => toast.error('Chyba: ' + (error as Error).message),
@@ -162,7 +175,7 @@ export default function AdminAutopost() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Auto-posting na Facebook</h2>
-          <p className="text-gray-600 mt-1">Automaticke publikovani dennich reportu</p>
+          <p className="text-gray-600 mt-1">Automatické publikování denních reportů</p>
         </div>
         <Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
           {isRefetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
@@ -176,10 +189,10 @@ export default function AdminAutopost() {
           {/* Facebook Mockup */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Nahled prispevku</CardTitle>
+              <CardTitle className="text-lg">Náhled příspěvku</CardTitle>
               {manualOverrides.enabled && (
                 <Badge variant="outline" className="w-fit text-orange-600 border-orange-300">
-                  <Edit3 className="w-3 h-3 mr-1" /> Manualni hodnoty
+                  <Edit3 className="w-3 h-3 mr-1" /> Manuální hodnoty
                 </Badge>
               )}
             </CardHeader>
@@ -191,7 +204,7 @@ export default function AdminAutopost() {
                   <div>
                     <div className="font-semibold text-sm">SKI CENTRUM KOHUTKA</div>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <span>Prave ted</span> · <Globe className="w-3 h-3" />
+                      <span>Právě teď</span> · <Globe className="w-3 h-3" />
                     </div>
                   </div>
                 </div>
@@ -211,13 +224,13 @@ export default function AdminAutopost() {
                 {/* FB Reactions */}
                 <div className="px-3 py-2 border-t flex items-center justify-around text-gray-600 text-sm">
                   <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1 rounded">
-                    <ThumbsUp className="w-4 h-4" /> Libi se
+                    <ThumbsUp className="w-4 h-4" /> Líbí se
                   </button>
                   <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1 rounded">
-                    <MessageCircle className="w-4 h-4" /> Komentar
+                    <MessageCircle className="w-4 h-4" /> Komentář
                   </button>
                   <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1 rounded">
-                    <Share2 className="w-4 h-4" /> Sdilet
+                    <Share2 className="w-4 h-4" /> Sdílet
                   </button>
                 </div>
               </div>
@@ -228,7 +241,7 @@ export default function AdminAutopost() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
-                Aktualni API data
+                Aktuální API data
                 {holidayData?.fromCache && <Badge variant="outline" className="text-yellow-600">Cache</Badge>}
               </CardTitle>
             </CardHeader>
@@ -237,7 +250,7 @@ export default function AdminAutopost() {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="p-2 bg-gray-50 rounded flex items-center gap-2">
                     <Badge className={holidayData.operation?.isOpen ? 'bg-green-500' : 'bg-red-500'}>
-                      {holidayData.operation?.isOpen ? 'Otevreno' : 'Zavreno'}
+                      {holidayData.operation?.isOpen ? 'Otevřeno' : 'Zavřeno'}
                     </Badge>
                   </div>
                   <div className="p-2 bg-gray-50 rounded">
@@ -264,7 +277,7 @@ export default function AdminAutopost() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Edit3 className="w-5 h-5 text-orange-500" /> Manualni hodnoty
+                  <Edit3 className="w-5 h-5 text-orange-500" /> Manuální hodnoty
                 </CardTitle>
                 <Switch checked={manualOverrides.enabled} onCheckedChange={(v) => setManualOverrides({ ...manualOverrides, enabled: v })} />
               </div>
@@ -272,15 +285,15 @@ export default function AdminAutopost() {
             {manualOverrides.enabled && (
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>Areal otevren</Label>
+                  <Label>Areál otevřen</Label>
                   <Switch checked={manualOverrides.isOpen} onCheckedChange={(v) => setManualOverrides({ ...manualOverrides, isOpen: v })} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label className="text-xs">Teplota</Label><Input placeholder={holidayData?.operation?.temperature || '-5'} value={manualOverrides.temperature} onChange={(e) => setManualOverrides({ ...manualOverrides, temperature: e.target.value })} /></div>
-                  <div><Label className="text-xs">Snih</Label><Input placeholder={holidayData?.operation?.snowHeight || '30 cm'} value={manualOverrides.snowHeight} onChange={(e) => setManualOverrides({ ...manualOverrides, snowHeight: e.target.value })} /></div>
-                  <div><Label className="text-xs">Lanovky (otevrene)</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.cableCarOpenCount || 0)} value={manualOverrides.liftsOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsOpen: e.target.value })} /></div>
-                  <div><Label className="text-xs">Vleky (otevrene)</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.dragLiftOpenCount || 0)} value={manualOverrides.liftsTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsTotal: e.target.value })} /></div>
-                  <div><Label className="text-xs">Sjezdovky otevreno</Label><Input type="number" min="0" placeholder={String(holidayData?.slopes?.openCount || 0)} value={manualOverrides.slopesOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, slopesOpen: e.target.value })} /></div>
+                  <div><Label className="text-xs">Sníh</Label><Input placeholder={holidayData?.operation?.snowHeight || '30 cm'} value={manualOverrides.snowHeight} onChange={(e) => setManualOverrides({ ...manualOverrides, snowHeight: e.target.value })} /></div>
+                  <div><Label className="text-xs">Lanovky (otevřené)</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.cableCarOpenCount || 0)} value={manualOverrides.liftsOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsOpen: e.target.value })} /></div>
+                  <div><Label className="text-xs">Vleky (otevřené)</Label><Input type="number" min="0" placeholder={String(holidayData?.lifts?.dragLiftOpenCount || 0)} value={manualOverrides.liftsTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, liftsTotal: e.target.value })} /></div>
+                  <div><Label className="text-xs">Sjezdovky otevřeno</Label><Input type="number" min="0" placeholder={String(holidayData?.slopes?.openCount || 0)} value={manualOverrides.slopesOpen} onChange={(e) => setManualOverrides({ ...manualOverrides, slopesOpen: e.target.value })} /></div>
                   <div><Label className="text-xs">Sjezdovky celkem</Label><Input type="number" min="0" placeholder={String(holidayData?.slopes?.totalCount || 9)} value={manualOverrides.slopesTotal} onChange={(e) => setManualOverrides({ ...manualOverrides, slopesTotal: e.target.value })} /></div>
                 </div>
               </CardContent>
@@ -299,7 +312,7 @@ export default function AdminAutopost() {
               </div>
               <CardDescription>
                 {formState.enabled ? (
-                  <span className="text-green-700">Aktivni - {formState.schedule_type === 'daily' ? `denne v ${formState.morning_time}` : formState.schedule_type === 'twice_daily' ? `2x denne` : 'vypnuto'}</span>
+                  <span className="text-green-700">Aktivní - {formState.schedule_type === 'daily' ? `denně v ${formState.morning_time}` : formState.schedule_type === 'twice_daily' ? `2x denně` : 'vypnuto'}</span>
                 ) : 'Vypnuto'}
               </CardDescription>
             </CardHeader>
@@ -308,17 +321,17 @@ export default function AdminAutopost() {
           {/* Schedule */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2"><Calendar className="w-5 h-5" /> Plan publikace</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2"><Calendar className="w-5 h-5" /> Plán publikace</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <RadioGroup value={formState.schedule_type} onValueChange={(v) => setFormState({ ...formState, schedule_type: v as AutopostScheduleType })}>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="disabled" id="disabled" /><Label htmlFor="disabled">Vypnuto</Label></div>
-                <div className="flex items-center space-x-2"><RadioGroupItem value="daily" id="daily" /><Label htmlFor="daily">Denne rano</Label></div>
-                <div className="flex items-center space-x-2"><RadioGroupItem value="twice_daily" id="twice_daily" /><Label htmlFor="twice_daily">2x denne</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="daily" id="daily" /><Label htmlFor="daily">Denně ráno</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="twice_daily" id="twice_daily" /><Label htmlFor="twice_daily">2x denně</Label></div>
               </RadioGroup>
               {formState.schedule_type !== 'disabled' && (
                 <div className="grid grid-cols-2 gap-4 pt-3 border-t">
-                  <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Rano</Label><Input type="time" value={formState.morning_time} onChange={(e) => setFormState({ ...formState, morning_time: e.target.value })} /></div>
+                  <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Ráno</Label><Input type="time" value={formState.morning_time} onChange={(e) => setFormState({ ...formState, morning_time: e.target.value })} /></div>
                   {formState.schedule_type === 'twice_daily' && (
                     <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Odpoledne</Label><Input type="time" value={formState.afternoon_time} onChange={(e) => setFormState({ ...formState, afternoon_time: e.target.value })} /></div>
                   )}
@@ -330,10 +343,28 @@ export default function AdminAutopost() {
           {/* Caption */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Text prispevku</CardTitle>
+              <CardTitle className="text-lg">Text příspěvku</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div><Label>Popisek</Label><Textarea value={formState.custom_caption} onChange={(e) => setFormState({ ...formState, custom_caption: e.target.value })} rows={2} /></div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>Popisek</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs text-muted-foreground hover:text-primary"
+                    onClick={() => setFormState({ ...formState, custom_caption: generateCaption() })}
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Vygenerovat nový
+                  </Button>
+                </div>
+                <Textarea value={formState.custom_caption} onChange={(e) => setFormState({ ...formState, custom_caption: e.target.value })} rows={2} />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Popisek se automaticky generuje s dnem v týdnu a variací textu
+                </p>
+              </div>
               <div><Label>Hashtags</Label><Input value={formState.hashtags} onChange={(e) => setFormState({ ...formState, hashtags: e.target.value })} /></div>
             </CardContent>
           </Card>
@@ -342,10 +373,10 @@ export default function AdminAutopost() {
           <Card className="border-blue-200 bg-blue-50/30">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Send className="w-5 h-5 text-blue-600" /> Rucni publikace
+                <Send className="w-5 h-5 text-blue-600" /> Ruční publikace
               </CardTitle>
               <CardDescription>
-                Otestuj nebo publikuj prispevek rucne
+                Otestuj nebo publikuj příspěvek ručně
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -374,7 +405,7 @@ export default function AdminAutopost() {
                   ) : (
                     <FileEdit className="w-4 h-4 mr-2" />
                   )}
-                  Vytvorit draft
+                  Vytvořit draft
                 </Button>
               </div>
               <Button
@@ -387,10 +418,10 @@ export default function AdminAutopost() {
                 ) : (
                   <Send className="w-4 h-4 mr-2" />
                 )}
-                Publikovat nyni
+                Publikovat nyní
               </Button>
               <p className="text-xs text-gray-500 text-center">
-                Draft najdes v{' '}
+                Draft najdeš v{' '}
                 <a
                   href="https://business.facebook.com/latest/content_calendar"
                   target="_blank"
@@ -406,7 +437,7 @@ export default function AdminAutopost() {
           {/* Save */}
           <Button onClick={handleSave} disabled={!hasChanges || updateMutation.isPending} className="w-full" size="lg">
             {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Ulozit nastaveni
+            Uložit nastavení
           </Button>
         </div>
       </div>
@@ -414,13 +445,13 @@ export default function AdminAutopost() {
       {/* History */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Historie publikaci</CardTitle>
+          <CardTitle className="text-lg">Historie publikací</CardTitle>
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p>Zatim zadne publikace</p>
+              <p>Zatím žádné publikace</p>
             </div>
           ) : (
             <Table>
@@ -438,7 +469,7 @@ export default function AdminAutopost() {
                     <TableCell><Badge variant="outline">{item.platform}</Badge></TableCell>
                     <TableCell>
                       <Badge className={item.status === 'success' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'}>
-                        {item.status === 'success' ? 'OK' : item.status === 'failed' ? 'Chyba' : 'Ceka'}
+                        {item.status === 'success' ? 'OK' : item.status === 'failed' ? 'Chyba' : 'Čeká'}
                       </Badge>
                     </TableCell>
                   </TableRow>
