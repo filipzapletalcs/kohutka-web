@@ -20,6 +20,7 @@ const VALID_ROUTES = new Set([
   '/cookies',
   '/ochrana-udaju',
   '/debug',
+  '/status-image-render',
   '/admin',
   '/admin/login',
   '/admin/cenik',
