@@ -195,7 +195,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
           />
           <StatCard
             icon={<Snowflake size={iconSize} color={COLORS.secondary} />}
-            label="Snih"
+            label="Sníh"
             value={snowHeight || '--'}
           />
         </div>
