@@ -133,8 +133,31 @@ const LEGACY_PREFIXES = [
 
   console.log('\n📁 Registering static file middleware (AFTER API routes)...');
 
-  // Serve static files from dist directory
-  app.use(express.static(path.join(__dirname, 'dist')));
+  // Serve static files from dist directory with proper cache headers
+  app.use(
+    express.static(path.join(__dirname, 'dist'), {
+      setHeaders: (res, filePath) => {
+        // Hashed build assets under /assets/ - cache aggressively (1 year)
+        // These files have content hashes in filenames, so they're safe to cache forever
+        // When content changes, the hash changes, so browsers fetch the new file
+        if (filePath.includes('/assets/')) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          return;
+        }
+
+        // index.html - must revalidate to pick up new asset hashes after deploy
+        // no-cache means "always revalidate with server before using cached version"
+        if (filePath.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-cache');
+          return;
+        }
+
+        // Other static files (favicon, manifest, sitemap, robots.txt, etc.)
+        // Cache for 1 hour - reasonable balance between performance and freshness
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+      },
+    })
+  );
 
   // SPA fallback with proper HTTP status codes for SEO
   app.use((req, res, next) => {
@@ -157,6 +180,8 @@ const LEGACY_PREFIXES = [
     // Check if it's a valid SPA route (200 OK)
     if (VALID_ROUTES.has(requestPath)) {
       console.log(`✅ Valid SPA route (200): ${req.method} ${req.url}`);
+      // SPA routes must revalidate to pick up new asset hashes after deploy
+      res.setHeader('Cache-Control', 'no-cache');
       return res.sendFile(indexHtml, (err) => {
         if (err) next(err);
       });
