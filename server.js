@@ -165,6 +165,17 @@ const LEGACY_PREFIXES = [
     const requestPath = req.path === '/' ? '/' : req.path.replace(/\/+$/, '');
     const indexHtml = path.join(__dirname, 'dist', 'index.html');
 
+    // Missing static files (assets, images, etc.) - return simple 404, not index.html
+    // This prevents browsers from trying to parse HTML as JS/CSS
+    const staticExtensions = /\.(js|css|map|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|webp|avif)$/i;
+    if (staticExtensions.test(requestPath) || requestPath.startsWith('/assets/')) {
+      console.log(`📦 Missing static file (404): ${req.method} ${req.url}`);
+      res.status(404);
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      return res.send('Not Found');
+    }
+
     // Check if it's a legacy URL (410 Gone)
     const isLegacy = LEGACY_PREFIXES.some(prefix => requestPath.startsWith(prefix));
     if (isLegacy) {
