@@ -66,7 +66,7 @@ export default function AdminSlopesLifts() {
           id: `slope_${slope.id}`,
           type: 'slope',
           name: slope.name,
-          is_open: slope.status_code !== 2 && slope.status_code !== 3,
+          is_open: slope.status_code === 2 || slope.status_code === 6,
           mode: 'auto',
         });
       }
@@ -76,7 +76,7 @@ export default function AdminSlopesLifts() {
           id: `lift_${lift.id}`,
           type: 'lift',
           name: lift.name,
-          is_open: lift.status_code !== 2,
+          is_open: lift.status_code === 1 || lift.status_code === 3,
           mode: 'auto',
         });
       }
@@ -194,7 +194,7 @@ export default function AdminSlopesLifts() {
             <CardContent className="p-0">
               <div className="divide-y">
                 {slopesDetailed.map((slope) => {
-                  const apiIsOpen = slope.status_code !== 2 && slope.status_code !== 3;
+                  const apiIsOpen = slope.status_code === 2 || slope.status_code === 6;
                   const override = getOverride('slope', slope.id);
                   const isManual = override?.mode === 'manual';
                   const effectiveStatus = getEffectiveStatus('slope', slope.id, apiIsOpen);
@@ -270,7 +270,7 @@ export default function AdminSlopesLifts() {
             <CardContent className="p-0">
               <div className="divide-y">
                 {liftsDetailed.map((lift) => {
-                  const apiIsOpen = lift.status_code !== 2;
+                  const apiIsOpen = lift.status_code === 1 || lift.status_code === 3;
                   const override = getOverride('lift', lift.id);
                   const isManual = override?.mode === 'manual';
                   const effectiveStatus = getEffectiveStatus('lift', lift.id, apiIsOpen);

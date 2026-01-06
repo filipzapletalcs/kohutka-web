@@ -146,9 +146,15 @@ const LEGACY_PREFIXES = [
         }
 
         // index.html - must revalidate to pick up new asset hashes after deploy
-        // no-cache means "always revalidate with server before using cached version"
+        // no-store forces browsers to always fetch fresh copy (stronger than no-cache)
+        // Safari/iOS is notoriously bad at respecting no-cache alone
+        // Remove ETag to prevent conditional caching that could bypass no-store
         if (filePath.endsWith('index.html')) {
-          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+          res.removeHeader('ETag');
+          res.removeHeader('Last-Modified');
           return;
         }
 
@@ -192,7 +198,13 @@ const LEGACY_PREFIXES = [
     if (VALID_ROUTES.has(requestPath)) {
       console.log(`✅ Valid SPA route (200): ${req.method} ${req.url}`);
       // SPA routes must revalidate to pick up new asset hashes after deploy
-      res.setHeader('Cache-Control', 'no-cache');
+      // Use aggressive no-store because Safari/iOS ignores weaker directives
+      // Remove ETag/Last-Modified to prevent conditional caching
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.removeHeader('ETag');
+      res.removeHeader('Last-Modified');
       return res.sendFile(indexHtml, (err) => {
         if (err) next(err);
       });
