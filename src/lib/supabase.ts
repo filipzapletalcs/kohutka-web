@@ -360,6 +360,7 @@ export interface HolidayInfoCache {
   temperature: string | null;
   weather: string | null;
   snow_height: string | null;
+  snow_type: string | null;
   lifts_open_count: number;
   lifts_total_count: number;
   skipark_open: boolean;

@@ -174,13 +174,21 @@ const Index = () => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-2.5">
               {widgetSettings.map((widget) => {
-                const widgetConfig: Record<string, { icon: typeof Mountain; autoValue: string; autoSubValue?: string; autoStatus: WidgetStatus; fullWidth?: boolean }> = {
+                // Determine skiareal label and value based on night skiing
+                const isNightSkiing = operation?.isNightSkiing || false;
+                const skiArealLabel = isNightSkiing ? "Večerní lyžování" : undefined; // undefined = use default from settings
+                const skiArealValue = isNightSkiing
+                  ? "V provozu"
+                  : (operation?.operationText || "mimo provoz");
+
+                const widgetConfig: Record<string, { icon: typeof Mountain; autoValue: string; autoSubValue?: string; autoStatus: WidgetStatus; fullWidth?: boolean; autoLabel?: string }> = {
                   skiareal: {
                     icon: Mountain,
-                    autoValue: operation?.operationText || "mimo provoz",
+                    autoValue: skiArealValue,
                     autoSubValue: operation?.opertime || undefined,
                     autoStatus: operation?.isOpen ? "open" : "closed",
                     fullWidth: true,
+                    autoLabel: skiArealLabel,
                   },
                   vleky: {
                     icon: CableCar,
@@ -206,6 +214,7 @@ const Index = () => {
                   snih: {
                     icon: Snowflake,
                     autoValue: operation?.snowHeight || "0 cm",
+                    autoSubValue: operation?.snowType || undefined,
                     autoStatus: null,
                   },
                   vozovka: {
@@ -222,7 +231,7 @@ const Index = () => {
                   <StatusWidget
                     key={widget.widget_key}
                     icon={config.icon}
-                    label={widget.display_name || widget.widget_key}
+                    label={config.autoLabel || widget.display_name || widget.widget_key}
                     value={getWidgetValue(widget.widget_key, config.autoValue)}
                     subValue={config.autoSubValue}
                     status={getWidgetStatus(widget.widget_key, config.autoStatus)}

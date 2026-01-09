@@ -1,11 +1,13 @@
 export interface StatusImageData {
   isOpen: boolean;
   temperature: string;
+  weather?: string;
   liftsOpen: number;
   liftsTotal: number;
   slopesOpen: number;
   slopesTotal: number;
   snowHeight: string;
+  snowType?: string;
   operatingHours?: string;
   date?: string;
 }

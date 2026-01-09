@@ -74,6 +74,9 @@ function parseOperationStatus(xmlDoc) {
     snowHeight = `${snowMax} cm`;
   }
 
+  // Typ sněhu
+  const snowType = getXMLText(locInfoWinter, 'snowtype_text')?.trim() || '';
+
   const isOpen = operationCode === 3 || operationCode === 4;
 
   return {
@@ -83,6 +86,7 @@ function parseOperationStatus(xmlDoc) {
     temperature,
     weather: weather === '-' ? '' : weather,
     snowHeight,
+    snowType,
   };
 }
 
@@ -267,6 +271,7 @@ export default async function handler(req, res) {
       temperature: operation.temperature,
       weather: operation.weather,
       snow_height: operation.snowHeight,
+      snow_type: operation.snowType,
       lifts_open_count: lifts.openCount,
       lifts_total_count: lifts.totalCount,
       skipark_open: lifts.skiParkOpen,

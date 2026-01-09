@@ -381,6 +381,36 @@ export function parseCameras(xmlDoc: Document): Camera[] {
 }
 
 /**
+ * Check if it's currently night skiing time
+ * Night skiing is typically after 17:00 or when opertime starts after 16:00
+ */
+function detectNightSkiing(opertime: string, isOpen: boolean): boolean {
+  if (!isOpen || !opertime) return false;
+
+  // Check current time (Czech timezone)
+  const now = new Date();
+  const czechTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Prague' }));
+  const currentHour = czechTime.getHours();
+
+  // If current time is after 17:00, it's night skiing
+  if (currentHour >= 17) {
+    return true;
+  }
+
+  // Also check if opertime indicates night skiing (starts after 16:00)
+  // Format: "08:30-18:00" or "17:00-21:00"
+  const match = opertime.match(/^(\d{2}):(\d{2})/);
+  if (match) {
+    const startHour = parseInt(match[1], 10);
+    if (startHour >= 16) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Get operation status from XML
  */
 export function parseOperationStatus(xmlDoc: Document): OperationStatus {
@@ -424,16 +454,25 @@ export function parseOperationStatus(xmlDoc: Document): OperationStatus {
     snowHeight = `${snowMax} cm`;
   }
 
+  // Snow type
+  const snowType = getXMLText(locInfoWinter, 'snowtype_text')?.trim() || '';
+
   // Operation codes: 1,2 = closed, 3,4 = open
   const isOpen = operationCode === 3 || operationCode === 4;
 
+  // Detect night skiing
+  const cleanOpertime = opertime === '00:00-00:00' ? '' : opertime;
+  const isNightSkiing = detectNightSkiing(cleanOpertime, isOpen);
+
   return {
     isOpen,
+    isNightSkiing,
     operationText: operationText === 'N/A' ? '' : operationText,
-    opertime: opertime === '00:00-00:00' ? '' : opertime,
+    opertime: cleanOpertime,
     temperature,
     weather: weather === '-' ? '' : weather,
     snowHeight,
+    snowType,
   };
 }
 
@@ -583,15 +622,19 @@ async function getFallbackFromCache() {
     const cache = await fetchHolidayInfoCache();
     if (cache) {
       console.log('Using cached HolidayInfo data from', cache.updated_at);
+      const opertime = cache.opertime || '';
+      const isOpen = cache.is_open;
       return {
         cameras: FALLBACK_CAMERAS,
         operation: {
-          isOpen: cache.is_open,
+          isOpen,
+          isNightSkiing: detectNightSkiing(opertime, isOpen),
           operationText: cache.operation_text || 'mimo provoz',
-          opertime: cache.opertime || '',
+          opertime,
           temperature: cache.temperature || '',
           weather: cache.weather || '',
           snowHeight: cache.snow_height || '',
+          snowType: cache.snow_type || '',
         },
         lifts: {
           openCount: cache.lifts_open_count,
@@ -622,11 +665,13 @@ async function getFallbackFromCache() {
     cameras: FALLBACK_CAMERAS,
     operation: {
       isOpen: false,
+      isNightSkiing: false,
       operationText: 'Data nedostupná',
       opertime: '',
       temperature: '',
       weather: '',
       snowHeight: '',
+      snowType: '',
     },
     lifts: {
       openCount: 0,
@@ -666,6 +711,7 @@ async function saveToCache(data: {
       temperature: data.operation.temperature,
       weather: data.operation.weather,
       snow_height: data.operation.snowHeight,
+      snow_type: data.operation.snowType,
       lifts_open_count: data.lifts.openCount,
       lifts_total_count: data.lifts.totalCount,
       skipark_open: data.lifts.skiParkOpen,

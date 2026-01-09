@@ -67,7 +67,7 @@ function StatCard({ icon, label, value, highlight }: {
 }
 
 export default function StatusImagePreview({ data }: { data: StatusImageData }) {
-  const { isOpen, temperature, liftsOpen, liftsTotal, slopesOpen, slopesTotal, snowHeight, operatingHours } = data;
+  const { isOpen, temperature, weather, liftsOpen, liftsTotal, slopesOpen, slopesTotal, snowHeight, snowType, operatingHours } = data;
   const hasLifts = liftsOpen > 0;
   const hasSlopes = slopesOpen > 0;
 
@@ -177,7 +177,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
         <div style={{ display: 'flex', gap: '0.5em' }}>
           <StatCard
             icon={<Thermometer size={iconSize} color={COLORS.secondary} />}
-            label="Teplota"
+            label={weather ? `Počasí - ${weather}` : "Počasí"}
             value={temperature || '--'}
           />
           <StatCard
@@ -196,7 +196,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
           />
           <StatCard
             icon={<Snowflake size={iconSize} color={COLORS.secondary} />}
-            label="Sníh"
+            label={snowType ? `Sníh - ${snowType}` : "Sníh"}
             value={snowHeight || '--'}
           />
         </div>

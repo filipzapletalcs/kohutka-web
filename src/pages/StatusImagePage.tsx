@@ -14,11 +14,13 @@ export default function StatusImagePage() {
   const data: StatusImageData = {
     isOpen: searchParams.get('isOpen') === 'true',
     temperature: searchParams.get('temperature') || '--',
+    weather: searchParams.get('weather') || undefined,
     liftsOpen: parseInt(searchParams.get('liftsOpen') || '0', 10),
     liftsTotal: parseInt(searchParams.get('liftsTotal') || '0', 10),
     slopesOpen: parseInt(searchParams.get('slopesOpen') || '0', 10),
     slopesTotal: parseInt(searchParams.get('slopesTotal') || '0', 10),
     snowHeight: searchParams.get('snowHeight') || '--',
+    snowType: searchParams.get('snowType') || undefined,
     operatingHours: searchParams.get('operatingHours') || undefined,
   };
 

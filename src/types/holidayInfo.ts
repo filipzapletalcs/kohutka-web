@@ -96,11 +96,13 @@ export interface HolidayInfoData {
 
 export interface OperationStatus {
   isOpen: boolean;
+  isNightSkiing: boolean;
   operationText: string;
   opertime: string;
   temperature: string;
   weather: string;
   snowHeight: string;
+  snowType: string;
 }
 
 export interface LiftStatus {

@@ -159,11 +159,13 @@ export default function AdminAutopost() {
   const previewData: StatusImageData = {
     isOpen: manualOverrides.enabled ? manualOverrides.isOpen : holidayData?.operation?.isOpen || false,
     temperature: manualOverrides.enabled && manualOverrides.temperature ? manualOverrides.temperature : holidayData?.operation?.temperature || '--',
+    weather: holidayData?.operation?.weather || undefined,
     liftsOpen: manualOverrides.enabled && manualOverrides.liftsOpen ? parseInt(manualOverrides.liftsOpen) : holidayData?.lifts?.cableCarOpenCount || 0,
     liftsTotal: manualOverrides.enabled && manualOverrides.liftsTotal ? parseInt(manualOverrides.liftsTotal) : holidayData?.lifts?.dragLiftOpenCount || 0,
     slopesOpen: manualOverrides.enabled && manualOverrides.slopesOpen ? parseInt(manualOverrides.slopesOpen) : holidayData?.slopes?.openCount || 0,
     slopesTotal: manualOverrides.enabled && manualOverrides.slopesTotal ? parseInt(manualOverrides.slopesTotal) : holidayData?.slopes?.totalCount || 0,
     snowHeight: manualOverrides.enabled && manualOverrides.snowHeight ? manualOverrides.snowHeight : holidayData?.operation?.snowHeight || '--',
+    snowType: holidayData?.operation?.snowType || undefined,
     operatingHours: holidayData?.operation?.opertime || undefined,
   };
 

@@ -120,6 +120,9 @@ async function fetchStatusData() {
     temperature = getXMLText(lastImage, 'temp');
   }
 
+  // Weather
+  const weather = getXMLText(locInfoWinter, 'weather_0700_text');
+
   // Snow height
   const snowMin = getXMLText(locInfoWinter, 'snowheight_slopes_min');
   const snowMax = getXMLText(locInfoWinter, 'snowheight_slopes_max');
@@ -129,6 +132,9 @@ async function fetchStatusData() {
   } else if (snowMin || snowMax) {
     snowHeight = `${snowMin || snowMax} cm`;
   }
+
+  // Snow type
+  const snowType = getXMLText(locInfoWinter, 'snowtype_text')?.trim() || '';
 
   // Operating hours
   const opertime = getXMLText(locInfoWinter, 'opertime');
@@ -141,7 +147,9 @@ async function fetchStatusData() {
     slopesOpen,
     slopesTotal,
     temperature: temperature ? `${temperature}°C` : 'N/A',
+    weather: weather && weather !== '-' ? weather : '',
     snowHeight: snowHeight || 'N/A',
+    snowType,
     operatingHours,
   };
 }
@@ -177,11 +185,13 @@ export default async function handler(req, res) {
     const params = new URLSearchParams({
       isOpen: String(statusData.isOpen),
       temperature: statusData.temperature,
+      weather: statusData.weather || '',
       liftsOpen: String(statusData.liftsOpen),
       liftsTotal: String(statusData.liftsTotal),
       slopesOpen: String(statusData.slopesOpen),
       slopesTotal: String(statusData.slopesTotal),
       snowHeight: statusData.snowHeight,
+      snowType: statusData.snowType || '',
       operatingHours: statusData.operatingHours || '',
     });
     const pageUrl = `${baseUrl}/status-image-render?${params.toString()}`;
