@@ -6,6 +6,7 @@ interface StatusWidgetProps {
   icon: LucideIcon;
   label: string;
   value: string;
+  subValue?: string;
   status?: "open" | "closed" | "partial";
   className?: string;
   fullWidth?: boolean;
@@ -15,6 +16,7 @@ export const StatusWidget = ({
   icon: Icon,
   label,
   value,
+  subValue,
   status,
   className,
   fullWidth = false,
@@ -24,7 +26,7 @@ export const StatusWidget = ({
       iconBg: "bg-gradient-to-br from-green-50 to-green-100",
       iconColor: "text-green-600",
       iconRing: "ring-2 ring-green-200",
-      valueColor: "text-green-600",
+      valueColor: "text-gray-800",
       cardBorder: "border-green-200/50",
       cardShadow: "shadow-green-100/50",
     },
@@ -32,7 +34,7 @@ export const StatusWidget = ({
       iconBg: "bg-gradient-to-br from-red-50 to-red-100",
       iconColor: "text-red-600",
       iconRing: "ring-2 ring-red-200",
-      valueColor: "text-red-600",
+      valueColor: "text-gray-800",
       cardBorder: "border-red-200/50",
       cardShadow: "shadow-red-100/50",
     },
@@ -40,7 +42,7 @@ export const StatusWidget = ({
       iconBg: "bg-gradient-to-br from-yellow-50 to-yellow-100",
       iconColor: "text-yellow-600",
       iconRing: "ring-2 ring-yellow-200",
-      valueColor: "text-yellow-600",
+      valueColor: "text-gray-800",
       cardBorder: "border-yellow-200/50",
       cardShadow: "shadow-yellow-100/50",
     },
@@ -50,7 +52,7 @@ export const StatusWidget = ({
     iconBg: "bg-gradient-to-br from-primary/5 to-primary/10",
     iconColor: "text-primary",
     iconRing: "ring-2 ring-primary/20",
-    valueColor: "text-primary",
+    valueColor: "text-gray-800",
     cardBorder: "border-gray-200/50",
     cardShadow: "shadow-gray-100/50",
   };
@@ -88,6 +90,11 @@ export const StatusWidget = ({
           <div className={cn("font-extrabold tracking-tight text-2xl", config.valueColor)}>
             {value}
           </div>
+          {subValue && (
+            <div className="text-gray-500 text-xs font-medium mt-0.5">
+              {subValue}
+            </div>
+          )}
         </div>
       </div>
 
@@ -126,6 +133,13 @@ export const StatusWidget = ({
         )}>
           {value}
         </div>
+
+        {/* SubValue - additional info below main value */}
+        {subValue && (
+          <div className="text-gray-500 text-[10px] md:text-xs font-medium mt-1 text-center leading-tight">
+            {subValue}
+          </div>
+        )}
       </div>
     </Card>
   );

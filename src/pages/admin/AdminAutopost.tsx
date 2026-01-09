@@ -92,9 +92,15 @@ export default function AdminAutopost() {
 
   const updateMutation = useMutation({
     mutationFn: (updates: Partial<AutopostSettings>) => updateAutopostSettings(updates),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['autopost-settings'] });
-      toast.success('Nastavení uloženo');
+      // Refresh scheduler immediately after saving settings
+      try {
+        await fetch('/api/refresh-autopost', { method: 'POST' });
+        toast.success('Nastavení uloženo a scheduler aktualizován');
+      } catch {
+        toast.success('Nastavení uloženo (scheduler se aktualizuje do 5 min)');
+      }
     },
     onError: (error) => toast.error('Chyba: ' + (error as Error).message),
   });

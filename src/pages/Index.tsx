@@ -174,10 +174,11 @@ const Index = () => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5 md:gap-2.5">
               {widgetSettings.map((widget) => {
-                const widgetConfig: Record<string, { icon: typeof Mountain; autoValue: string; autoStatus: WidgetStatus; fullWidth?: boolean }> = {
+                const widgetConfig: Record<string, { icon: typeof Mountain; autoValue: string; autoSubValue?: string; autoStatus: WidgetStatus; fullWidth?: boolean }> = {
                   skiareal: {
                     icon: Mountain,
                     autoValue: operation?.operationText || "mimo provoz",
+                    autoSubValue: operation?.opertime || undefined,
                     autoStatus: operation?.isOpen ? "open" : "closed",
                     fullWidth: true,
                   },
@@ -199,6 +200,7 @@ const Index = () => {
                   pocasi: {
                     icon: CloudSun,
                     autoValue: operation?.temperature ? `${operation.temperature}°C` : "N/A",
+                    autoSubValue: operation?.weather || undefined,
                     autoStatus: null,
                   },
                   snih: {
@@ -222,6 +224,7 @@ const Index = () => {
                     icon={config.icon}
                     label={widget.display_name || widget.widget_key}
                     value={getWidgetValue(widget.widget_key, config.autoValue)}
+                    subValue={config.autoSubValue}
                     status={getWidgetStatus(widget.widget_key, config.autoStatus)}
                     fullWidth={config.fullWidth}
                     className={config.fullWidth ? "col-span-2 md:col-span-1" : undefined}

@@ -202,7 +202,7 @@ const SlopesAndLifts = () => {
                           index % 2 === 0 ? "bg-blue-500/5" : ""
                         }`}
                       >
-                        <td className="px-1.5 py-2 md:p-3 font-bold text-xs md:text-sm text-gray-800">{slope.name}</td>
+                        <td className="px-1.5 py-2 md:p-3 font-bold text-xs md:text-sm text-gray-800">{slope.id} - {slope.name}</td>
                         <td className="px-1.5 py-2 md:p-3">
                           <div className="flex items-center gap-2">
                             <div className={`w-4 h-4 md:w-5 md:h-5 rounded-full shadow-md flex-shrink-0 ${getDifficultyColor(slope.diff_code)}`} />
@@ -290,7 +290,7 @@ const SlopesAndLifts = () => {
                           index % 2 === 0 ? "bg-blue-500/5" : ""
                         }`}
                       >
-                        <td className="px-1.5 py-2 md:p-3 font-bold text-xs md:text-sm text-gray-800">{lift.name}</td>
+                        <td className="px-1.5 py-2 md:p-3 font-bold text-xs md:text-sm text-gray-800">{lift.id} - {lift.name}</td>
                         <td className="px-1.5 py-2 md:p-3 text-xs md:text-sm font-semibold text-gray-800">{lift.type_text}</td>
                         <td className="px-1.5 py-2 md:p-3 text-right whitespace-nowrap">
                           <span className="text-xs md:text-sm font-semibold text-gray-800">{lift.capacity} os/h</span>

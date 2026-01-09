@@ -131,6 +131,24 @@ const LEGACY_PREFIXES = [
     }
   }
 
+  // API endpoint to manually refresh autopost scheduler (called after settings save)
+  // Must be registered BEFORE static file middleware and SPA fallback
+  let updateScheduleRef = null;
+  app.post('/api/refresh-autopost', async (req, res) => {
+    console.log('[Autopost] Manual refresh triggered');
+    try {
+      if (updateScheduleRef) {
+        await updateScheduleRef();
+        res.json({ success: true, message: 'Scheduler refreshed' });
+      } else {
+        res.json({ success: true, message: 'Scheduler not yet initialized' });
+      }
+    } catch (error) {
+      console.error('[Autopost] Manual refresh failed:', error.message);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   console.log('\n📁 Registering static file middleware (AFTER API routes)...');
 
   // Serve static files from dist directory with proper cache headers
@@ -321,6 +339,8 @@ const LEGACY_PREFIXES = [
 
   async function initAutopostScheduler() {
     console.log('[Autopost] Initializing scheduler...');
+    // Store reference for API endpoint
+    updateScheduleRef = updateSchedule;
     await updateSchedule();
 
     // Check for settings changes every 5 minutes
@@ -330,6 +350,45 @@ const LEGACY_PREFIXES = [
     });
   }
 
+  // ===== HOLIDAY INFO BACKUP SCHEDULER =====
+  async function initHolidayInfoBackup() {
+    console.log('[HolidayInfo Backup] Initializing scheduler...');
+
+    // Run backup every 20 minutes
+    cron.schedule(
+      '*/20 * * * *',
+      async () => {
+        console.log(`[HolidayInfo Backup] Starting backup at ${new Date().toISOString()}`);
+        try {
+          const response = await fetch(`http://localhost:${PORT}/api/holidayinfo-backup`);
+          const result = await response.json();
+          if (result.success) {
+            console.log(`[HolidayInfo Backup] ${result.message}`);
+          } else {
+            console.error(`[HolidayInfo Backup] Failed: ${result.error}`);
+          }
+        } catch (error) {
+          console.error('[HolidayInfo Backup] Error:', error.message);
+        }
+      },
+      { timezone: 'Europe/Prague' }
+    );
+
+    // Run initial backup on startup
+    console.log('[HolidayInfo Backup] Running initial backup...');
+    try {
+      const response = await fetch(`http://localhost:${PORT}/api/holidayinfo-backup`);
+      const result = await response.json();
+      if (result.success) {
+        console.log(`[HolidayInfo Backup] Initial backup: ${result.message}`);
+      } else {
+        console.error(`[HolidayInfo Backup] Initial backup failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('[HolidayInfo Backup] Initial backup error:', error.message);
+    }
+  }
+
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 🚀 Server is running!
@@ -337,9 +396,10 @@ const LEGACY_PREFIXES = [
 🏥 Health: http://localhost:${PORT}/health
     `);
 
-    // Initialize autopost scheduler after server starts
+    // Initialize schedulers after server starts
     setTimeout(() => {
       initAutopostScheduler();
+      initHolidayInfoBackup();
     }, 2000);
   });
 })();

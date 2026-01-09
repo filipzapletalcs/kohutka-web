@@ -140,7 +140,7 @@ export default async function handler(req, res) {
     }
 
     // 3. Upload photo to Facebook
-    // Facebook requires multipart/form-data for photo uploads
+    // Direct photo upload with message - appears in feed AND photos
     console.log(`[Facebook Post] Uploading to Facebook page ${pageId} (${modeLabel})...`);
 
     // Create FormData with the image
@@ -149,48 +149,26 @@ export default async function handler(req, res) {
     formData.append('message', fullCaption);
     formData.append('access_token', accessToken);
 
-    // Step 1: Upload photo as unpublished first
-    formData.append('published', 'false');
-
-    const uploadResponse = await fetch(`${GRAPH_API_BASE}/${pageId}/photos`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    const uploadData = await uploadResponse.json();
-
-    if (!uploadResponse.ok || uploadData.error) {
-      throw new Error(uploadData.error?.message || 'Failed to upload photo');
-    }
-
-    const photoId = uploadData.id;
-    console.log(`[Facebook Post] Photo uploaded with ID: ${photoId}`);
-
-    // Step 2: Create feed post with the photo attached
-    const feedFormData = new URLSearchParams();
-    feedFormData.append('message', fullCaption);
-    feedFormData.append('attached_media[0]', JSON.stringify({ media_fbid: photoId }));
-    feedFormData.append('access_token', accessToken);
-
-    // Draft mode - create scheduled post 2 days in future (appears in Scheduled section)
+    // Set publish status based on mode
     if (isDraft) {
-      feedFormData.append('scheduled_publish_time', String(effectiveScheduledTime));
-      feedFormData.append('published', 'false');
+      formData.append('published', 'false');
+      formData.append('scheduled_publish_time', String(effectiveScheduledTime));
       const scheduledDate = new Date(effectiveScheduledTime * 1000).toLocaleString('cs-CZ');
       console.log(`[Facebook Post] Creating as SCHEDULED DRAFT for: ${scheduledDate}`);
-    }
-    // Scheduled mode - schedule for specified future time
-    else if (isScheduled) {
-      feedFormData.append('scheduled_publish_time', String(scheduledTime));
-      feedFormData.append('published', 'false');
+    } else if (isScheduled) {
+      formData.append('published', 'false');
+      formData.append('scheduled_publish_time', String(scheduledTime));
       const scheduledDate = new Date(scheduledTime * 1000).toISOString();
       console.log(`[Facebook Post] Scheduling for: ${scheduledDate}`);
+    } else {
+      // Immediate publish - photo goes directly to feed as public post
+      formData.append('published', 'true');
+      console.log(`[Facebook Post] Publishing immediately with published=true`);
     }
 
-    const fbResponse = await fetch(`${GRAPH_API_BASE}/${pageId}/feed`, {
+    const fbResponse = await fetch(`${GRAPH_API_BASE}/${pageId}/photos`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: feedFormData.toString(),
+      body: formData,
     });
 
     const fbData = await fbResponse.json();

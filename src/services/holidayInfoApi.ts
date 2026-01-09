@@ -711,19 +711,33 @@ export async function fetchHolidayInfoData() {
     const slopesDetailed = parseSlopes(xmlDoc);
     const liftsDetailed = parseLifts(xmlDoc);
 
-    // Save to cache (don't await to not block the response)
-    saveToCache({ operation, lifts, slopes, slopesDetailed, liftsDetailed });
+    // Only save to cache if we have actual data (prevent overwriting with empty data)
+    const hasData = slopes.totalCount > 0 || lifts.totalCount > 0;
+    if (hasData) {
+      // Save to cache (don't await to not block the response)
+      saveToCache({ operation, lifts, slopes, slopesDetailed, liftsDetailed });
 
-    return {
-      cameras: parseCameras(xmlDoc),
-      operation,
-      lifts,
-      slopes,
-      slopesDetailed,
-      liftsDetailed,
-      rawXML: xmlText,
-      fromCache: false,
-    };
+      return {
+        cameras: parseCameras(xmlDoc),
+        operation,
+        lifts,
+        slopes,
+        slopesDetailed,
+        liftsDetailed,
+        rawXML: xmlText,
+        fromCache: false,
+      };
+    } else {
+      // API returned empty data - use cache instead
+      console.warn('Holiday Info API returned empty data, using cache fallback');
+      const cachedData = await getFallbackFromCache();
+      // Still return cameras from API (they might be valid)
+      return {
+        ...cachedData,
+        cameras: parseCameras(xmlDoc).length > 0 ? parseCameras(xmlDoc) : cachedData.cameras,
+        rawXML: xmlText,
+      };
+    }
   } catch (error) {
     console.error('Error fetching Holiday Info data:', error);
     // Try to get cached data
