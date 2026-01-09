@@ -13,6 +13,7 @@ const COLORS = {
   white: '#ffffff',
   mediumGray: '#64748b',
   darkText: '#0f2942',
+  valueText: '#163a5e', // Dark blue (same as primary) for stat values
 };
 
 function StatCard({ icon, label, value, highlight }: {
@@ -56,7 +57,7 @@ function StatCard({ icon, label, value, highlight }: {
           fontWeight: 900,
           lineHeight: 1,
           whiteSpace: 'nowrap',
-          color: highlight ? COLORS.open : COLORS.primary,
+          color: COLORS.valueText,
         }}
       >
         {value}
