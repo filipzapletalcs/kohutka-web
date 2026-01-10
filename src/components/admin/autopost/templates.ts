@@ -17,8 +17,8 @@ function getWeatherEmoji(weatherCode: number): string {
 export const POST_TEMPLATES: PostTemplate[] = [
   {
     id: 'daily',
-    name: 'Denni report',
-    description: 'Poznamka + kamera + odkaz',
+    name: 'Denní report',
+    description: 'Poznámka + kamera + odkaz',
     emoji: '📢',
     generate: (data: TemplateData): string => {
       let text = '';
@@ -27,15 +27,15 @@ export const POST_TEMPLATES: PostTemplate[] = [
         text += `📢 ${data.textComment}\n\n`;
       } else {
         text += data.isOpen
-          ? '📢 Areal je otevren! Prijedte si zalyzovat.\n\n'
-          : '📢 Areal je dnes uzavren.\n\n';
+          ? '📢 Areál je otevřen! Přijeďte si zalyžovat.\n\n'
+          : '📢 Areál je dnes uzavřen.\n\n';
       }
 
       if (data.cameraName) {
         text += `📸 Pohled z kamery: ${data.cameraName}\n\n`;
       }
 
-      text += 'Vice info 👉 kohutka.ski';
+      text += 'Více info 👉 kohutka.ski';
 
       return text;
     },
@@ -43,8 +43,8 @@ export const POST_TEMPLATES: PostTemplate[] = [
 
   {
     id: 'weather',
-    name: 'S pocasim',
-    description: 'Pocasi + poznamka + novy snih',
+    name: 'S počasím',
+    description: 'Počasí + poznámka + nový sníh',
     emoji: '🌤️',
     generate: (data: TemplateData): string => {
       let text = '';
@@ -52,7 +52,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
       const weatherEmoji = getWeatherEmoji(data.weatherCode);
       if (data.weatherText) {
         const weatherCapitalized = data.weatherText.charAt(0).toUpperCase() + data.weatherText.slice(1);
-        text += `${weatherEmoji} ${weatherCapitalized} na Kohutce\n\n`;
+        text += `${weatherEmoji} ${weatherCapitalized} na Kohútce\n\n`;
       }
 
       if (data.textComment) {
@@ -60,7 +60,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
       }
 
       if (data.newSnow && data.newSnow !== '0 cm') {
-        text += `❄️ Novy snih: ${data.newSnow}\n\n`;
+        text += `❄️ Nový sníh: ${data.newSnow}\n\n`;
       }
 
       if (data.cameraName) {
@@ -73,22 +73,22 @@ export const POST_TEMPLATES: PostTemplate[] = [
 
   {
     id: 'morning',
-    name: 'Ranni pozvanka',
-    description: 'Privetivy ranni pozdrav',
+    name: 'Ranní pozvánka',
+    description: 'Přívětivý ranní pozdrav',
     emoji: '☀️',
     generate: (data: TemplateData): string => {
-      let text = '☀️ Dobre rano z Kohutky!\n\n';
+      let text = '☀️ Dobré ráno z Kohútky!\n\n';
 
       if (data.textComment) {
         text += `${data.textComment}\n\n`;
       } else if (data.isOpen) {
-        text += 'Areal je pripraven, sjezdovky upravene!\n\n';
+        text += 'Areál je připraven, sjezdovky upravené!\n\n';
       } else {
-        text += 'Dnes je areal uzavren, sledujte nas pro aktualni info.\n\n';
+        text += 'Dnes je areál uzavřen, sledujte nás pro aktuální info.\n\n';
       }
 
       if (data.isOpen) {
-        text += 'Prijedte si zalyzovat! 🎿\n';
+        text += 'Přijeďte si zalyžovat! 🎿\n';
       }
 
       if (data.cameraName) {
@@ -101,8 +101,8 @@ export const POST_TEMPLATES: PostTemplate[] = [
 
   {
     id: 'brief',
-    name: 'Strucna',
-    description: 'Jen poznamka a kamera',
+    name: 'Stručná',
+    description: 'Jen poznámka a kamera',
     emoji: '📝',
     generate: (data: TemplateData): string => {
       let text = '';
@@ -110,7 +110,7 @@ export const POST_TEMPLATES: PostTemplate[] = [
       if (data.textComment) {
         text += data.textComment;
       } else {
-        text += data.isOpen ? 'Areal otevren!' : 'Areal uzavren.';
+        text += data.isOpen ? 'Areál otevřen!' : 'Areál uzavřen.';
       }
 
       if (data.cameraName) {
@@ -147,7 +147,7 @@ export function generatePostText(
 
   const template = getTemplateById(templateId);
   if (!template) {
-    return 'Denni report z Kohutky!';
+    return 'Denní report z Kohútky!';
   }
 
   const templateData: TemplateData = {

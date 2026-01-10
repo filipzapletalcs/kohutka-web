@@ -306,7 +306,7 @@ export default function AdminAutopost() {
               <div className="bg-white rounded-lg shadow-lg border overflow-hidden max-w-sm mx-auto">
                 {/* FB Header */}
                 <div className="p-3 flex items-center gap-3">
-                  <img src={logo} alt="Kohutka" className="w-10 h-10 rounded-full object-contain bg-primary/10" />
+                  <img src={logo} alt="Kohútka" className="w-10 h-10 rounded-full object-contain bg-primary/10" />
                   <div>
                     <div className="font-semibold text-sm">SKI CENTRUM KOHUTKA</div>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -501,7 +501,7 @@ export default function AdminAutopost() {
             <CardContent className="space-y-4">
               {/* Výběr šablony */}
               <div className="space-y-2">
-                <Label>Sablona textu</Label>
+                <Label>Šablona textu</Label>
                 <Select
                   value={formState.selected_template}
                   onValueChange={(value: TemplateId) => {
@@ -509,7 +509,7 @@ export default function AdminAutopost() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Vyberte sablonu" />
+                    <SelectValue placeholder="Vyberte šablonu" />
                   </SelectTrigger>
                   <SelectContent>
                     {POST_TEMPLATES.map((template) => (
@@ -536,10 +536,10 @@ export default function AdminAutopost() {
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center gap-2 text-blue-700 text-sm font-medium mb-1">
                     <RefreshCw className="w-4 h-4" />
-                    Automaticky generovano ze sablony
+                    Automaticky generováno ze šablony
                   </div>
                   <p className="text-xs text-blue-600">
-                    Text pouziva poznamku z Holiday Info API. Editaci prepnete na vlastni text.
+                    Text používá poznámku z Holiday Info API. Editací přepnete na vlastní text.
                   </p>
                 </div>
               )}
@@ -577,7 +577,7 @@ export default function AdminAutopost() {
                   className="font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formState.custom_caption.length} znaku
+                  {formState.custom_caption.length} znaků
                 </p>
               </div>
               <div><Label>Hashtags</Label><Input value={formState.hashtags} onChange={(e) => setFormState({ ...formState, hashtags: e.target.value })} /></div>

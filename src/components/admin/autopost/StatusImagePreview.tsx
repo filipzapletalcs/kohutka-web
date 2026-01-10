@@ -112,7 +112,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
         paddingTop: '1.5em',
         paddingBottom: '0.5em',
       }}>
-        <img src={logo} alt="Kohutka" style={{ height: '4em', width: 'auto', objectFit: 'contain' }} />
+        <img src={logo} alt="Kohútka" style={{ height: '4em', width: 'auto', objectFit: 'contain' }} />
         <div style={{
           fontSize: '0.6em',
           fontWeight: 700,
@@ -217,7 +217,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
           <svg width="0.9em" height="0.9em" viewBox="0 0 24 24" fill="none" stroke={COLORS.white} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
           </svg>
-          <span style={{ fontSize: '0.55em', color: 'rgba(255,255,255,0.8)' }}>Provozni doba:</span>
+          <span style={{ fontSize: '0.55em', color: 'rgba(255,255,255,0.8)' }}>Provozní doba:</span>
           <span style={{ fontSize: '0.65em', fontWeight: 700, color: COLORS.white }}>{operatingHours}</span>
         </div>
       )}
@@ -235,7 +235,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
           backgroundColor: COLORS.accent,
           boxShadow: '0 0.3em 1em rgba(140, 240, 92, 0.4)',
         }}>
-          <span style={{ fontSize: '0.7em', fontWeight: 700, color: COLORS.darkText }}>Vice na kohutka.ski</span>
+          <span style={{ fontSize: '0.7em', fontWeight: 700, color: COLORS.darkText }}>Více na kohutka.ski</span>
         </div>
       </div>
 
