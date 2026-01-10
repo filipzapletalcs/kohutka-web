@@ -103,6 +103,10 @@ export interface OperationStatus {
   weather: string;
   snowHeight: string;
   snowType: string;
+  // Pro autoposting šablony
+  textComment: string;      // Poznámka majitele z Holiday Info
+  newSnow: string;          // Nový sníh
+  weatherCode: number;      // Kód počasí pro emoji
 }
 
 export interface LiftStatus {

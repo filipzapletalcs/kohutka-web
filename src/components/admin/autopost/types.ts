@@ -22,3 +22,24 @@ export interface ManualOverrides {
   snowHeight: string;
   isOpen: boolean;
 }
+
+// === Typy pro šablony autopostingu ===
+
+export type TemplateId = 'daily' | 'weather' | 'morning' | 'brief' | 'custom';
+
+export interface TemplateData {
+  textComment: string;
+  cameraName: string;
+  weatherText: string;
+  weatherCode: number;
+  newSnow: string;
+  isOpen: boolean;
+}
+
+export interface PostTemplate {
+  id: TemplateId;
+  name: string;
+  description: string;
+  emoji: string;
+  generate: (data: TemplateData) => string;
+}

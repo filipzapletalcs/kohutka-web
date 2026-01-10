@@ -457,6 +457,12 @@ export function parseOperationStatus(xmlDoc: Document): OperationStatus {
   // Snow type
   const snowType = getXMLText(locInfoWinter, 'snowtype_text')?.trim() || '';
 
+  // Nová pole pro autoposting šablony
+  const textComment = getXMLText(locInfoWinter, 'text_comment')?.trim() || '';
+  const newSnowRaw = getXMLText(locInfoWinter, 'snowheight_new')?.trim() || '';
+  const newSnow = newSnowRaw && newSnowRaw !== '0' ? `${newSnowRaw} cm` : '';
+  const weatherCode = getXMLNumber(locInfoWinter, 'weather_0700_code');
+
   // Operation codes: 1,2 = closed, 3,4 = open
   const isOpen = operationCode === 3 || operationCode === 4;
 
@@ -473,6 +479,10 @@ export function parseOperationStatus(xmlDoc: Document): OperationStatus {
     weather: weather === '-' ? '' : weather,
     snowHeight,
     snowType,
+    // Nová pole pro autoposting
+    textComment,
+    newSnow,
+    weatherCode,
   };
 }
 
@@ -640,6 +650,9 @@ async function getFallbackFromCache() {
           weather: cache.weather || '',
           snowHeight: cache.snow_height || '',
           snowType: cache.snow_type || '',
+          textComment: '',
+          newSnow: '',
+          weatherCode: 0,
         },
         lifts: {
           openCount: cache.lifts_open_count,
@@ -677,6 +690,9 @@ async function getFallbackFromCache() {
       weather: '',
       snowHeight: '',
       snowType: '',
+      textComment: '',
+      newSnow: '',
+      weatherCode: 0,
     },
     lifts: {
       openCount: 0,

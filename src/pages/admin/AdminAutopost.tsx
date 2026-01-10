@@ -23,7 +23,8 @@ import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
-import type { ManualOverrides, StatusImageData } from '@/components/admin/autopost/types';
+import type { ManualOverrides, StatusImageData, TemplateId } from '@/components/admin/autopost/types';
+import { POST_TEMPLATES, generatePostText } from '@/components/admin/autopost/templates';
 
 const MONTH_NAMES = [
   'ledna', 'února', 'března', 'dubna', 'května', 'června',
@@ -51,6 +52,7 @@ export default function AdminAutopost() {
     custom_caption: DEFAULT_CAPTION,
     hashtags: '#kohutka #lyze #skiing #beskydy #zima',
     camera_id: null as string | null,
+    selected_template: 'daily' as TemplateId,
   });
 
   const [manualOverrides, setManualOverrides] = useState<ManualOverrides>({
@@ -132,9 +134,32 @@ export default function AdminAutopost() {
         custom_caption: settings.custom_caption || DEFAULT_CAPTION,
         hashtags: settings.hashtags,
         camera_id: settings.camera_id,
+        selected_template: 'daily' as TemplateId,
       });
     }
   }, [settings]);
+
+  // Získat název vybrané kamery pro šablony
+  const selectedCameraName = formState.camera_id
+    ? activeCameras.find(c => c.id === formState.camera_id)?.name || ''
+    : '';
+
+  // Automatická aktualizace textu při změně šablony nebo dat
+  useEffect(() => {
+    if (formState.selected_template !== 'custom' && holidayData) {
+      const generatedText = generatePostText(
+        formState.selected_template,
+        holidayData,
+        selectedCameraName
+      );
+      if (generatedText) {
+        setFormState((prev) => ({
+          ...prev,
+          custom_caption: generatedText,
+        }));
+      }
+    }
+  }, [formState.selected_template, holidayData, selectedCameraName]);
 
   const updateMutation = useMutation({
     mutationFn: (updates: Partial<AutopostSettings>) => updateAutopostSettings(updates),
@@ -291,7 +316,7 @@ export default function AdminAutopost() {
                 </div>
                 {/* Caption */}
                 <div className="px-3 pb-2">
-                  <p className="text-sm">{formState.custom_caption}</p>
+                  <p className="text-sm whitespace-pre-line">{formState.custom_caption}</p>
                   <p className="text-sm text-blue-600 mt-1">{formState.hashtags}</p>
                 </div>
                 {/* Image Preview - Carousel when camera is selected */}
@@ -473,24 +498,86 @@ export default function AdminAutopost() {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Text příspěvku</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
+              {/* Výběr šablony */}
+              <div className="space-y-2">
+                <Label>Sablona textu</Label>
+                <Select
+                  value={formState.selected_template}
+                  onValueChange={(value: TemplateId) => {
+                    setFormState({ ...formState, selected_template: value });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte sablonu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {POST_TEMPLATES.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        <span className="flex items-center gap-2">
+                          <span>{template.emoji}</span>
+                          <span>{template.name}</span>
+                          <span className="text-xs text-muted-foreground">- {template.description}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">
+                      <span className="flex items-center gap-2">
+                        <span>✏️</span>
+                        <span>Vlastni text</span>
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Info o automatickém generování */}
+              {formState.selected_template !== 'custom' && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 text-blue-700 text-sm font-medium mb-1">
+                    <RefreshCw className="w-4 h-4" />
+                    Automaticky generovano ze sablony
+                  </div>
+                  <p className="text-xs text-blue-600">
+                    Text pouziva poznamku z Holiday Info API. Editaci prepnete na vlastni text.
+                  </p>
+                </div>
+              )}
+
+              {/* Textarea */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <Label>Popisek</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs text-muted-foreground hover:text-primary"
-                    onClick={() => setFormState({ ...formState, custom_caption: generateCaption() })}
-                  >
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Vygenerovat nový
-                  </Button>
+                  {formState.selected_template !== 'custom' && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        if (holidayData) {
+                          const text = generatePostText(formState.selected_template, holidayData, selectedCameraName);
+                          setFormState({ ...formState, custom_caption: text });
+                        }
+                      }}
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Znovu vygenerovat
+                    </Button>
+                  )}
                 </div>
-                <Textarea value={formState.custom_caption} onChange={(e) => setFormState({ ...formState, custom_caption: e.target.value })} rows={2} />
+                <Textarea
+                  value={formState.custom_caption}
+                  onChange={(e) => setFormState({
+                    ...formState,
+                    custom_caption: e.target.value,
+                    selected_template: 'custom' as TemplateId,
+                  })}
+                  rows={5}
+                  className="font-mono text-sm"
+                />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Popisek se automaticky generuje s dnem v týdnu a variací textu
+                  {formState.custom_caption.length} znaku
                 </p>
               </div>
               <div><Label>Hashtags</Label><Input value={formState.hashtags} onChange={(e) => setFormState({ ...formState, hashtags: e.target.value })} /></div>
