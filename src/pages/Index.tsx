@@ -121,7 +121,7 @@ const Index = () => {
         />
 
         {/* Content */}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
+        <div className="absolute inset-0 flex items-center justify-center z-10 pb-24 md:pb-0">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-4xl mx-auto">
               {/* Logo */}

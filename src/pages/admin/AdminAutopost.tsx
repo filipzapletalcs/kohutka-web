@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera } from 'lucide-react';
+import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
@@ -63,6 +63,14 @@ export default function AdminAutopost() {
     snowHeight: '',
     isOpen: false,
   });
+
+  // Carousel state for preview (0 = status image, 1 = camera image)
+  const [carouselSlide, setCarouselSlide] = useState(0);
+
+  // Reset carousel when camera changes
+  useEffect(() => {
+    setCarouselSlide(0);
+  }, [formState.camera_id]);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['autopost-settings'],
@@ -255,7 +263,14 @@ export default function AdminAutopost() {
           {/* Facebook Mockup */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Náhled příspěvku</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Náhled příspěvku</CardTitle>
+                {formState.camera_id && getCameraPreviewUrl(formState.camera_id) && (
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                    <Camera className="w-3 h-3 mr-1" /> Carousel (2 obrázky)
+                  </Badge>
+                )}
+              </div>
               {manualOverrides.enabled && (
                 <Badge variant="outline" className="w-fit text-orange-600 border-orange-300">
                   <Edit3 className="w-3 h-3 mr-1" /> Manuální hodnoty
@@ -279,12 +294,61 @@ export default function AdminAutopost() {
                   <p className="text-sm">{formState.custom_caption}</p>
                   <p className="text-sm text-blue-600 mt-1">{formState.hashtags}</p>
                 </div>
-                {/* Image Preview */}
+                {/* Image Preview - Carousel when camera is selected */}
                 {isLoadingData ? (
                   <div className="aspect-[1080/1350] bg-gray-200 flex items-center justify-center">
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                   </div>
+                ) : formState.camera_id && getCameraPreviewUrl(formState.camera_id) ? (
+                  // Carousel view with 2 images
+                  <div className="relative">
+                    {/* Slides container */}
+                    <div className="overflow-hidden">
+                      {carouselSlide === 0 ? (
+                        <div style={{ fontSize: '13px' }}>
+                          <StatusImagePreview data={previewData} />
+                        </div>
+                      ) : (
+                        <div className="bg-gray-900 flex items-center justify-center min-h-[200px]">
+                          <img
+                            src={getCameraPreviewUrl(formState.camera_id)}
+                            alt="Snímek z kamery"
+                            className="w-full h-auto"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {/* Navigation arrows */}
+                    <button
+                      onClick={() => setCarouselSlide((s) => (s === 0 ? 1 : 0))}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-lg transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-700" />
+                    </button>
+                    <button
+                      onClick={() => setCarouselSlide((s) => (s === 0 ? 1 : 0))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-lg transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-700" />
+                    </button>
+                    {/* Dots indicator */}
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      <button
+                        onClick={() => setCarouselSlide(0)}
+                        className={`w-2 h-2 rounded-full transition-colors ${carouselSlide === 0 ? 'bg-blue-500' : 'bg-white/70 hover:bg-white'}`}
+                      />
+                      <button
+                        onClick={() => setCarouselSlide(1)}
+                        className={`w-2 h-2 rounded-full transition-colors ${carouselSlide === 1 ? 'bg-blue-500' : 'bg-white/70 hover:bg-white'}`}
+                      />
+                    </div>
+                    {/* Slide counter */}
+                    <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                      {carouselSlide + 1}/2
+                    </div>
+                  </div>
                 ) : (
+                  // Single image view
                   <div style={{ fontSize: '13px' }}>
                     <StatusImagePreview data={previewData} />
                   </div>
