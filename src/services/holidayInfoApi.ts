@@ -624,11 +624,16 @@ async function getFallbackFromCache() {
       console.log('Using cached HolidayInfo data from', cache.updated_at);
       const opertime = cache.opertime || '';
       const isOpen = cache.is_open;
+      // Detekce večerního lyžování z cached dat (nightskiing_code !== 1 = aktivní)
+      const slopesDetailed = cache.slopes_detailed || [];
+      const liftsDetailed = cache.lifts_detailed || [];
+      const hasNightSkiingFromApi = slopesDetailed.some((s: { nightskiing_code: number }) => s.nightskiing_code !== 1) ||
+                                    liftsDetailed.some((l: { nightskiing_code: number }) => l.nightskiing_code !== 1);
       return {
         cameras: FALLBACK_CAMERAS,
         operation: {
           isOpen,
-          isNightSkiing: detectNightSkiing(opertime, isOpen),
+          isNightSkiing: hasNightSkiingFromApi,
           operationText: cache.operation_text || 'mimo provoz',
           opertime,
           temperature: cache.temperature || '',
@@ -756,6 +761,12 @@ export async function fetchHolidayInfoData() {
     const slopes = parseSlopeStatus(xmlDoc);
     const slopesDetailed = parseSlopes(xmlDoc);
     const liftsDetailed = parseLifts(xmlDoc);
+
+    // Detekce večerního lyžování z API dat (nightskiing_code !== 1 = aktivní)
+    // Přepíše časově-založenou detekci z parseOperationStatus
+    const hasNightSkiingFromApi = slopesDetailed.some(s => s.nightskiing_code !== 1) ||
+                                  liftsDetailed.some(l => l.nightskiing_code !== 1);
+    operation.isNightSkiing = hasNightSkiingFromApi;
 
     // Only save to cache if we have actual data (prevent overwriting with empty data)
     const hasData = slopes.totalCount > 0 || lifts.totalCount > 0;

@@ -176,16 +176,18 @@ const Index = () => {
               {widgetSettings.map((widget) => {
                 // Determine skiareal label and value based on night skiing
                 const isNightSkiing = operation?.isNightSkiing || false;
-                const skiArealLabel = isNightSkiing ? "Večerní lyžování" : undefined; // undefined = use default from settings
+                const skiArealLabel = isNightSkiing ? "VEČERNÍ LYŽOVÁNÍ" : "SKIAREÁL";
                 const skiArealValue = isNightSkiing
                   ? "V provozu"
                   : (operation?.operationText || "mimo provoz");
+                // Dynamická otevírací doba - večerní lyžování prodlužuje do 18:00
+                const skiArealSubValue = isNightSkiing ? "08:30-18:00" : (operation?.opertime || "08:30-16:00");
 
                 const widgetConfig: Record<string, { icon: typeof Mountain; autoValue: string; autoSubValue?: string; autoStatus: WidgetStatus; fullWidth?: boolean; autoLabel?: string }> = {
                   skiareal: {
                     icon: Mountain,
                     autoValue: skiArealValue,
-                    autoSubValue: operation?.opertime || undefined,
+                    autoSubValue: skiArealSubValue,
                     autoStatus: operation?.isOpen ? "open" : "closed",
                     fullWidth: true,
                     autoLabel: skiArealLabel,
