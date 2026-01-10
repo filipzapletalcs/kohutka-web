@@ -280,7 +280,7 @@ const LEGACY_PREFIXES = [
         return;
       }
 
-      const { morning_time, afternoon_time, schedule_type, custom_caption, hashtags } = settings;
+      const { morning_time, schedule_type, custom_caption, hashtags, camera_id, camera_image_url } = settings;
 
       // Parse times (format: "HH:MM")
       const [morningHour, morningMin] = morning_time.split(':').map(Number);
@@ -290,45 +290,30 @@ const LEGACY_PREFIXES = [
       const morningJob = cron.schedule(
         morningCron,
         () => {
-          executeAutopost(custom_caption, hashtags);
+          executeAutopost(custom_caption, hashtags, camera_id, camera_image_url);
         },
         { timezone: 'Europe/Prague' }
       );
       scheduledJobs.push(morningJob);
-      console.log(`[Autopost] Scheduled morning post at ${morning_time} (cron: ${morningCron})`);
+      console.log(`[Autopost] Scheduled morning post at ${morning_time} (cron: ${morningCron})${camera_id ? `, camera: ${camera_id}` : ''}`);
 
-      // Afternoon post (if twice_daily)
-      if (schedule_type === 'twice_daily') {
-        const [afternoonHour, afternoonMin] = afternoon_time.split(':').map(Number);
-        const afternoonCron = `${afternoonMin} ${afternoonHour} * * *`;
-        const afternoonJob = cron.schedule(
-          afternoonCron,
-          () => {
-            executeAutopost(custom_caption, hashtags);
-          },
-          { timezone: 'Europe/Prague' }
-        );
-        scheduledJobs.push(afternoonJob);
-        console.log(
-          `[Autopost] Scheduled afternoon post at ${afternoon_time} (cron: ${afternoonCron})`
-        );
-      }
+      // Note: twice_daily option has been removed
     } catch (error) {
       console.error('[Autopost] Scheduler error:', error.message);
     }
   }
 
-  async function executeAutopost(caption, hashtags) {
-    console.log(`[Autopost] Executing at ${new Date().toISOString()}`);
+  async function executeAutopost(caption, hashtags, cameraId, cameraImageUrl) {
+    console.log(`[Autopost] Executing at ${new Date().toISOString()}${cameraId ? `, camera: ${cameraId}` : ''}`);
     try {
       const response = await fetch(`http://localhost:${PORT}/api/facebook-post`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ caption, hashtags }),
+        body: JSON.stringify({ caption, hashtags, cameraId, cameraImageUrl }),
       });
       const result = await response.json();
       if (result.success) {
-        console.log(`[Autopost] Success! Post ID: ${result.postId}`);
+        console.log(`[Autopost] Success! Post ID: ${result.postId}${result.isCarousel ? ' (carousel)' : ''}`);
       } else {
         console.error(`[Autopost] Failed: ${result.error}`);
       }

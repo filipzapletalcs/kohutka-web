@@ -4,6 +4,7 @@ import {
   fetchAutopostSettings,
   updateAutopostSettings,
   fetchAutopostHistory,
+  fetchCameraSettings,
   type AutopostSettings,
   type AutopostScheduleType,
 } from '@/lib/supabase';
@@ -16,8 +17,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink } from 'lucide-react';
+import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
@@ -48,6 +50,7 @@ export default function AdminAutopost() {
     afternoon_time: '14:00',
     custom_caption: DEFAULT_CAPTION,
     hashtags: '#kohutka #lyze #skiing #beskydy #zima',
+    camera_id: null as string | null,
   });
 
   const [manualOverrides, setManualOverrides] = useState<ManualOverrides>({
@@ -77,6 +80,40 @@ export default function AdminAutopost() {
     queryFn: () => fetchAutopostHistory(10),
   });
 
+  const { data: cameraSettings = [] } = useQuery({
+    queryKey: ['camera-settings'],
+    queryFn: fetchCameraSettings,
+  });
+
+  // Get active cameras merged with holiday info data
+  // Filter same as AdminCameras: exclude archive (except kohutka-p0), check is_active
+  const activeCameras = (holidayData?.cameras || [])
+    .filter((cam) => {
+      // Exclude archive cameras (same as AdminCameras)
+      if (cam.source === 'archive' && cam.id !== 'kohutka-p0') return false;
+      // Check if camera is active in settings
+      const setting = cameraSettings.find((s) => s.camera_id === cam.id);
+      return setting?.is_active !== false;
+    })
+    .map((cam) => {
+      const setting = cameraSettings.find((s) => s.camera_id === cam.id);
+      return {
+        ...cam,
+        displayName: setting?.custom_name || cam.name,
+      };
+    });
+
+  // Helper to get camera preview URL (same logic as Cameras page)
+  const getCameraPreviewUrl = (cameraId: string) => {
+    const camera = activeCameras.find((c) => c.id === cameraId);
+    if (!camera) return '';
+    const baseUrl = camera.media?.last_image?.url || '';
+    if (!baseUrl) return '';
+    // Add cache-busting timestamp
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}t=${Date.now()}`;
+  };
+
   useEffect(() => {
     if (settings) {
       setFormState({
@@ -86,6 +123,7 @@ export default function AdminAutopost() {
         afternoon_time: settings.afternoon_time,
         custom_caption: settings.custom_caption || DEFAULT_CAPTION,
         hashtags: settings.hashtags,
+        camera_id: settings.camera_id,
       });
     }
   }, [settings]);
@@ -105,17 +143,36 @@ export default function AdminAutopost() {
     onError: (error) => toast.error('Chyba: ' + (error as Error).message),
   });
 
-  const handleSave = () => updateMutation.mutate(formState);
+  const handleSave = () => {
+    // Get camera image URL if camera is selected
+    const selectedCamera = formState.camera_id
+      ? activeCameras.find((c) => c.id === formState.camera_id)
+      : null;
+    const camera_image_url = selectedCamera?.media?.last_image?.url || null;
+
+    updateMutation.mutate({
+      ...formState,
+      camera_image_url,
+    });
+  };
 
   // Mutation for manual posting
   const postMutation = useMutation({
     mutationFn: async ({ draft, testMode }: { draft?: boolean; testMode?: boolean }) => {
+      // Get camera image URL if camera is selected
+      const selectedCamera = formState.camera_id
+        ? activeCameras.find((c) => c.id === formState.camera_id)
+        : null;
+      const cameraImageUrl = selectedCamera?.media?.last_image?.url || null;
+
       const response = await fetch('/api/facebook-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           caption: formState.custom_caption,
           hashtags: formState.hashtags,
+          cameraId: formState.camera_id,
+          cameraImageUrl,
           draft,
           testMode,
         }),
@@ -150,7 +207,8 @@ export default function AdminAutopost() {
     formState.morning_time !== settings.morning_time ||
     formState.afternoon_time !== settings.afternoon_time ||
     formState.custom_caption !== (settings.custom_caption || DEFAULT_CAPTION) ||
-    formState.hashtags !== settings.hashtags
+    formState.hashtags !== settings.hashtags ||
+    formState.camera_id !== settings.camera_id
   );
 
   // Preview data - use manual if enabled, otherwise API
@@ -322,7 +380,7 @@ export default function AdminAutopost() {
               </div>
               <CardDescription>
                 {formState.enabled ? (
-                  <span className="text-green-700">Aktivní - {formState.schedule_type === 'daily' ? `denně v ${formState.morning_time}` : formState.schedule_type === 'twice_daily' ? `2x denně` : 'vypnuto'}</span>
+                  <span className="text-green-700">Aktivní - {formState.schedule_type === 'daily' ? `denně v ${formState.morning_time}` : 'vypnuto'}</span>
                 ) : 'Vypnuto'}
               </CardDescription>
             </CardHeader>
@@ -337,14 +395,10 @@ export default function AdminAutopost() {
               <RadioGroup value={formState.schedule_type} onValueChange={(v) => setFormState({ ...formState, schedule_type: v as AutopostScheduleType })}>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="disabled" id="disabled" /><Label htmlFor="disabled">Vypnuto</Label></div>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="daily" id="daily" /><Label htmlFor="daily">Denně ráno</Label></div>
-                <div className="flex items-center space-x-2"><RadioGroupItem value="twice_daily" id="twice_daily" /><Label htmlFor="twice_daily">2x denně</Label></div>
               </RadioGroup>
               {formState.schedule_type !== 'disabled' && (
-                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
-                  <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Ráno</Label><Input type="time" value={formState.morning_time} onChange={(e) => setFormState({ ...formState, morning_time: e.target.value })} /></div>
-                  {formState.schedule_type === 'twice_daily' && (
-                    <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Odpoledne</Label><Input type="time" value={formState.afternoon_time} onChange={(e) => setFormState({ ...formState, afternoon_time: e.target.value })} /></div>
-                  )}
+                <div className="pt-3 border-t">
+                  <div><Label className="flex items-center gap-1 text-xs"><Clock className="w-3 h-3" /> Čas publikace</Label><Input type="time" value={formState.morning_time} onChange={(e) => setFormState({ ...formState, morning_time: e.target.value })} className="mt-1" /></div>
                 </div>
               )}
             </CardContent>
@@ -376,6 +430,48 @@ export default function AdminAutopost() {
                 </p>
               </div>
               <div><Label>Hashtags</Label><Input value={formState.hashtags} onChange={(e) => setFormState({ ...formState, hashtags: e.target.value })} /></div>
+            </CardContent>
+          </Card>
+
+          {/* Camera Snapshot */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Camera className="w-5 h-5" /> Snímek z kamery
+              </CardTitle>
+              <CardDescription>
+                Volitelně přidej snímek z kamery k příspěvku (carousel)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Select
+                value={formState.camera_id || 'none'}
+                onValueChange={(v) => setFormState({ ...formState, camera_id: v === 'none' ? null : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vyberte kameru" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Bez kamery</SelectItem>
+                  {activeCameras.map((cam) => (
+                    <SelectItem key={cam.id} value={cam.id}>
+                      {cam.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formState.camera_id && getCameraPreviewUrl(formState.camera_id) && (
+                <div className="rounded-lg overflow-hidden border">
+                  <img
+                    src={getCameraPreviewUrl(formState.camera_id)}
+                    alt="Náhled kamery"
+                    className="w-full h-auto"
+                  />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Pokud je kamera vybrána, příspěvek bude obsahovat 2 obrázky (carousel)
+              </p>
             </CardContent>
           </Card>
 

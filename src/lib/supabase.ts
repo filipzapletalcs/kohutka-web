@@ -416,6 +416,8 @@ export interface AutopostSettings {
   afternoon_time: string;
   custom_caption: string | null;
   hashtags: string;
+  camera_id: string | null;
+  camera_image_url: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -5,6 +5,7 @@
  * Body: {
  *   caption?: string,
  *   hashtags?: string,
+ *   cameraId?: string,     // ID kamery pro přidání snímku (carousel)
  *   testMode?: boolean,    // jen vygeneruje obrázek, nepostuje
  *   draft?: boolean,       // vytvoří nepublikovaný příspěvek (draft)
  *   scheduledTime?: number // Unix timestamp pro naplánované publikování
@@ -48,6 +49,66 @@ async function logToHistory(entry) {
 }
 
 /**
+ * Upload photo to Facebook as unpublished
+ * Returns the photo ID for use in carousel
+ */
+async function uploadUnpublishedPhoto(pageId, accessToken, imageBuffer, filename) {
+  const formData = new FormData();
+  formData.append('source', new Blob([imageBuffer], { type: 'image/png' }), filename);
+  formData.append('published', 'false');
+  formData.append('access_token', accessToken);
+
+  const response = await fetch(`${GRAPH_API_BASE}/${pageId}/photos`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    throw new Error(data.error?.message || 'Failed to upload photo');
+  }
+
+  return data.id;
+}
+
+/**
+ * Create a carousel/multi-photo post on Facebook feed
+ */
+async function createCarouselPost(pageId, accessToken, photoIds, message, options = {}) {
+  const { isDraft, isScheduled, scheduledTime } = options;
+
+  const params = new URLSearchParams();
+  params.append('message', message);
+  params.append('access_token', accessToken);
+
+  // Attach all photos
+  photoIds.forEach((photoId, index) => {
+    params.append(`attached_media[${index}]`, JSON.stringify({ media_fbid: photoId }));
+  });
+
+  // Handle draft/scheduled mode
+  if (isDraft || isScheduled) {
+    params.append('published', 'false');
+    params.append('scheduled_publish_time', String(scheduledTime));
+  }
+
+  const response = await fetch(`${GRAPH_API_BASE}/${pageId}/feed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    throw new Error(data.error?.message || 'Failed to create carousel post');
+  }
+
+  return data.id;
+}
+
+/**
  * Main handler
  */
 export default async function handler(req, res) {
@@ -75,7 +136,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { caption, hashtags, testMode, draft, scheduledTime } = req.body || {};
+    const { caption, hashtags, cameraId, cameraImageUrl, testMode, draft, scheduledTime } = req.body || {};
 
     // Default caption and hashtags
     const defaultCaption =
@@ -86,38 +147,64 @@ export default async function handler(req, res) {
     const fullCaption = [caption || defaultCaption, '', hashtags || defaultHashtags].join('\n');
 
     // Determine post mode
-    // Note: "draft" mode now creates a scheduled post 15 min in future
-    // because FB API's published=false creates Ad Posts, not real drafts
     const isDraft = draft === true;
     const isScheduled = scheduledTime && !isDraft;
 
     // For draft mode, schedule 2 days into the future
     let effectiveScheduledTime = scheduledTime;
     if (isDraft) {
-      effectiveScheduledTime = Math.floor(Date.now() / 1000) + (2 * 24 * 60 * 60); // 2 days from now
+      effectiveScheduledTime = Math.floor(Date.now() / 1000) + 2 * 24 * 60 * 60; // 2 days from now
     }
 
     const modeLabel = isDraft ? 'SCHEDULED_DRAFT' : isScheduled ? 'SCHEDULED' : 'PUBLISH';
+    const hasCamera = cameraId && cameraId !== 'none';
 
-    console.log(`[Facebook Post] Starting post process (mode: ${modeLabel})...`);
+    console.log(`[Facebook Post] Starting post process (mode: ${modeLabel}, camera: ${hasCamera ? cameraId : 'none'})...`);
     console.log(`[Facebook Post] Caption: ${fullCaption.substring(0, 50)}...`);
 
     // 1. Generate status image by calling internal API
     const PORT = process.env.PORT || 3000;
-    const imageUrl = `http://localhost:${PORT}/api/status-image`;
+    const statusImageUrl = `http://localhost:${PORT}/api/status-image`;
 
-    console.log(`[Facebook Post] Fetching image from ${imageUrl}`);
-    const imageResponse = await fetch(imageUrl);
+    console.log(`[Facebook Post] Fetching status image from ${statusImageUrl}`);
+    const statusImageResponse = await fetch(statusImageUrl);
 
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to generate status image: ${imageResponse.status}`);
+    if (!statusImageResponse.ok) {
+      throw new Error(`Failed to generate status image: ${statusImageResponse.status}`);
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const imageSize = imageBuffer.byteLength;
-    console.log(`[Facebook Post] Image generated: ${imageSize} bytes`);
+    const statusImageBuffer = await statusImageResponse.arrayBuffer();
+    const statusImageSize = statusImageBuffer.byteLength;
+    console.log(`[Facebook Post] Status image generated: ${statusImageSize} bytes`);
 
-    // 2. If test mode, return without posting
+    // 2. Fetch camera snapshot if cameraId is provided
+    let cameraImageBuffer = null;
+    let cameraImageSize = 0;
+
+    if (hasCamera) {
+      // Use provided cameraImageUrl if available, otherwise fall back to holidayinfo-image API
+      let fetchUrl;
+      if (cameraImageUrl) {
+        // Direct URL provided - use it directly
+        fetchUrl = cameraImageUrl;
+      } else {
+        // Fall back to holidayinfo-image API (only works for HolidayInfo cameras)
+        fetchUrl = `http://localhost:${PORT}/api/holidayinfo-image?camid=${cameraId}`;
+      }
+      console.log(`[Facebook Post] Fetching camera image from ${fetchUrl}`);
+
+      const cameraImageResponse = await fetch(fetchUrl);
+
+      if (!cameraImageResponse.ok) {
+        console.warn(`[Facebook Post] Failed to fetch camera image: ${cameraImageResponse.status}, continuing without it`);
+      } else {
+        cameraImageBuffer = await cameraImageResponse.arrayBuffer();
+        cameraImageSize = cameraImageBuffer.byteLength;
+        console.log(`[Facebook Post] Camera image fetched: ${cameraImageSize} bytes`);
+      }
+    }
+
+    // 3. If test mode, return without posting
     if (testMode) {
       console.log(`[Facebook Post] Test mode - not posting`);
 
@@ -127,74 +214,117 @@ export default async function handler(req, res) {
         post_id: 'TEST_MODE',
         caption: fullCaption,
         error_message: null,
-        data_snapshot: { testMode: true, imageSize },
+        data_snapshot: {
+          testMode: true,
+          statusImageSize,
+          cameraImageSize: cameraImageSize || null,
+          cameraId: hasCamera ? cameraId : null,
+        },
       });
 
       return res.status(200).json({
         success: true,
         testMode: true,
-        message: 'Test successful - image generated, ready to post',
+        message: `Test successful - ${cameraImageBuffer ? '2 images' : '1 image'} generated, ready to post`,
         caption: fullCaption,
-        imageSize,
+        statusImageSize,
+        cameraImageSize: cameraImageSize || null,
       });
     }
 
-    // 3. Upload photo to Facebook
-    // Direct photo upload with message - appears in feed AND photos
+    // 4. Post to Facebook
     console.log(`[Facebook Post] Uploading to Facebook page ${pageId} (${modeLabel})...`);
 
-    // Create FormData with the image
-    const formData = new FormData();
-    formData.append('source', new Blob([imageBuffer], { type: 'image/png' }), 'kohutka-status.png');
-    formData.append('message', fullCaption);
-    formData.append('access_token', accessToken);
+    let postId;
 
-    // Set publish status based on mode
-    if (isDraft) {
-      formData.append('published', 'false');
-      formData.append('scheduled_publish_time', String(effectiveScheduledTime));
-      const scheduledDate = new Date(effectiveScheduledTime * 1000).toLocaleString('cs-CZ');
-      console.log(`[Facebook Post] Creating as SCHEDULED DRAFT for: ${scheduledDate}`);
-    } else if (isScheduled) {
-      formData.append('published', 'false');
-      formData.append('scheduled_publish_time', String(scheduledTime));
-      const scheduledDate = new Date(scheduledTime * 1000).toISOString();
-      console.log(`[Facebook Post] Scheduling for: ${scheduledDate}`);
+    if (cameraImageBuffer) {
+      // CAROUSEL MODE: Upload both images as unpublished, then create feed post
+      console.log(`[Facebook Post] Creating carousel with 2 images...`);
+
+      // Upload status image
+      const statusPhotoId = await uploadUnpublishedPhoto(
+        pageId,
+        accessToken,
+        statusImageBuffer,
+        'kohutka-status.png'
+      );
+      console.log(`[Facebook Post] Status photo uploaded: ${statusPhotoId}`);
+
+      // Upload camera image
+      const cameraPhotoId = await uploadUnpublishedPhoto(
+        pageId,
+        accessToken,
+        cameraImageBuffer,
+        'kohutka-camera.jpg'
+      );
+      console.log(`[Facebook Post] Camera photo uploaded: ${cameraPhotoId}`);
+
+      // Create carousel post
+      postId = await createCarouselPost(
+        pageId,
+        accessToken,
+        [statusPhotoId, cameraPhotoId],
+        fullCaption,
+        {
+          isDraft,
+          isScheduled,
+          scheduledTime: effectiveScheduledTime,
+        }
+      );
+      console.log(`[Facebook Post] Carousel post created: ${postId}`);
     } else {
-      // Immediate publish - photo goes directly to feed as public post
-      formData.append('published', 'true');
-      console.log(`[Facebook Post] Publishing immediately with published=true`);
-    }
+      // SINGLE IMAGE MODE: Direct photo upload (original logic)
+      const formData = new FormData();
+      formData.append('source', new Blob([statusImageBuffer], { type: 'image/png' }), 'kohutka-status.png');
+      formData.append('message', fullCaption);
+      formData.append('access_token', accessToken);
 
-    const fbResponse = await fetch(`${GRAPH_API_BASE}/${pageId}/photos`, {
-      method: 'POST',
-      body: formData,
-    });
+      if (isDraft) {
+        formData.append('published', 'false');
+        formData.append('scheduled_publish_time', String(effectiveScheduledTime));
+        const scheduledDate = new Date(effectiveScheduledTime * 1000).toLocaleString('cs-CZ');
+        console.log(`[Facebook Post] Creating as SCHEDULED DRAFT for: ${scheduledDate}`);
+      } else if (isScheduled) {
+        formData.append('published', 'false');
+        formData.append('scheduled_publish_time', String(scheduledTime));
+        const scheduledDate = new Date(scheduledTime * 1000).toISOString();
+        console.log(`[Facebook Post] Scheduling for: ${scheduledDate}`);
+      } else {
+        formData.append('published', 'true');
+        console.log(`[Facebook Post] Publishing immediately with published=true`);
+      }
 
-    const fbData = await fbResponse.json();
-
-    if (!fbResponse.ok || fbData.error) {
-      const errorMessage = fbData.error?.message || 'Unknown Facebook API error';
-      console.error(`[Facebook Post] Error: ${errorMessage}`);
-
-      await logToHistory({
-        platform: 'facebook',
-        status: 'failed',
-        post_id: null,
-        caption: fullCaption,
-        error_message: errorMessage,
-        data_snapshot: { imageSize, fbError: fbData.error, mode: modeLabel },
+      const fbResponse = await fetch(`${GRAPH_API_BASE}/${pageId}/photos`, {
+        method: 'POST',
+        body: formData,
       });
 
-      return res.status(500).json({
-        success: false,
-        error: errorMessage,
-        details: fbData.error,
-      });
+      const fbData = await fbResponse.json();
+
+      if (!fbResponse.ok || fbData.error) {
+        const errorMessage = fbData.error?.message || 'Unknown Facebook API error';
+        console.error(`[Facebook Post] Error: ${errorMessage}`);
+
+        await logToHistory({
+          platform: 'facebook',
+          status: 'failed',
+          post_id: null,
+          caption: fullCaption,
+          error_message: errorMessage,
+          data_snapshot: { statusImageSize, fbError: fbData.error, mode: modeLabel },
+        });
+
+        return res.status(500).json({
+          success: false,
+          error: errorMessage,
+          details: fbData.error,
+        });
+      }
+
+      postId = fbData.post_id || fbData.id;
     }
 
     // Success!
-    const postId = fbData.post_id || fbData.id;
     const statusLabel = isDraft ? 'draft' : isScheduled ? 'scheduled' : 'published';
     console.log(`[Facebook Post] Success! Post ID: ${postId} (${statusLabel})`);
 
@@ -204,7 +334,13 @@ export default async function handler(req, res) {
       post_id: postId,
       caption: fullCaption,
       error_message: null,
-      data_snapshot: { imageSize, mode: statusLabel },
+      data_snapshot: {
+        statusImageSize,
+        cameraImageSize: cameraImageSize || null,
+        cameraId: hasCamera ? cameraId : null,
+        mode: statusLabel,
+        isCarousel: !!cameraImageBuffer,
+      },
     });
 
     // Build success message based on mode
@@ -222,6 +358,7 @@ export default async function handler(req, res) {
       postId,
       mode: statusLabel,
       message,
+      isCarousel: !!cameraImageBuffer,
     });
   } catch (error) {
     console.error(`[Facebook Post] Exception: ${error.message}`);
