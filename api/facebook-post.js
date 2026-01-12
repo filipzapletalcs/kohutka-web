@@ -5,10 +5,12 @@
  * Body: {
  *   caption?: string,
  *   hashtags?: string,
- *   cameraId?: string,     // ID kamery pro přidání snímku (carousel)
- *   testMode?: boolean,    // jen vygeneruje obrázek, nepostuje
- *   draft?: boolean,       // vytvoří nepublikovaný příspěvek (draft)
- *   scheduledTime?: number // Unix timestamp pro naplánované publikování
+ *   cameraId?: string,       // ID kamery pro přidání snímku
+ *   cameraImageUrl?: string, // URL kamery (pokud není z Holiday Info)
+ *   imageType?: 'widget_only' | 'camera_only' | 'both' | 'none', // typ obrázku
+ *   testMode?: boolean,      // jen vygeneruje obrázek, nepostuje
+ *   draft?: boolean,         // vytvoří nepublikovaný příspěvek (draft)
+ *   scheduledTime?: number   // Unix timestamp pro naplánované publikování
  * }
  *
  * Requires: FACEBOOK_PAGE_ACCESS_TOKEN environment variable
@@ -109,6 +111,37 @@ async function createCarouselPost(pageId, accessToken, photoIds, message, option
 }
 
 /**
+ * Create a text-only post on Facebook feed (without images)
+ */
+async function createTextPost(pageId, accessToken, message, options = {}) {
+  const { isDraft, isScheduled, scheduledTime } = options;
+
+  const params = new URLSearchParams();
+  params.append('message', message);
+  params.append('access_token', accessToken);
+
+  // Handle draft/scheduled mode
+  if (isDraft || isScheduled) {
+    params.append('published', 'false');
+    params.append('scheduled_publish_time', String(scheduledTime));
+  }
+
+  const response = await fetch(`${GRAPH_API_BASE}/${pageId}/feed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    throw new Error(data.error?.message || 'Failed to create text post');
+  }
+
+  return data.id;
+}
+
+/**
  * Main handler
  */
 export default async function handler(req, res) {
@@ -136,7 +169,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { caption, hashtags, cameraId, cameraImageUrl, testMode, draft, scheduledTime } = req.body || {};
+    const { caption, hashtags, cameraId, cameraImageUrl, imageType = 'both', testMode, draft, scheduledTime } = req.body || {};
 
     // Default caption and hashtags
     const defaultCaption =
@@ -159,29 +192,38 @@ export default async function handler(req, res) {
     const modeLabel = isDraft ? 'SCHEDULED_DRAFT' : isScheduled ? 'SCHEDULED' : 'PUBLISH';
     const hasCamera = cameraId && cameraId !== 'none';
 
-    console.log(`[Facebook Post] Starting post process (mode: ${modeLabel}, camera: ${hasCamera ? cameraId : 'none'})...`);
+    // Determine what images to include based on imageType
+    const includeWidget = imageType === 'widget_only' || imageType === 'both';
+    const includeCamera = (imageType === 'camera_only' || imageType === 'both') && hasCamera;
+    const isTextOnly = imageType === 'none';
+
+    console.log(`[Facebook Post] Starting post process (mode: ${modeLabel}, imageType: ${imageType}, camera: ${hasCamera ? cameraId : 'none'})...`);
     console.log(`[Facebook Post] Caption: ${fullCaption.substring(0, 50)}...`);
 
-    // 1. Generate status image by calling internal API
+    // 1. Generate status image if needed
     const PORT = process.env.PORT || 3000;
-    const statusImageUrl = `http://localhost:${PORT}/api/status-image`;
+    let statusImageBuffer = null;
+    let statusImageSize = 0;
 
-    console.log(`[Facebook Post] Fetching status image from ${statusImageUrl}`);
-    const statusImageResponse = await fetch(statusImageUrl);
+    if (includeWidget) {
+      const statusImageUrl = `http://localhost:${PORT}/api/status-image`;
+      console.log(`[Facebook Post] Fetching status image from ${statusImageUrl}`);
+      const statusImageResponse = await fetch(statusImageUrl);
 
-    if (!statusImageResponse.ok) {
-      throw new Error(`Failed to generate status image: ${statusImageResponse.status}`);
+      if (!statusImageResponse.ok) {
+        throw new Error(`Failed to generate status image: ${statusImageResponse.status}`);
+      }
+
+      statusImageBuffer = await statusImageResponse.arrayBuffer();
+      statusImageSize = statusImageBuffer.byteLength;
+      console.log(`[Facebook Post] Status image generated: ${statusImageSize} bytes`);
     }
 
-    const statusImageBuffer = await statusImageResponse.arrayBuffer();
-    const statusImageSize = statusImageBuffer.byteLength;
-    console.log(`[Facebook Post] Status image generated: ${statusImageSize} bytes`);
-
-    // 2. Fetch camera snapshot if cameraId is provided
+    // 2. Fetch camera snapshot if needed
     let cameraImageBuffer = null;
     let cameraImageSize = 0;
 
-    if (hasCamera) {
+    if (includeCamera) {
       // Use provided cameraImageUrl if available, otherwise fall back to holidayinfo-image API
       let fetchUrl;
       if (cameraImageUrl) {
@@ -208,6 +250,9 @@ export default async function handler(req, res) {
     if (testMode) {
       console.log(`[Facebook Post] Test mode - not posting`);
 
+      const imageCount = (statusImageBuffer ? 1 : 0) + (cameraImageBuffer ? 1 : 0);
+      const imageTypeLabel = isTextOnly ? 'text only' : `${imageCount} image(s)`;
+
       await logToHistory({
         platform: 'facebook',
         status: 'success',
@@ -216,7 +261,8 @@ export default async function handler(req, res) {
         error_message: null,
         data_snapshot: {
           testMode: true,
-          statusImageSize,
+          imageType,
+          statusImageSize: statusImageSize || null,
           cameraImageSize: cameraImageSize || null,
           cameraId: hasCamera ? cameraId : null,
         },
@@ -225,21 +271,39 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         testMode: true,
-        message: `Test successful - ${cameraImageBuffer ? '2 images' : '1 image'} generated, ready to post`,
+        message: `Test successful - ${imageTypeLabel} generated, ready to post`,
         caption: fullCaption,
-        statusImageSize,
+        imageType,
+        statusImageSize: statusImageSize || null,
         cameraImageSize: cameraImageSize || null,
       });
     }
 
     // 4. Post to Facebook
-    console.log(`[Facebook Post] Uploading to Facebook page ${pageId} (${modeLabel})...`);
+    console.log(`[Facebook Post] Uploading to Facebook page ${pageId} (${modeLabel}, imageType: ${imageType})...`);
 
     let postId;
+    let isCarousel = false;
 
-    if (cameraImageBuffer) {
+    if (isTextOnly) {
+      // TEXT-ONLY MODE: Post without images
+      console.log(`[Facebook Post] Creating text-only post...`);
+
+      postId = await createTextPost(
+        pageId,
+        accessToken,
+        fullCaption,
+        {
+          isDraft,
+          isScheduled,
+          scheduledTime: effectiveScheduledTime,
+        }
+      );
+      console.log(`[Facebook Post] Text post created: ${postId}`);
+    } else if (statusImageBuffer && cameraImageBuffer) {
       // CAROUSEL MODE: Upload both images as unpublished, then create feed post
       console.log(`[Facebook Post] Creating carousel with 2 images...`);
+      isCarousel = true;
 
       // Upload status image
       const statusPhotoId = await uploadUnpublishedPhoto(
@@ -273,9 +337,19 @@ export default async function handler(req, res) {
       );
       console.log(`[Facebook Post] Carousel post created: ${postId}`);
     } else {
-      // SINGLE IMAGE MODE: Direct photo upload (original logic)
+      // SINGLE IMAGE MODE: Direct photo upload
+      const imageBuffer = statusImageBuffer || cameraImageBuffer;
+      const imageFilename = statusImageBuffer ? 'kohutka-status.png' : 'kohutka-camera.jpg';
+      const imageType_internal = statusImageBuffer ? 'image/png' : 'image/jpeg';
+
+      if (!imageBuffer) {
+        throw new Error('No image available to post');
+      }
+
+      console.log(`[Facebook Post] Creating single image post (${imageFilename})...`);
+
       const formData = new FormData();
-      formData.append('source', new Blob([statusImageBuffer], { type: 'image/png' }), 'kohutka-status.png');
+      formData.append('source', new Blob([imageBuffer], { type: imageType_internal }), imageFilename);
       formData.append('message', fullCaption);
       formData.append('access_token', accessToken);
 
@@ -311,7 +385,7 @@ export default async function handler(req, res) {
           post_id: null,
           caption: fullCaption,
           error_message: errorMessage,
-          data_snapshot: { statusImageSize, fbError: fbData.error, mode: modeLabel },
+          data_snapshot: { imageType, statusImageSize, cameraImageSize, fbError: fbData.error, mode: modeLabel },
         });
 
         return res.status(500).json({
@@ -326,7 +400,7 @@ export default async function handler(req, res) {
 
     // Success!
     const statusLabel = isDraft ? 'draft' : isScheduled ? 'scheduled' : 'published';
-    console.log(`[Facebook Post] Success! Post ID: ${postId} (${statusLabel})`);
+    console.log(`[Facebook Post] Success! Post ID: ${postId} (${statusLabel}, imageType: ${imageType})`);
 
     await logToHistory({
       platform: 'facebook',
@@ -335,11 +409,13 @@ export default async function handler(req, res) {
       caption: fullCaption,
       error_message: null,
       data_snapshot: {
-        statusImageSize,
+        imageType,
+        statusImageSize: statusImageSize || null,
         cameraImageSize: cameraImageSize || null,
         cameraId: hasCamera ? cameraId : null,
         mode: statusLabel,
-        isCarousel: !!cameraImageBuffer,
+        isCarousel,
+        isTextOnly,
       },
     });
 
@@ -358,7 +434,9 @@ export default async function handler(req, res) {
       postId,
       mode: statusLabel,
       message,
-      isCarousel: !!cameraImageBuffer,
+      imageType,
+      isCarousel,
+      isTextOnly,
     });
   } catch (error) {
     console.error(`[Facebook Post] Exception: ${error.message}`);

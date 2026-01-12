@@ -67,7 +67,7 @@ function StatCard({ icon, label, value, highlight }: {
 }
 
 export default function StatusImagePreview({ data }: { data: StatusImageData }) {
-  const { isOpen, temperature, weather, liftsOpen, liftsTotal, slopesOpen, slopesTotal, snowHeight, snowType, operatingHours } = data;
+  const { isOpen, isNightSkiing, temperature, weather, liftsOpen, liftsTotal, slopesOpen, slopesTotal, snowHeight, snowType, operatingHours } = data;
   const hasLifts = liftsOpen > 0;
   const hasSlopes = slopesOpen > 0;
 
@@ -139,7 +139,7 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
       </div>
 
       {/* Status Badge */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '0.6em 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '0.6em 0', gap: '0.4em' }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -165,6 +165,26 @@ export default function StatusImagePreview({ data }: { data: StatusImageData }) 
             {isOpen ? 'OTEVŘENO' : 'ZAVŘENO'}
           </div>
         </div>
+        {isNightSkiing && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3em',
+            padding: '0.4em 1em',
+            borderRadius: '9999px',
+            backgroundColor: '#8b5cf6',
+            boxShadow: '0 0.4em 1.2em rgba(139, 92, 246, 0.5)',
+          }}>
+            <div style={{
+              fontSize: '0.75em',
+              fontWeight: 900,
+              letterSpacing: '0.08em',
+              color: COLORS.white,
+            }}>
+              VEČERNÍ LYŽOVÁNÍ
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid 2x2 */}

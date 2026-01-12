@@ -1,5 +1,6 @@
 export interface StatusImageData {
   isOpen: boolean;
+  isNightSkiing?: boolean;
   temperature: string;
   weather?: string;
   liftsOpen: number;
@@ -14,13 +15,22 @@ export interface StatusImageData {
 
 export interface ManualOverrides {
   enabled: boolean;
+  // Základní hodnoty
   temperature: string;
+  weather: string;
   liftsOpen: string;
   liftsTotal: string;
   slopesOpen: string;
   slopesTotal: string;
   snowHeight: string;
+  snowType: string;
+  opertime: string;
   isOpen: boolean;
+  isNightSkiing: boolean;
+  // Nová pole pro šablony a fallback
+  textComment: string;      // Poznámka majitele - KRITICKÉ pro šablony
+  newSnow: string;          // Nový sníh
+  weatherCode: number;      // Kód počasí pro emoji (1-8)
 }
 
 // === Typy pro šablony autopostingu ===

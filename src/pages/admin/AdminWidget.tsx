@@ -114,7 +114,7 @@ export default function AdminWidget() {
   const queryClient = useQueryClient();
 
   // Local state for editing (prevents lag while typing)
-  const [localEdits, setLocalEdits] = useState<Record<WidgetKey, { value: string; status: WidgetStatus }>>({} as any);
+  const [localEdits, setLocalEdits] = useState<Record<WidgetKey, { value: string; status: WidgetStatus; extra: Record<string, any> }>>({} as any);
 
   // Fetch widget settings
   const { data: widgetSettings = [], isLoading: isLoadingSettings } = useQuery({
@@ -135,11 +135,12 @@ export default function AdminWidget() {
   // Initialize local edits when widget settings load
   useEffect(() => {
     if (widgetSettings.length > 0) {
-      const edits: Record<WidgetKey, { value: string; status: WidgetStatus }> = {} as any;
+      const edits: Record<WidgetKey, { value: string; status: WidgetStatus; extra: Record<string, any> }> = {} as any;
       widgetSettings.forEach((w) => {
         edits[w.widget_key] = {
           value: w.manual_value || '',
           status: w.manual_status || 'closed',
+          extra: w.manual_extra || {},
         };
       });
       setLocalEdits(edits);
@@ -222,7 +223,7 @@ export default function AdminWidget() {
   };
 
   // Get API value for a widget
-  const getApiValue = (key: WidgetKey): { value: string; status?: WidgetStatus } => {
+  const getApiValue = (key: WidgetKey): { value: string; subValue?: string; status?: WidgetStatus; extra?: Record<string, any> } => {
     const operation = apiData?.operation;
     const lifts = apiData?.lifts;
     const slopes = apiData?.slopes;
@@ -231,7 +232,12 @@ export default function AdminWidget() {
       case 'skiareal':
         return {
           value: operation?.operationText || 'mimo provoz',
+          subValue: operation?.opertime || undefined,
           status: operation?.isOpen ? 'open' : 'closed',
+          extra: {
+            isNightSkiing: operation?.isNightSkiing || false,
+            opertime: operation?.opertime || '',
+          },
         };
       case 'vleky':
         return {
@@ -246,14 +252,22 @@ export default function AdminWidget() {
       case 'vozovka':
         return { value: 'N/A (není v API)', status: 'partial' };
       case 'pocasi':
-        return { value: operation?.temperature ? `${operation.temperature}°C` : 'N/A' };
+        return {
+          value: operation?.temperature ? `${operation.temperature}°C` : 'N/A',
+          subValue: operation?.weather || undefined,
+          extra: { weather: operation?.weather || '' },
+        };
       case 'skipark':
         return {
           value: lifts?.skiParkOpen ? 'otevřen' : 'zavřen',
           status: lifts?.skiParkOpen ? 'open' : 'closed',
         };
       case 'snih':
-        return { value: operation?.snowHeight || '0 cm' };
+        return {
+          value: operation?.snowHeight || '0 cm',
+          subValue: operation?.snowType || undefined,
+          extra: { snowType: operation?.snowType || '' },
+        };
       default:
         return { value: 'N/A' };
     }
@@ -262,13 +276,18 @@ export default function AdminWidget() {
   // Handle mode change
   const handleModeChange = async (key: WidgetKey, mode: WidgetMode) => {
     const settings = getSettings(key);
+    const apiValue = getApiValue(key);
     await updateMutation.mutateAsync({
       key,
       updates: {
         mode,
         // If switching to manual, use current API value as default
         ...(mode === 'manual' && !settings?.manual_value
-          ? { manual_value: getApiValue(key).value, manual_status: getApiValue(key).status }
+          ? {
+              manual_value: apiValue.value,
+              manual_status: apiValue.status,
+              manual_extra: apiValue.extra || null,
+            }
           : {}),
       },
     });
@@ -290,6 +309,17 @@ export default function AdminWidget() {
     }));
   };
 
+  // Handle local extra change (no DB save)
+  const handleLocalExtraChange = (key: WidgetKey, extraKey: string, extraValue: any) => {
+    setLocalEdits((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        extra: { ...prev[key]?.extra, [extraKey]: extraValue },
+      },
+    }));
+  };
+
   // Save to database
   const handleSave = async (key: WidgetKey) => {
     const edits = localEdits[key];
@@ -300,6 +330,7 @@ export default function AdminWidget() {
       updates: {
         manual_value: edits.value,
         manual_status: edits.status,
+        manual_extra: Object.keys(edits.extra || {}).length > 0 ? edits.extra : null,
       },
     });
   };
@@ -309,7 +340,12 @@ export default function AdminWidget() {
     const widget = widgetSettings.find((w) => w.widget_key === key);
     const local = localEdits[key];
     if (!widget || !local) return false;
-    return (widget.manual_value || '') !== local.value || (widget.manual_status || 'closed') !== local.status;
+
+    const valueChanged = (widget.manual_value || '') !== local.value;
+    const statusChanged = (widget.manual_status || 'closed') !== local.status;
+    const extraChanged = JSON.stringify(widget.manual_extra || {}) !== JSON.stringify(local.extra || {});
+
+    return valueChanged || statusChanged || extraChanged;
   };
 
   const isLoading = isLoadingSettings || isLoadingApi;
@@ -482,11 +518,21 @@ export default function AdminWidget() {
                 <CardContent className="space-y-4">
                   {/* Current API value */}
                   {config.canBeAuto && (
-                    <div className="text-sm">
-                      <span className="text-gray-500">Hodnota z API: </span>
-                      <span className="font-medium">{apiValue.value}</span>
-                      {config.hasStatus && apiValue.status && (
-                        <span className="ml-2">{getStatusBadge(apiValue.status)}</span>
+                    <div className="text-sm space-y-1">
+                      <div>
+                        <span className="text-gray-500">Hodnota z API: </span>
+                        <span className="font-medium">{apiValue.value}</span>
+                        {apiValue.subValue && (
+                          <span className="text-gray-500 ml-1">({apiValue.subValue})</span>
+                        )}
+                        {config.hasStatus && apiValue.status && (
+                          <span className="ml-2">{getStatusBadge(apiValue.status)}</span>
+                        )}
+                      </div>
+                      {key === 'skiareal' && apiValue.extra?.isNightSkiing && (
+                        <div>
+                          <Badge className="bg-purple-500">Noční lyžování</Badge>
+                        </div>
                       )}
                     </div>
                   )}
@@ -503,6 +549,55 @@ export default function AdminWidget() {
                           placeholder={apiValue.value}
                         />
                       </div>
+
+                      {/* Extra fields for pocasi widget */}
+                      {key === 'pocasi' && (
+                        <div className="space-y-2">
+                          <Label htmlFor={`${key}-weather`}>Popis počasí</Label>
+                          <Input
+                            id={`${key}-weather`}
+                            value={localEdits[key]?.extra?.weather || ''}
+                            onChange={(e) => handleLocalExtraChange(key, 'weather', e.target.value)}
+                            placeholder={apiValue.extra?.weather || 'jasno'}
+                          />
+                        </div>
+                      )}
+
+                      {/* Extra fields for snih widget */}
+                      {key === 'snih' && (
+                        <div className="space-y-2">
+                          <Label htmlFor={`${key}-snowType`}>Typ sněhu</Label>
+                          <Input
+                            id={`${key}-snowType`}
+                            value={localEdits[key]?.extra?.snowType || ''}
+                            onChange={(e) => handleLocalExtraChange(key, 'snowType', e.target.value)}
+                            placeholder={apiValue.extra?.snowType || 'prachový'}
+                          />
+                        </div>
+                      )}
+
+                      {/* Extra fields for skiareal widget */}
+                      {key === 'skiareal' && (
+                        <>
+                          <div className="flex items-center justify-between py-2">
+                            <Label htmlFor={`${key}-nightSkiing`}>Noční lyžování</Label>
+                            <Switch
+                              id={`${key}-nightSkiing`}
+                              checked={localEdits[key]?.extra?.isNightSkiing || false}
+                              onCheckedChange={(v) => handleLocalExtraChange(key, 'isNightSkiing', v)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`${key}-opertime`}>Otevírací doba</Label>
+                            <Input
+                              id={`${key}-opertime`}
+                              value={localEdits[key]?.extra?.opertime || ''}
+                              onChange={(e) => handleLocalExtraChange(key, 'opertime', e.target.value)}
+                              placeholder={apiValue.extra?.opertime || '08:30-16:00'}
+                            />
+                          </div>
+                        </>
+                      )}
 
                       {config.hasStatus && (
                         <div className="space-y-2">
