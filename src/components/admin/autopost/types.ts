@@ -29,6 +29,7 @@ export interface ManualOverrides {
   isNightSkiing: boolean;
   // Nová pole pro šablony a fallback
   textComment: string;      // Poznámka majitele - KRITICKÉ pro šablony
+  descText: string;         // Popis (desc_text z API) - doplňkový text
   newSnow: string;          // Nový sníh
   weatherCode: number;      // Kód počasí pro emoji (1-8)
 }
@@ -39,6 +40,7 @@ export type TemplateId = 'daily' | 'weather' | 'morning' | 'brief' | 'custom';
 
 export interface TemplateData {
   textComment: string;
+  descText: string;
   cameraName: string;
   weatherText: string;
   weatherCode: number;

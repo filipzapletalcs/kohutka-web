@@ -134,6 +134,7 @@ export function generatePostText(
     operation?: {
       isOpen: boolean;
       textComment?: string;
+      descText?: string;
       newSnow?: string;
       weather?: string;
       weatherCode?: number;
@@ -152,6 +153,7 @@ export function generatePostText(
 
   const templateData: TemplateData = {
     textComment: holidayData?.operation?.textComment || '',
+    descText: holidayData?.operation?.descText || '',
     cameraName: cameraName || '',
     weatherText: holidayData?.operation?.weather || '',
     weatherCode: holidayData?.operation?.weatherCode || 0,

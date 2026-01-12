@@ -29,6 +29,74 @@ const supabaseKey =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0bmNoemFkanJtZ2Z2aGZ6cHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzYyNDAsImV4cCI6MjA4MDQ1MjI0MH0.gaCkl1hs_RKpbtHbSOMGbkAa4dCPgh6erEq524lSDk0';
 
 /**
+ * Fetch holiday info data from cache
+ */
+async function fetchHolidayInfoFromCache() {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+      .from('holidayinfo_cache')
+      .select('*')
+      .eq('id', 'main')
+      .single();
+
+    if (error) {
+      console.error('[Facebook Post] Failed to fetch holiday info cache:', error);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.error('[Facebook Post] Error fetching holiday info:', e);
+    return null;
+  }
+}
+
+/**
+ * Replace placeholders in caption with actual values from holiday info
+ */
+function replacePlaceholders(caption, holidayInfo) {
+  if (!caption || !holidayInfo) return caption;
+
+  const now = new Date();
+  const dayNames = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
+
+  const replacements = {
+    // Texty
+    '{text_comment}': holidayInfo.text_comment || '',
+    '{desc_text}': holidayInfo.desc_text || '',
+    // Počasí
+    '{teplota}': holidayInfo.temperature ? `${holidayInfo.temperature}°C` : '',
+    '{pocasi}': holidayInfo.weather || '',
+    // Sníh
+    '{snih_vyska}': holidayInfo.snow_height || '',
+    '{snih_typ}': holidayInfo.snow_type || '',
+    '{novy_snih}': holidayInfo.new_snow || '',
+    // Provoz
+    '{provozni_doba}': holidayInfo.opertime || '',
+    '{stav}': holidayInfo.is_open ? 'Otevřeno' : 'Zavřeno',
+    '{provozni_text}': holidayInfo.operation_text || '',
+    // Lanovky a vleky
+    '{lanovky}': String(holidayInfo.cable_car_open_count || 0),
+    '{lanovky_celkem}': String(holidayInfo.cable_car_total_count || 0),
+    '{vleky}': String(holidayInfo.drag_lift_open_count || 0),
+    '{vleky_celkem}': String(holidayInfo.drag_lift_total_count || 0),
+    // Sjezdovky
+    '{sjezdovky}': String(holidayInfo.slopes_open_count || 0),
+    '{sjezdovky_celkem}': String(holidayInfo.slopes_total_count || 0),
+    // Datum a čas
+    '{datum}': now.toLocaleDateString('cs-CZ'),
+    '{den}': dayNames[now.getDay()],
+  };
+
+  let result = caption;
+  for (const [placeholder, value] of Object.entries(replacements)) {
+    result = result.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+  }
+
+  return result;
+}
+
+/**
  * Log to autopost_history table
  */
 async function logToHistory(entry) {
@@ -176,8 +244,18 @@ export default async function handler(req, res) {
       'Aktuální podmínky na SKI CENTRUM KOHÚTKA! Přijďte si zalyžovat do srdce Beskyd.';
     const defaultHashtags = '#kohutka #lyze #skiing #beskydy #zima #ski #sneh #hory';
 
-    // Build full caption
-    const fullCaption = [caption || defaultCaption, '', hashtags || defaultHashtags].join('\n');
+    // Fetch holiday info for placeholder replacement
+    const holidayInfo = await fetchHolidayInfoFromCache();
+
+    // Build caption and replace placeholders with actual values
+    let processedCaption = caption || defaultCaption;
+    if (holidayInfo) {
+      processedCaption = replacePlaceholders(processedCaption, holidayInfo);
+      console.log('[Facebook Post] Placeholders replaced with holiday info data');
+    }
+
+    // Build full caption with hashtags
+    const fullCaption = [processedCaption, '', hashtags || defaultHashtags].join('\n');
 
     // Determine post mode
     const isDraft = draft === true;

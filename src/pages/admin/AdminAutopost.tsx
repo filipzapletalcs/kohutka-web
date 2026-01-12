@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchAutopostSettings,
@@ -20,12 +20,43 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
 import type { ManualOverrides, StatusImageData, TemplateId } from '@/components/admin/autopost/types';
 import { POST_TEMPLATES, generatePostText } from '@/components/admin/autopost/templates';
+
+// Dostupné proměnné pro vkládání do textu
+// getValue funkce vrací aktuální hodnotu z holidayData
+const TEXT_PLACEHOLDERS = [
+  // Texty
+  { key: '{text_comment}', label: 'Poznámka majitele', emoji: '💬', getValue: (d: any) => d?.operation?.textComment || '' },
+  { key: '{desc_text}', label: 'Popis', emoji: '📝', getValue: (d: any) => d?.operation?.descText || '' },
+  // Počasí
+  { key: '{teplota}', label: 'Teplota', emoji: '🌡️', getValue: (d: any) => d?.operation?.temperature ? `${d.operation.temperature}°C` : '' },
+  { key: '{pocasi}', label: 'Počasí', emoji: '☀️', getValue: (d: any) => d?.operation?.weather || '' },
+  // Sníh
+  { key: '{snih_vyska}', label: 'Výška sněhu', emoji: '❄️', getValue: (d: any) => d?.operation?.snowHeight || '' },
+  { key: '{snih_typ}', label: 'Typ sněhu', emoji: '🏔️', getValue: (d: any) => d?.operation?.snowType || '' },
+  { key: '{novy_snih}', label: 'Nový sníh', emoji: '🌨️', getValue: (d: any) => d?.operation?.newSnow || '' },
+  // Provoz
+  { key: '{provozni_doba}', label: 'Provozní doba', emoji: '🕐', getValue: (d: any) => d?.operation?.opertime || '' },
+  { key: '{stav}', label: 'Stav areálu', emoji: '🚦', getValue: (d: any) => d?.operation?.isOpen ? 'Otevřeno' : 'Zavřeno' },
+  { key: '{provozni_text}', label: 'Provozní text', emoji: '📋', getValue: (d: any) => d?.operation?.operationText || '' },
+  // Vleky a lanovky
+  { key: '{lanovky}', label: 'Lanovky', emoji: '🚡', getValue: (d: any) => String(d?.lifts?.cableCarOpenCount || 0) },
+  { key: '{lanovky_celkem}', label: 'Lanovky celkem', emoji: '🚠', getValue: (d: any) => String(d?.lifts?.cableCarTotalCount || 0) },
+  { key: '{vleky}', label: 'Vleky', emoji: '🎿', getValue: (d: any) => String(d?.lifts?.dragLiftOpenCount || 0) },
+  { key: '{vleky_celkem}', label: 'Vleky celkem', emoji: '⛷️', getValue: (d: any) => String(d?.lifts?.dragLiftTotalCount || 0) },
+  // Sjezdovky
+  { key: '{sjezdovky}', label: 'Sjezdovky', emoji: '🗻', getValue: (d: any) => String(d?.slopes?.openCount || 0) },
+  { key: '{sjezdovky_celkem}', label: 'Sjezdovky celkem', emoji: '⛰️', getValue: (d: any) => String(d?.slopes?.totalCount || 0) },
+  // Datum a čas
+  { key: '{datum}', label: 'Datum', emoji: '📅', getValue: () => new Date().toLocaleDateString('cs-CZ') },
+  { key: '{den}', label: 'Den v týdnu', emoji: '🗓️', getValue: () => ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'][new Date().getDay()] },
+];
 
 const MONTH_NAMES = [
   'ledna', 'února', 'března', 'dubna', 'května', 'června',
@@ -71,12 +102,53 @@ export default function AdminAutopost() {
     isOpen: false,
     isNightSkiing: false,
     textComment: '',
+    descText: '',
     newSnow: '',
     weatherCode: 0,
   });
 
   // Carousel state for preview (0 = status image, 1 = camera image)
   const [carouselSlide, setCarouselSlide] = useState(0);
+
+  // Ref pro textarea - pro vkládání proměnných na pozici kurzoru
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isPlaceholderPopoverOpen, setIsPlaceholderPopoverOpen] = useState(false);
+
+  // Funkce pro vložení proměnné na pozici kurzoru
+  const insertPlaceholder = (placeholder: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      // Fallback - přidáme na konec
+      setFormState({
+        ...formState,
+        custom_caption: formState.custom_caption + placeholder,
+        selected_template: 'custom' as TemplateId,
+      });
+      setIsPlaceholderPopoverOpen(false);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = formState.custom_caption;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+
+    const newText = before + placeholder + after;
+    setFormState({
+      ...formState,
+      custom_caption: newText,
+      selected_template: 'custom' as TemplateId,
+    });
+    setIsPlaceholderPopoverOpen(false);
+
+    // Přesunout kurzor za vloženou proměnnou
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + placeholder.length;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
 
   // Reset carousel when camera changes
   useEffect(() => {
@@ -155,11 +227,28 @@ export default function AdminAutopost() {
     : '';
 
   // Automatická aktualizace textu při změně šablony nebo dat
+  // Manuální overrides mají prioritu před API daty
   useEffect(() => {
     if (formState.selected_template !== 'custom' && holidayData) {
+      // Merge manual overrides with API data - manual takes priority when enabled
+      const mergedData = manualOverrides.enabled
+        ? {
+            ...holidayData,
+            operation: {
+              ...holidayData.operation,
+              textComment: manualOverrides.textComment || holidayData.operation?.textComment,
+              descText: manualOverrides.descText || holidayData.operation?.descText,
+              newSnow: manualOverrides.newSnow || holidayData.operation?.newSnow,
+              weather: manualOverrides.weather || holidayData.operation?.weather,
+              weatherCode: manualOverrides.weatherCode || holidayData.operation?.weatherCode,
+              isOpen: manualOverrides.isOpen,
+            },
+          }
+        : holidayData;
+
       const generatedText = generatePostText(
         formState.selected_template,
-        holidayData,
+        mergedData,
         selectedCameraName
       );
       if (generatedText) {
@@ -169,7 +258,7 @@ export default function AdminAutopost() {
         }));
       }
     }
-  }, [formState.selected_template, holidayData, selectedCameraName]);
+  }, [formState.selected_template, holidayData, selectedCameraName, manualOverrides]);
 
   const updateMutation = useMutation({
     mutationFn: (updates: Partial<AutopostSettings>) => updateAutopostSettings(updates),
@@ -507,6 +596,24 @@ export default function AdminAutopost() {
                   </p>
                 </div>
 
+                {/* Popis - doplňkový text */}
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <Label className="text-xs font-medium flex items-center gap-2 mb-2">
+                    <Edit3 className="w-4 h-4 text-blue-600" />
+                    Popis (desc_text)
+                  </Label>
+                  <Textarea
+                    placeholder={holidayData?.operation?.descText || 'Doplňkový popis areálu...'}
+                    value={manualOverrides.descText}
+                    onChange={(e) => setManualOverrides({ ...manualOverrides, descText: e.target.value })}
+                    rows={2}
+                    className="text-sm"
+                  />
+                  <p className="text-xs text-blue-600 mt-1">
+                    Doplňkový text pro šablony. Prázdné = použije se z API.
+                  </p>
+                </div>
+
                 <div className="flex items-center justify-between">
                   <Label>Areál otevřen</Label>
                   <Switch checked={manualOverrides.isOpen} onCheckedChange={(v) => setManualOverrides({ ...manualOverrides, isOpen: v })} />
@@ -605,42 +712,66 @@ export default function AdminAutopost() {
                 </Select>
               </div>
 
-              {/* Info o automatickém generování */}
-              {formState.selected_template !== 'custom' && (
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2 text-blue-700 text-sm font-medium mb-1">
-                    <RefreshCw className="w-4 h-4" />
-                    Automaticky generováno ze šablony
-                  </div>
-                  <p className="text-xs text-blue-600">
-                    Text používá poznámku z Holiday Info API. Editací přepnete na vlastní text.
-                  </p>
-                </div>
-              )}
-
               {/* Textarea */}
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2 mb-1">
                   <Label>Popisek</Label>
-                  {formState.selected_template !== 'custom' && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-xs text-muted-foreground hover:text-primary"
-                      onClick={() => {
-                        if (holidayData) {
-                          const text = generatePostText(formState.selected_template, holidayData, selectedCameraName);
-                          setFormState({ ...formState, custom_caption: text });
-                        }
-                      }}
-                    >
-                      <RefreshCw className="w-3 h-3 mr-1" />
-                      Znovu vygenerovat
-                    </Button>
-                  )}
+                  <Popover open={isPlaceholderPopoverOpen} onOpenChange={setIsPlaceholderPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-primary hover:bg-primary hover:text-white"
+                        title="Vložit proměnnou"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-96 p-2" align="start">
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-gray-700 pb-1 border-b">
+                          Vložit proměnnou
+                        </div>
+                        <div className="max-h-80 overflow-y-auto space-y-0.5">
+                          {TEXT_PLACEHOLDERS.map((p) => {
+                            const currentValue = p.getValue(holidayData);
+                            return (
+                              <button
+                                key={p.key}
+                                type="button"
+                                onClick={() => insertPlaceholder(p.key)}
+                                className="w-full flex items-center justify-between px-2 py-1.5 text-left text-xs rounded hover:bg-gray-100 transition-colors group"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span>{p.emoji}</span>
+                                  <span className="font-medium">{p.label}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500 ml-2">
+                                  {currentValue ? (
+                                    <span className="truncate max-w-[120px] text-green-600" title={currentValue}>
+                                      {currentValue.length > 20 ? currentValue.substring(0, 20) + '...' : currentValue}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 italic">prázdné</span>
+                                  )}
+                                  <code className="text-[10px] bg-gray-100 px-1 rounded group-hover:bg-gray-200">
+                                    {p.key}
+                                  </code>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="text-xs text-gray-500 pt-1 border-t">
+                          Proměnné se nahradí skutečnými hodnotami při publikaci
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Textarea
+                  ref={textareaRef}
                   value={formState.custom_caption}
                   onChange={(e) => setFormState({
                     ...formState,
