@@ -58,6 +58,17 @@ const TEXT_PLACEHOLDERS = [
   { key: '{den}', label: 'Den v týdnu', emoji: '🗓️', getValue: () => ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'][new Date().getDay()] },
 ];
 
+// Funkce pro nahrazení placeholderů skutečnými hodnotami v náhledu
+function replacePlaceholdersForPreview(text: string, data: any): string {
+  if (!text) return text;
+  let result = text;
+  for (const p of TEXT_PLACEHOLDERS) {
+    const value = p.getValue(data);
+    result = result.replace(new RegExp(p.key.replace(/[{}]/g, '\\$&'), 'g'), value);
+  }
+  return result;
+}
+
 const MONTH_NAMES = [
   'ledna', 'února', 'března', 'dubna', 'května', 'června',
   'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'
@@ -282,8 +293,11 @@ export default function AdminAutopost() {
       : null;
     const camera_image_url = selectedCamera?.media?.last_image?.url || null;
 
+    // Neukládat selected_template - to je pouze UI stav, ne DB sloupec
+    const { selected_template, ...settingsToSave } = formState;
+
     updateMutation.mutate({
-      ...formState,
+      ...settingsToSave,
       camera_image_url,
     });
   };
@@ -424,7 +438,7 @@ export default function AdminAutopost() {
                 </div>
                 {/* Caption */}
                 <div className="px-3 pb-2">
-                  <p className="text-sm whitespace-pre-line">{formState.custom_caption}</p>
+                  <p className="text-sm whitespace-pre-line">{replacePlaceholdersForPreview(formState.custom_caption, holidayData)}</p>
                   <p className="text-sm text-blue-600 mt-1">{formState.hashtags}</p>
                 </div>
                 {/* Image Preview - based on image_type */}
@@ -711,6 +725,21 @@ export default function AdminAutopost() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Warning: text zmiňuje kameru ale není nastavená */}
+              {formState.custom_caption.includes('📸') &&
+               (formState.image_type === 'widget_only' || formState.image_type === 'none' || !formState.camera_id) && (
+                <div className="flex items-center gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-sm">
+                  <Camera className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    Text obsahuje zmínku o kameře, ale{' '}
+                    {!formState.camera_id
+                      ? 'není vybraná žádná kamera'
+                      : 'typ obrázku nezahrnuje kameru'}
+                    .
+                  </span>
+                </div>
+              )}
 
               {/* Textarea */}
               <div>
