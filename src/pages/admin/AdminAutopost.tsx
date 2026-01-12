@@ -232,9 +232,9 @@ export default function AdminAutopost() {
     }
   }, [settings]);
 
-  // Získat název vybrané kamery pro šablony
+  // Získat název vybrané kamery pro šablony (používáme displayName = custom_name z nastavení)
   const selectedCameraName = formState.camera_id
-    ? activeCameras.find(c => c.id === formState.camera_id)?.name || ''
+    ? activeCameras.find(c => c.id === formState.camera_id)?.displayName || ''
     : '';
 
   // Automatická aktualizace textu při změně šablony nebo dat
@@ -454,15 +454,22 @@ export default function AdminAutopost() {
                   <div style={{ fontSize: '13px' }}>
                     <StatusImagePreview data={previewData} />
                   </div>
-                ) : formState.image_type === 'camera_only' && formState.camera_id && getCameraPreviewUrl(formState.camera_id) ? (
-                  // Camera only
-                  <div className="bg-gray-900 flex items-center justify-center min-h-[200px]">
-                    <img
-                      src={getCameraPreviewUrl(formState.camera_id)}
-                      alt="Snímek z kamery"
-                      className="w-full h-auto"
-                    />
-                  </div>
+                ) : formState.image_type === 'camera_only' ? (
+                  // Camera only - show camera image or placeholder if no camera selected
+                  formState.camera_id && getCameraPreviewUrl(formState.camera_id) ? (
+                    <div className="bg-gray-900 flex items-center justify-center min-h-[200px]">
+                      <img
+                        src={getCameraPreviewUrl(formState.camera_id)}
+                        alt="Snímek z kamery"
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gray-200 flex flex-col items-center justify-center text-gray-500">
+                      <Camera className="w-12 h-12 mb-2 opacity-50" />
+                      <p className="text-sm">Vyberte kameru</p>
+                    </div>
+                  )
                 ) : formState.image_type === 'both' && formState.camera_id && getCameraPreviewUrl(formState.camera_id) ? (
                   // Carousel view with 2 images
                   <div className="relative">
