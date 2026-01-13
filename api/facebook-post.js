@@ -54,38 +54,40 @@ async function fetchHolidayInfoFromCache() {
 /**
  * Replace placeholders in caption with actual values from holiday info
  */
-function replacePlaceholders(caption, holidayInfo) {
-  if (!caption || !holidayInfo) return caption;
+function replacePlaceholders(caption, holidayInfo, cameraName = '') {
+  if (!caption) return caption;
 
   const now = new Date();
   const dayNames = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
 
   const replacements = {
     // Texty
-    '{text_comment}': holidayInfo.text_comment || '',
-    '{desc_text}': holidayInfo.desc_text || '',
+    '{text_comment}': holidayInfo?.text_comment || '',
+    '{desc_text}': holidayInfo?.desc_text || '',
     // Počasí
-    '{teplota}': holidayInfo.temperature ? `${holidayInfo.temperature}°C` : '',
-    '{pocasi}': holidayInfo.weather || '',
+    '{teplota}': holidayInfo?.temperature ? `${holidayInfo.temperature}°C` : '',
+    '{pocasi}': holidayInfo?.weather || '',
     // Sníh
-    '{snih_vyska}': holidayInfo.snow_height || '',
-    '{snih_typ}': holidayInfo.snow_type || '',
-    '{novy_snih}': holidayInfo.new_snow || '',
+    '{snih_vyska}': holidayInfo?.snow_height || '',
+    '{snih_typ}': holidayInfo?.snow_type || '',
+    '{novy_snih}': holidayInfo?.new_snow || '',
     // Provoz
-    '{provozni_doba}': holidayInfo.opertime || '',
-    '{stav}': holidayInfo.is_open ? 'Otevřeno' : 'Zavřeno',
-    '{provozni_text}': holidayInfo.operation_text || '',
+    '{provozni_doba}': holidayInfo?.opertime || '',
+    '{stav}': holidayInfo?.is_open ? 'Otevřeno' : 'Zavřeno',
+    '{provozni_text}': holidayInfo?.operation_text || '',
     // Lanovky a vleky
-    '{lanovky}': String(holidayInfo.cable_car_open_count || 0),
-    '{lanovky_celkem}': String(holidayInfo.cable_car_total_count || 0),
-    '{vleky}': String(holidayInfo.drag_lift_open_count || 0),
-    '{vleky_celkem}': String(holidayInfo.drag_lift_total_count || 0),
+    '{lanovky}': String(holidayInfo?.cable_car_open_count || 0),
+    '{lanovky_celkem}': String(holidayInfo?.cable_car_total_count || 0),
+    '{vleky}': String(holidayInfo?.drag_lift_open_count || 0),
+    '{vleky_celkem}': String(holidayInfo?.drag_lift_total_count || 0),
     // Sjezdovky
-    '{sjezdovky}': String(holidayInfo.slopes_open_count || 0),
-    '{sjezdovky_celkem}': String(holidayInfo.slopes_total_count || 0),
+    '{sjezdovky}': String(holidayInfo?.slopes_open_count || 0),
+    '{sjezdovky_celkem}': String(holidayInfo?.slopes_total_count || 0),
     // Datum a čas
     '{datum}': now.toLocaleDateString('cs-CZ'),
     '{den}': dayNames[now.getDay()],
+    // Kamera
+    '{kamera}': cameraName || '',
   };
 
   let result = caption;
@@ -94,6 +96,32 @@ function replacePlaceholders(caption, holidayInfo) {
   }
 
   return result;
+}
+
+/**
+ * Get camera name from cameras_settings table
+ */
+async function getCameraName(cameraId) {
+  if (!cameraId || cameraId === 'none') return '';
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+      .from('cameras_settings')
+      .select('custom_name')
+      .eq('camera_id', cameraId)
+      .single();
+
+    if (error || !data) {
+      console.log(`[Facebook Post] No custom camera name found for ${cameraId}`);
+      return cameraId; // Fallback to camera ID
+    }
+
+    return data.custom_name || cameraId;
+  } catch (err) {
+    console.error('[Facebook Post] Error fetching camera name:', err);
+    return cameraId;
+  }
 }
 
 /**
@@ -247,12 +275,13 @@ export default async function handler(req, res) {
     // Fetch holiday info for placeholder replacement
     const holidayInfo = await fetchHolidayInfoFromCache();
 
+    // Fetch camera name for {kamera} placeholder
+    const cameraName = await getCameraName(cameraId);
+
     // Build caption and replace placeholders with actual values
     let processedCaption = caption || defaultCaption;
-    if (holidayInfo) {
-      processedCaption = replacePlaceholders(processedCaption, holidayInfo);
-      console.log('[Facebook Post] Placeholders replaced with holiday info data');
-    }
+    processedCaption = replacePlaceholders(processedCaption, holidayInfo, cameraName);
+    console.log('[Facebook Post] Placeholders replaced with holiday info data');
 
     // Build full caption with hashtags
     const fullCaption = [processedCaption, '', hashtags || defaultHashtags].join('\n');

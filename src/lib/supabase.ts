@@ -492,3 +492,68 @@ export async function createAutopostHistoryEntry(
   if (error) throw error;
   return data;
 }
+
+// === Autopost Templates ===
+
+export interface AutopostTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  emoji: string;
+  content: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Fetch all autopost templates
+export async function fetchAutopostTemplates(): Promise<AutopostTemplate[]> {
+  const { data, error } = await supabase
+    .from('autopost_templates')
+    .select('*')
+    .order('sort_order')
+    .order('created_at');
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Create new autopost template
+export async function createAutopostTemplate(
+  template: Omit<AutopostTemplate, 'id' | 'created_at' | 'updated_at'>
+): Promise<AutopostTemplate> {
+  const { data, error } = await supabase
+    .from('autopost_templates')
+    .insert(template)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Update autopost template
+export async function updateAutopostTemplate(
+  id: string,
+  updates: Partial<Omit<AutopostTemplate, 'id' | 'created_at'>>
+): Promise<AutopostTemplate> {
+  const { data, error } = await supabase
+    .from('autopost_templates')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Delete autopost template
+export async function deleteAutopostTemplate(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('autopost_templates')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}

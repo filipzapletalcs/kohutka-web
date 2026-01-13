@@ -1,6 +1,7 @@
-import type { PostTemplate, TemplateData, TemplateId } from './types';
+import type { DefaultTemplate } from './types';
 
-function getWeatherEmoji(weatherCode: number): string {
+// Helper funkce pro emoji počasí (používá se v preview)
+export function getWeatherEmoji(weatherCode: number): string {
   switch (weatherCode) {
     case 1: return '☀️';
     case 2: return '🌤️';
@@ -14,152 +15,45 @@ function getWeatherEmoji(weatherCode: number): string {
   }
 }
 
-export const POST_TEMPLATES: PostTemplate[] = [
+// Výchozí šablony - použijí se pro seed do databáze
+// Obsahují placeholdery, které se nahradí skutečnými hodnotami při zobrazení náhledu
+export const DEFAULT_TEMPLATES: DefaultTemplate[] = [
   {
-    id: 'daily',
     name: 'Denní report',
     description: 'Poznámka + kamera + odkaz',
     emoji: '📢',
-    generate: (data: TemplateData): string => {
-      let text = '';
-
-      if (data.textComment) {
-        text += `📢 ${data.textComment}\n\n`;
-      } else {
-        text += data.isOpen
-          ? '📢 Areál je otevřen! Přijeďte si zalyžovat.\n\n'
-          : '📢 Areál je dnes uzavřen.\n\n';
-      }
-
-      if (data.cameraName) {
-        text += `📸 Pohled z kamery: ${data.cameraName}\n\n`;
-      }
-
-      text += 'Více info 👉 kohutka.ski';
-
-      return text;
-    },
+    content: '📢 {text_comment}\n\n📸 Pohled z kamery: {kamera}\n\nVíce info 👉 kohutka.ski',
+    sort_order: 1,
   },
-
   {
-    id: 'weather',
     name: 'S počasím',
     description: 'Počasí + poznámka + nový sníh',
     emoji: '🌤️',
-    generate: (data: TemplateData): string => {
-      let text = '';
-
-      const weatherEmoji = getWeatherEmoji(data.weatherCode);
-      if (data.weatherText) {
-        const weatherCapitalized = data.weatherText.charAt(0).toUpperCase() + data.weatherText.slice(1);
-        text += `${weatherEmoji} ${weatherCapitalized} na Kohútce\n\n`;
-      }
-
-      if (data.textComment) {
-        text += `📢 ${data.textComment}\n\n`;
-      }
-
-      if (data.newSnow && data.newSnow !== '0 cm') {
-        text += `❄️ Nový sníh: ${data.newSnow}\n\n`;
-      }
-
-      if (data.cameraName) {
-        text += `📸 ${data.cameraName}`;
-      }
-
-      return text.trim();
-    },
+    content: '{pocasi} na Kohútce\n\n📢 {text_comment}\n\n❄️ Nový sníh: {novy_snih}\n\n📸 {kamera}',
+    sort_order: 2,
   },
-
   {
-    id: 'morning',
     name: 'Ranní pozvánka',
     description: 'Přívětivý ranní pozdrav',
     emoji: '☀️',
-    generate: (data: TemplateData): string => {
-      let text = '☀️ Dobré ráno z Kohútky!\n\n';
-
-      if (data.textComment) {
-        text += `${data.textComment}\n\n`;
-      } else if (data.isOpen) {
-        text += 'Areál je připraven, sjezdovky upravené!\n\n';
-      } else {
-        text += 'Dnes je areál uzavřen, sledujte nás pro aktuální info.\n\n';
-      }
-
-      if (data.isOpen) {
-        text += 'Přijeďte si zalyžovat! 🎿\n';
-      }
-
-      if (data.cameraName) {
-        text += `📸 ${data.cameraName}`;
-      }
-
-      return text.trim();
-    },
+    content: '☀️ Dobré ráno z Kohútky!\n\n{text_comment}\n\nPřijeďte si zalyžovat! 🎿\n\n📸 {kamera}',
+    sort_order: 3,
   },
-
   {
-    id: 'brief',
     name: 'Stručná',
     description: 'Jen poznámka a kamera',
     emoji: '📝',
-    generate: (data: TemplateData): string => {
-      let text = '';
-
-      if (data.textComment) {
-        text += data.textComment;
-      } else {
-        text += data.isOpen ? 'Areál otevřen!' : 'Areál uzavřen.';
-      }
-
-      if (data.cameraName) {
-        text += `\n\n📸 ${data.cameraName} | kohutka.ski`;
-      } else {
-        text += '\n\nkohutka.ski';
-      }
-
-      return text;
-    },
+    content: '{text_comment}\n\n📸 {kamera} | kohutka.ski',
+    sort_order: 4,
   },
 ];
 
-export function getTemplateById(id: TemplateId): PostTemplate | undefined {
-  return POST_TEMPLATES.find((t) => t.id === id);
-}
-
-export function generatePostText(
-  templateId: TemplateId,
-  holidayData: {
-    operation?: {
-      isOpen: boolean;
-      textComment?: string;
-      descText?: string;
-      newSnow?: string;
-      weather?: string;
-      weatherCode?: number;
-    };
-  } | null,
-  cameraName?: string
-): string {
-  if (templateId === 'custom') {
-    return '';
-  }
-
-  const template = getTemplateById(templateId);
-  if (!template) {
-    return 'Denní report z Kohútky!';
-  }
-
-  const templateData: TemplateData = {
-    textComment: holidayData?.operation?.textComment || '',
-    descText: holidayData?.operation?.descText || '',
-    cameraName: cameraName || '',
-    weatherText: holidayData?.operation?.weather || '',
-    weatherCode: holidayData?.operation?.weatherCode || 0,
-    newSnow: holidayData?.operation?.newSnow || '',
-    isOpen: holidayData?.operation?.isOpen ?? false,
-  };
-
-  return template.generate(templateData);
+// Funkce pro odstranění řádků s kamerou (při widget_only nebo none)
+export function stripCameraReferences(text: string): string {
+  return text
+    .split('\n')
+    .filter(line => !line.includes('{kamera}') && !line.includes('📸'))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')  // Vyčistit extra prázdné řádky
+    .trim();
 }

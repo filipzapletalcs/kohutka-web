@@ -5,9 +5,14 @@ import {
   updateAutopostSettings,
   fetchAutopostHistory,
   fetchCameraSettings,
+  fetchAutopostTemplates,
+  createAutopostTemplate,
+  updateAutopostTemplate,
+  deleteAutopostTemplate,
   type AutopostSettings,
   type AutopostScheduleType,
   type AutopostImageType,
+  type AutopostTemplate,
 } from '@/lib/supabase';
 import { fetchHolidayInfoData } from '@/services/holidayInfoApi';
 import { Button } from '@/components/ui/button';
@@ -21,12 +26,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus } from 'lucide-react';
+import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import StatusImagePreview from '@/components/admin/autopost/StatusImagePreview';
 import type { ManualOverrides, StatusImageData, TemplateId } from '@/components/admin/autopost/types';
-import { POST_TEMPLATES, generatePostText } from '@/components/admin/autopost/templates';
+import { DEFAULT_TEMPLATES, stripCameraReferences } from '@/components/admin/autopost/templates';
 
 // Dostupné proměnné pro vkládání do textu
 // getValue funkce vrací aktuální hodnotu z holidayData
@@ -56,14 +63,17 @@ const TEXT_PLACEHOLDERS = [
   // Datum a čas
   { key: '{datum}', label: 'Datum', emoji: '📅', getValue: () => new Date().toLocaleDateString('cs-CZ') },
   { key: '{den}', label: 'Den v týdnu', emoji: '🗓️', getValue: () => ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'][new Date().getDay()] },
+  // Kamera - speciální placeholder, hodnota se předá zvlášť
+  { key: '{kamera}', label: 'Název kamery', emoji: '📸', getValue: () => '' },
 ];
 
 // Funkce pro nahrazení placeholderů skutečnými hodnotami v náhledu
-function replacePlaceholdersForPreview(text: string, data: any): string {
+function replacePlaceholdersForPreview(text: string, data: any, cameraName?: string): string {
   if (!text) return text;
   let result = text;
   for (const p of TEXT_PLACEHOLDERS) {
-    const value = p.getValue(data);
+    // Speciální zacházení pro {kamera}
+    const value = p.key === '{kamera}' ? (cameraName || '') : p.getValue(data);
     result = result.replace(new RegExp(p.key.replace(/[{}]/g, '\\$&'), 'g'), value);
   }
   return result;
@@ -187,6 +197,22 @@ export default function AdminAutopost() {
     queryFn: fetchCameraSettings,
   });
 
+  // Fetch templates from database
+  const { data: templates = [], refetch: refetchTemplates } = useQuery({
+    queryKey: ['autopost-templates'],
+    queryFn: fetchAutopostTemplates,
+  });
+
+  // Template editor state
+  const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Partial<AutopostTemplate> | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<AutopostTemplate | null>(null);
+
+  // Template editor textarea ref
+  const templateTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isTemplatePlaceholderOpen, setIsTemplatePlaceholderOpen] = useState(false);
+
   // Get active cameras merged with holiday info data
   // Filter same as AdminCameras: exclude archive (except kohutka-p0), check is_active
   const activeCameras = (holidayData?.cameras || [])
@@ -227,49 +253,54 @@ export default function AdminAutopost() {
         hashtags: settings.hashtags,
         camera_id: settings.camera_id,
         image_type: settings.image_type || 'both',
-        selected_template: 'daily' as TemplateId,
+        selected_template: 'custom' as TemplateId, // Start with custom, will be updated when templates load
       });
     }
   }, [settings]);
+
+  // Track if we've initialized the template selection
+  const hasInitializedTemplate = useRef(false);
+
+  // Set first template as default when templates load (only once)
+  useEffect(() => {
+    if (templates.length > 0 && !hasInitializedTemplate.current) {
+      hasInitializedTemplate.current = true;
+      const firstTemplate = templates[0];
+      setFormState((prev) => ({
+        ...prev,
+        selected_template: firstTemplate.id,
+        custom_caption: prev.image_type === 'widget_only' || prev.image_type === 'none'
+          ? stripCameraReferences(firstTemplate.content)
+          : firstTemplate.content,
+      }));
+    }
+  }, [templates]);
 
   // Získat název vybrané kamery pro šablony (používáme displayName = custom_name z nastavení)
   const selectedCameraName = formState.camera_id
     ? activeCameras.find(c => c.id === formState.camera_id)?.displayName || ''
     : '';
 
-  // Automatická aktualizace textu při změně šablony nebo dat
-  // Manuální overrides mají prioritu před API daty
+  // Automatická aktualizace textu při změně šablony
+  // Nyní vkládáme template STRING s placeholdery, ne vygenerovaný text
   useEffect(() => {
-    if (formState.selected_template !== 'custom' && holidayData) {
-      // Merge manual overrides with API data - manual takes priority when enabled
-      const mergedData = manualOverrides.enabled
-        ? {
-            ...holidayData,
-            operation: {
-              ...holidayData.operation,
-              textComment: manualOverrides.textComment || holidayData.operation?.textComment,
-              descText: manualOverrides.descText || holidayData.operation?.descText,
-              newSnow: manualOverrides.newSnow || holidayData.operation?.newSnow,
-              weather: manualOverrides.weather || holidayData.operation?.weather,
-              weatherCode: manualOverrides.weatherCode || holidayData.operation?.weatherCode,
-              isOpen: manualOverrides.isOpen,
-            },
-          }
-        : holidayData;
+    if (formState.selected_template && formState.selected_template !== 'custom' && templates.length > 0) {
+      const template = templates.find(t => t.id === formState.selected_template);
+      if (template) {
+        let content = template.content;
 
-      const generatedText = generatePostText(
-        formState.selected_template,
-        mergedData,
-        selectedCameraName
-      );
-      if (generatedText) {
+        // Pokud je widget_only nebo none, odstranit reference na kameru
+        if (formState.image_type === 'widget_only' || formState.image_type === 'none') {
+          content = stripCameraReferences(content);
+        }
+
         setFormState((prev) => ({
           ...prev,
-          custom_caption: generatedText,
+          custom_caption: content,
         }));
       }
     }
-  }, [formState.selected_template, holidayData, selectedCameraName, manualOverrides]);
+  }, [formState.selected_template, templates, formState.image_type]);
 
   const updateMutation = useMutation({
     mutationFn: (updates: Partial<AutopostSettings>) => updateAutopostSettings(updates),
@@ -359,6 +390,140 @@ export default function AdminAutopost() {
     formState.image_type !== (settings.image_type || 'both')
   );
 
+  // Template CRUD mutations
+  const createTemplateMutation = useMutation({
+    mutationFn: createAutopostTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['autopost-templates'] });
+      toast.success('Šablona vytvořena');
+      setIsTemplateEditorOpen(false);
+      setEditingTemplate(null);
+    },
+    onError: (error) => toast.error('Chyba při vytváření šablony: ' + (error as Error).message),
+  });
+
+  const updateTemplateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<AutopostTemplate> }) =>
+      updateAutopostTemplate(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['autopost-templates'] });
+      toast.success('Šablona aktualizována');
+      setIsTemplateEditorOpen(false);
+      setEditingTemplate(null);
+    },
+    onError: (error) => toast.error('Chyba při aktualizaci šablony: ' + (error as Error).message),
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: deleteAutopostTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['autopost-templates'] });
+      toast.success('Šablona smazána');
+      setIsDeleteDialogOpen(false);
+      setTemplateToDelete(null);
+      // Pokud byla smazána aktuálně vybraná šablona, přepnout na custom
+      if (templateToDelete && formState.selected_template === templateToDelete.id) {
+        setFormState(prev => ({ ...prev, selected_template: 'custom' }));
+      }
+    },
+    onError: (error) => toast.error('Chyba při mazání šablony: ' + (error as Error).message),
+  });
+
+  // Template editor handlers
+  const handleOpenNewTemplate = () => {
+    setEditingTemplate({
+      name: '',
+      description: '',
+      emoji: '📝',
+      content: '',
+      sort_order: templates.length + 1,
+    });
+    setIsTemplateEditorOpen(true);
+  };
+
+  const handleOpenEditTemplate = (template: AutopostTemplate) => {
+    setEditingTemplate({ ...template });
+    setIsTemplateEditorOpen(true);
+  };
+
+  const handleSaveTemplate = () => {
+    if (!editingTemplate) return;
+    if (!editingTemplate.name?.trim()) {
+      toast.error('Název šablony je povinný');
+      return;
+    }
+    if (!editingTemplate.content?.trim()) {
+      toast.error('Obsah šablony je povinný');
+      return;
+    }
+
+    if (editingTemplate.id) {
+      // Update existing template
+      updateTemplateMutation.mutate({
+        id: editingTemplate.id,
+        updates: {
+          name: editingTemplate.name,
+          description: editingTemplate.description || null,
+          emoji: editingTemplate.emoji || '📝',
+          content: editingTemplate.content,
+          sort_order: editingTemplate.sort_order || 0,
+        },
+      });
+    } else {
+      // Create new template
+      createTemplateMutation.mutate({
+        name: editingTemplate.name,
+        description: editingTemplate.description || null,
+        emoji: editingTemplate.emoji || '📝',
+        content: editingTemplate.content,
+        sort_order: editingTemplate.sort_order || templates.length + 1,
+      });
+    }
+  };
+
+  const handleDeleteTemplate = (template: AutopostTemplate) => {
+    setTemplateToDelete(template);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTemplate = () => {
+    if (templateToDelete) {
+      deleteTemplateMutation.mutate(templateToDelete.id);
+    }
+  };
+
+  // Insert placeholder into template editor
+  const insertTemplateEditorPlaceholder = (placeholder: string) => {
+    if (!editingTemplate) return;
+
+    const textarea = templateTextareaRef.current;
+    if (!textarea) {
+      setEditingTemplate({
+        ...editingTemplate,
+        content: (editingTemplate.content || '') + placeholder,
+      });
+      setIsTemplatePlaceholderOpen(false);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = editingTemplate.content || '';
+    const newText = text.substring(0, start) + placeholder + text.substring(end);
+
+    setEditingTemplate({
+      ...editingTemplate,
+      content: newText,
+    });
+    setIsTemplatePlaceholderOpen(false);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + placeholder.length;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
+
   // Preview data - use manual if enabled, otherwise API
   // LANOVKY/VLEKY format: cableCarOpenCount/dragLiftOpenCount (e.g., 1/4)
   // This matches landing page widget exactly
@@ -438,7 +603,7 @@ export default function AdminAutopost() {
                 </div>
                 {/* Caption */}
                 <div className="px-3 pb-2">
-                  <p className="text-sm whitespace-pre-line">{replacePlaceholdersForPreview(formState.custom_caption, holidayData)}</p>
+                  <p className="text-sm whitespace-pre-line">{replacePlaceholdersForPreview(formState.custom_caption, holidayData, selectedCameraName)}</p>
                   <p className="text-sm text-blue-600 mt-1">{formState.hashtags}</p>
                 </div>
                 {/* Image Preview - based on image_type */}
@@ -703,38 +868,79 @@ export default function AdminAutopost() {
             <CardContent className="space-y-4">
               {/* Výběr šablony */}
               <div className="space-y-2">
-                <Label>Šablona textu</Label>
-                <Select
-                  value={formState.selected_template}
-                  onValueChange={(value: TemplateId) => {
-                    setFormState({ ...formState, selected_template: value });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Vyberte šablonu" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {POST_TEMPLATES.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
+                <div className="flex items-center justify-between">
+                  <Label>Šablona textu</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenNewTemplate}
+                    className="h-7 text-xs"
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Nová šablona
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={formState.selected_template}
+                    onValueChange={(value: TemplateId) => {
+                      setFormState({ ...formState, selected_template: value });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Vyberte šablonu" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          <span className="flex items-center gap-2">
+                            <span>{template.emoji}</span>
+                            <span>{template.name}</span>
+                            <span className="text-xs text-muted-foreground">- {template.description}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">
                         <span className="flex items-center gap-2">
-                          <span>{template.emoji}</span>
-                          <span>{template.name}</span>
-                          <span className="text-xs text-muted-foreground">- {template.description}</span>
+                          <span>✏️</span>
+                          <span>Vlastní text</span>
                         </span>
                       </SelectItem>
-                    ))}
-                    <SelectItem value="custom">
-                      <span className="flex items-center gap-2">
-                        <span>✏️</span>
-                        <span>Vlastni text</span>
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                  {/* Edit/Delete buttons for selected template */}
+                  {formState.selected_template && formState.selected_template !== 'custom' && (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => {
+                          const template = templates.find(t => t.id === formState.selected_template);
+                          if (template) handleOpenEditTemplate(template);
+                        }}
+                        title="Upravit šablonu"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          const template = templates.find(t => t.id === formState.selected_template);
+                          if (template) handleDeleteTemplate(template);
+                        }}
+                        title="Smazat šablonu"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Warning: text zmiňuje kameru ale není nastavená */}
-              {formState.custom_caption.includes('📸') &&
+              {(formState.custom_caption.includes('📸') || formState.custom_caption.includes('{kamera}')) &&
                (formState.image_type === 'widget_only' || formState.image_type === 'none' || !formState.camera_id) && (
                 <div className="flex items-center gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-sm">
                   <Camera className="w-4 h-4 flex-shrink-0" />
@@ -743,7 +949,7 @@ export default function AdminAutopost() {
                     {!formState.camera_id
                       ? 'není vybraná žádná kamera'
                       : 'typ obrázku nezahrnuje kameru'}
-                    .
+                    . Proměnná {'{kamera}'} bude prázdná.
                   </span>
                 </div>
               )}
@@ -1025,6 +1231,152 @@ export default function AdminAutopost() {
           )}
         </CardContent>
       </Card>
+
+      {/* Template Editor Dialog */}
+      <Dialog open={isTemplateEditorOpen} onOpenChange={setIsTemplateEditorOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingTemplate?.id ? 'Upravit šablonu' : 'Nová šablona'}
+            </DialogTitle>
+            <DialogDescription>
+              Vytvořte nebo upravte šablonu pro automatické příspěvky. Použijte proměnné v složených závorkách.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Název</Label>
+                <Input
+                  value={editingTemplate?.name || ''}
+                  onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
+                  placeholder="Např. Denní report"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Emoji</Label>
+                <Input
+                  value={editingTemplate?.emoji || ''}
+                  onChange={(e) => setEditingTemplate({ ...editingTemplate, emoji: e.target.value })}
+                  placeholder="📝"
+                  className="w-20"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Popis</Label>
+              <Input
+                value={editingTemplate?.description || ''}
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, description: e.target.value })}
+                placeholder="Krátký popis šablony"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Obsah šablony</Label>
+                <Popover open={isTemplatePlaceholderOpen} onOpenChange={setIsTemplatePlaceholderOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7">
+                      <Plus className="w-3 h-3 mr-1" /> Vložit proměnnou
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-2" align="end">
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-700 pb-1 border-b">
+                        Dostupné proměnné
+                      </div>
+                      <div className="max-h-60 overflow-y-auto space-y-0.5">
+                        {TEXT_PLACEHOLDERS.map((p) => (
+                          <button
+                            key={p.key}
+                            type="button"
+                            onClick={() => insertTemplateEditorPlaceholder(p.key)}
+                            className="w-full flex items-center justify-between px-2 py-1.5 text-left text-xs rounded hover:bg-gray-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>{p.emoji}</span>
+                              <span className="font-medium">{p.label}</span>
+                            </div>
+                            <code className="text-[10px] bg-gray-100 px-1 rounded">{p.key}</code>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Textarea
+                ref={templateTextareaRef}
+                value={editingTemplate?.content || ''}
+                onChange={(e) => setEditingTemplate({ ...editingTemplate, content: e.target.value })}
+                rows={6}
+                className="font-mono text-sm"
+                placeholder="Např.: 📢 {text_comment}
+
+📸 Pohled z kamery: {kamera}
+
+Více info 👉 kohutka.ski"
+              />
+            </div>
+
+            {/* Live preview */}
+            <Card className="bg-gray-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="w-4 h-4" /> Náhled
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-line">
+                  {replacePlaceholdersForPreview(editingTemplate?.content || '', holidayData, selectedCameraName) || (
+                    <span className="text-gray-400 italic">Zadejte obsah šablony...</span>
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTemplateEditorOpen(false)}>
+              Zrušit
+            </Button>
+            <Button
+              onClick={handleSaveTemplate}
+              disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending}
+            >
+              {(createTemplateMutation.isPending || updateTemplateMutation.isPending) && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Uložit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Smazat šablonu?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Opravdu chcete smazat šablonu "{templateToDelete?.name}"? Tuto akci nelze vrátit zpět.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Zrušit</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTemplate}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteTemplateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Smazat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

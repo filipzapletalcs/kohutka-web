@@ -36,8 +36,10 @@ export interface ManualOverrides {
 
 // === Typy pro šablony autopostingu ===
 
-export type TemplateId = 'daily' | 'weather' | 'morning' | 'brief' | 'custom';
+// TemplateId je nyní string pro podporu custom šablon z DB
+export type TemplateId = string;
 
+// Data pro náhled šablon (stále potřebné pro preview)
 export interface TemplateData {
   textComment: string;
   descText: string;
@@ -48,10 +50,26 @@ export interface TemplateData {
   isOpen: boolean;
 }
 
+// Šablona z databáze - používá content string místo generate funkce
 export interface PostTemplate {
-  id: TemplateId;
+  id: string;
+  name: string;
+  description: string | null;
+  emoji: string;
+  content: string;  // Template string s placeholdery: "📢 {text_comment}\n\n📸 {kamera}"
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Typ pro vytvoření/update šablony (bez auto-generovaných polí)
+export type PostTemplateInput = Omit<PostTemplate, 'id' | 'created_at' | 'updated_at'>;
+
+// Výchozí šablony pro seed do DB
+export interface DefaultTemplate {
   name: string;
   description: string;
   emoji: string;
-  generate: (data: TemplateData) => string;
+  content: string;
+  sort_order: number;
 }
