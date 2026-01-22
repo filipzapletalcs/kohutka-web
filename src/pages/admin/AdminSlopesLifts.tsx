@@ -217,8 +217,13 @@ export default function AdminSlopesLifts() {
                           )}
                         </div>
                         <div>
-                          <div className="font-semibold">{slope.name}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="font-semibold">
+                            <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-xs font-bold bg-primary/10 text-primary rounded">
+                              {slope.id}
+                            </span>
+                            {slope.name}
+                          </div>
+                          <div className="text-xs text-gray-500 ml-8">
                             API: {apiIsOpen ? 'otevřeno' : 'zavřeno'}
                           </div>
                         </div>
@@ -293,8 +298,13 @@ export default function AdminSlopesLifts() {
                           )}
                         </div>
                         <div>
-                          <div className="font-semibold">{lift.name}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="font-semibold">
+                            <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-xs font-bold bg-primary/10 text-primary rounded">
+                              {lift.id}
+                            </span>
+                            {lift.name}
+                          </div>
+                          <div className="text-xs text-gray-500 ml-8">
                             API: {apiIsOpen ? 'otevřeno' : 'zavřeno'} | {lift.type_text}
                           </div>
                         </div>

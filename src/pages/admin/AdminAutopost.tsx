@@ -26,7 +26,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, RefreshCw, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, FileEdit, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Loader2, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
@@ -181,7 +181,7 @@ export default function AdminAutopost() {
     queryFn: fetchAutopostSettings,
   });
 
-  const { data: holidayData, isLoading: isLoadingData, refetch, isRefetching } = useQuery({
+  const { data: holidayData, isLoading: isLoadingData } = useQuery({
     queryKey: ['holiday-info-autopost'],
     queryFn: fetchHolidayInfoData,
     staleTime: 60 * 1000,
@@ -327,8 +327,12 @@ export default function AdminAutopost() {
     // Neukládat selected_template - to je pouze UI stav, ne DB sloupec
     const { selected_template, ...settingsToSave } = formState;
 
+    // Auto-enable based on schedule type
+    const enabled = formState.schedule_type !== 'disabled';
+
     updateMutation.mutate({
       ...settingsToSave,
+      enabled,
       camera_image_url,
     });
   };
@@ -551,18 +555,6 @@ export default function AdminAutopost() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Auto-posting na Facebook</h2>
-          <p className="text-gray-600 mt-1">Automatické publikování denních reportů</p>
-        </div>
-        <Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
-          {isRefetching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Obnovit
-        </Button>
-      </div>
-
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Left - Preview */}
         <div className="space-y-4">
@@ -827,21 +819,6 @@ export default function AdminAutopost() {
 
         {/* Right - Settings */}
         <div className="space-y-4">
-          {/* Enable/Disable */}
-          <Card className={formState.enabled ? 'border-green-500/50 bg-green-50/50' : ''}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Auto-posting</CardTitle>
-                <Switch checked={formState.enabled} onCheckedChange={(v) => setFormState({ ...formState, enabled: v })} />
-              </div>
-              <CardDescription>
-                {formState.enabled ? (
-                  <span className="text-green-700">Aktivní - {formState.schedule_type === 'daily' ? `denně v ${formState.morning_time}` : 'vypnuto'}</span>
-                ) : 'Vypnuto'}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
           {/* Schedule */}
           <Card>
             <CardHeader className="pb-2">
@@ -1128,38 +1105,10 @@ export default function AdminAutopost() {
                 <Send className="w-5 h-5 text-blue-600" /> Ruční publikace
               </CardTitle>
               <CardDescription>
-                Otestuj nebo publikuj příspěvek ručně
+                Publikuj příspěvek ručně kdykoliv
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => postMutation.mutate({ testMode: true })}
-                  disabled={postMutation.isPending}
-                  className="w-full"
-                >
-                  {postMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Eye className="w-4 h-4 mr-2" />
-                  )}
-                  Test
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => postMutation.mutate({ draft: true })}
-                  disabled={postMutation.isPending}
-                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
-                >
-                  {postMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <FileEdit className="w-4 h-4 mr-2" />
-                  )}
-                  Vytvořit draft
-                </Button>
-              </div>
+            <CardContent>
               <Button
                 onClick={() => postMutation.mutate({})}
                 disabled={postMutation.isPending}
@@ -1172,17 +1121,6 @@ export default function AdminAutopost() {
                 )}
                 Publikovat nyní
               </Button>
-              <p className="text-xs text-gray-500 text-center">
-                Draft najdeš v{' '}
-                <a
-                  href="https://business.facebook.com/latest/content_calendar"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline inline-flex items-center gap-1"
-                >
-                  Meta Business Suite <ExternalLink className="w-3 h-3" />
-                </a>
-              </p>
             </CardContent>
           </Card>
 
