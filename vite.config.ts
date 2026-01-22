@@ -14,6 +14,13 @@ export default defineConfig(({ mode }) => ({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // Proxy HolidayInfo API requests to bypass CORS issues in development
+      '/holidayinfo-proxy': {
+        target: 'https://exports.holidayinfo.cz',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/holidayinfo-proxy/, ''),
+        secure: true,
+      },
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

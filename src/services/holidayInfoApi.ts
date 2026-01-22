@@ -3,17 +3,23 @@ import { fetchHolidayInfoCache, updateHolidayInfoCache } from '@/lib/supabase';
 
 const API_URL = 'https://exports.holidayinfo.cz/xml_export.php?dc=c9ixxlejab5d4mrr&localias=kohutka';
 
-// Fallback camera data if API fails
+// Download kód pro HolidayInfo API
+const HOLIDAYINFO_DC = import.meta.env.VITE_HOLIDAYINFO_DC || 'c9ixxlejab5d4mrr';
+const IS_DEV = import.meta.env.DEV;
+
+// Fallback camera data if API fails - uses HolidayInfo direct image URLs
 const FALLBACK_CAMERAS = [
   {
-    id: '3122',
-    name: 'Kohútka',
-    description: 'Hlavní kamera',
-    location: 'Areál Kohútka',
+    id: '2122',
+    name: 'Chata Kohútka',
+    description: 'Nadmořská výška: 913m',
+    location: '913',
+    source: 'holidayinfo',
+    hasPanorama: true,
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
+        url: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=2122`,
+        url_preview: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=2122`,
         temp: '',
         date: '',
         time: '',
@@ -21,14 +27,31 @@ const FALLBACK_CAMERAS = [
     },
   },
   {
-    id: '3123',
+    id: '3122',
     name: 'Horní stanice',
-    description: 'Sedačková lanovka',
-    location: 'Horní stanice',
+    description: 'Nadmořská výška: 893m',
+    location: '893',
+    source: 'holidayinfo',
     media: {
       last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
+        url: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3122`,
+        url_preview: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3122`,
+        temp: '',
+        date: '',
+        time: '',
+      },
+    },
+  },
+  {
+    id: '3121',
+    name: 'Dolní stanice',
+    description: 'Nadmořská výška: 720m',
+    location: '720',
+    source: 'holidayinfo',
+    media: {
+      last_image: {
+        url: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3121`,
+        url_preview: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3121`,
         temp: '',
         date: '',
         time: '',
@@ -64,16 +87,21 @@ function getXMLNumber(element: Element | null, tagName: string): number {
 
 /**
  * Fetch raw XML data from Holiday Info API
+ * V development módu používáme Vite proxy pro obejití CORS problému
+ * (HolidayInfo server vrací duplikovaný Access-Control-Allow-Origin header)
  */
 export async function fetchHolidayInfoXML(): Promise<string> {
   try {
-    // Try direct fetch (Holiday Info má CORS povolený)
-    const response = await fetch(API_URL, {
+    // V development módu použijeme Vite proxy pro obejití CORS
+    const url = IS_DEV
+      ? `/holidayinfo-proxy/xml_export.php?dc=${HOLIDAYINFO_DC}&localias=kohutka`
+      : API_URL;
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/xml, text/xml, */*',
       },
-      mode: 'cors',
     });
 
     if (!response.ok) {
@@ -87,10 +115,6 @@ export async function fetchHolidayInfoXML(): Promise<string> {
     throw error;
   }
 }
-
-// Download kód - v produkci je v environment variables, v dev módu použijeme hardcoded
-const HOLIDAYINFO_DC = import.meta.env.VITE_HOLIDAYINFO_DC || 'c9ixxlejab5d4mrr';
-const IS_DEV = import.meta.env.DEV;
 
 /**
  * Helper funkce pro vytvoření URL přes proxy (produkce) nebo přímo (development)
@@ -279,40 +303,6 @@ export function parseCameras(xmlDoc: Document): Camera[] {
       last_image: {
         url: 'https://webcams.i2net.cz/obr/kohutka-02.jpg',
         url_preview: 'https://webcams.i2net.cz/obr/kohutka-02.jpg',
-        temp: '',
-        date: '',
-        time: '',
-      },
-    },
-  });
-
-  cameras.push({
-    id: 'kohutka-p5',
-    name: 'Kohútka',
-    description: 'Náhled na areál Kohútka',
-    location: 'Kohútka',
-    source: 'archive',
-    media: {
-      last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P5_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P5_nahled.jpg',
-        temp: '',
-        date: '',
-        time: '',
-      },
-    },
-  });
-
-  cameras.push({
-    id: 'kohutka-p1',
-    name: 'Malá Kohútka',
-    description: 'Náhled na areál Malá Kohútka',
-    location: 'Malá Kohútka',
-    source: 'archive',
-    media: {
-      last_image: {
-        url: 'http://data.kohutka.ski/snimky/kamera_P1_snimek.jpg',
-        url_preview: 'http://data.kohutka.ski/snimky/kamera_P1_nahled.jpg',
         temp: '',
         date: '',
         time: '',
