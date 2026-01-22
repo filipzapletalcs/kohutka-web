@@ -182,8 +182,21 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
-  console.log('[Generate Caption] OPENAI_API_KEY check:', apiKey ? `SET (${apiKey.substring(0, 8)}...)` : 'NOT SET');
-  console.log('[Generate Caption] All env keys:', Object.keys(process.env).filter(k => k.includes('OPENAI') || k.includes('VITE') || k.includes('SUPABASE')).join(', '));
+
+  // === Extended DEBUG for OPENAI_API_KEY ===
+  console.log('[Generate Caption] === API KEY DEBUG ===');
+  console.log('[Generate Caption] OPENAI_API_KEY:', apiKey
+    ? `SET (length: ${apiKey.length}, first 10: "${apiKey.substring(0, 10)}", last 4: "${apiKey.substring(apiKey.length - 4)}")`
+    : 'NOT SET');
+  if (apiKey) {
+    console.log('[Generate Caption] Key has spaces:', apiKey.includes(' '));
+    console.log('[Generate Caption] Key has newlines:', apiKey.includes('\n') || apiKey.includes('\r'));
+    console.log('[Generate Caption] Key starts with sk-:', apiKey.startsWith('sk-'));
+  }
+  console.log('[Generate Caption] All OPENAI vars:', Object.keys(process.env).filter(k => k.includes('OPENAI')));
+  console.log('[Generate Caption] All KEY vars:', Object.keys(process.env).filter(k => k.includes('KEY')));
+  console.log('[Generate Caption] Total env vars:', Object.keys(process.env).length);
+  console.log('[Generate Caption] ===================');
 
   if (!apiKey) {
     return res.status(500).json({

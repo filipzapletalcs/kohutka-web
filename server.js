@@ -9,6 +9,17 @@ import { createClient } from '@supabase/supabase-js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// === DEBUG: Environment check at server startup ===
+console.log('='.repeat(60));
+console.log('[ENV DEBUG] Server starting - checking environment variables');
+console.log('[ENV DEBUG] OPENAI_API_KEY:', process.env.OPENAI_API_KEY
+  ? `SET (length: ${process.env.OPENAI_API_KEY.length}, starts: ${process.env.OPENAI_API_KEY.substring(0,10)}...)`
+  : 'NOT SET');
+console.log('[ENV DEBUG] All OPENAI vars:', Object.keys(process.env).filter(k => k.includes('OPENAI')));
+console.log('[ENV DEBUG] All KEY vars:', Object.keys(process.env).filter(k => k.includes('KEY')));
+console.log('[ENV DEBUG] Total env vars count:', Object.keys(process.env).length);
+console.log('='.repeat(60));
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
