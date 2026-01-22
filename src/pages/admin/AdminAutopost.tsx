@@ -535,16 +535,23 @@ export default function AdminAutopost() {
   // AI caption generation
   const generateAiCaption = async () => {
     setIsGeneratingAi(true);
+    console.log('[AI Caption] Starting generation...');
     try {
+      console.log('[AI Caption] Fetching /api/generate-caption...');
       const response = await fetch('/api/generate-caption', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
 
+      console.log('[AI Caption] Response status:', response.status);
+      console.log('[AI Caption] Response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('[AI Caption] Response data:', data);
 
       if (!response.ok || !data.success) {
+        console.error('[AI Caption] Error in response:', data);
         throw new Error(data.error || 'Nepodařilo se vygenerovat text');
       }
 
@@ -553,8 +560,10 @@ export default function AdminAutopost() {
         custom_caption: data.caption,
       }));
 
+      console.log('[AI Caption] Success! Caption:', data.caption?.substring(0, 50) + '...');
       toast.success('Text vygenerován!');
     } catch (error) {
+      console.error('[AI Caption] Catch error:', error);
       toast.error('Chyba: ' + (error as Error).message);
     } finally {
       setIsGeneratingAi(false);
