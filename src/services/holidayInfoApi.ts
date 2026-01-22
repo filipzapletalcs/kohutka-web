@@ -1,14 +1,12 @@
 import { OperationStatus, LiftStatus, SlopeStatus, Camera, Slope, Lift } from '@/types/holidayInfo';
 import { fetchHolidayInfoCache, updateHolidayInfoCache } from '@/lib/supabase';
 
-const API_URL = 'https://exports.holidayinfo.cz/xml_export.php?dc=c9ixxlejab5d4mrr&localias=kohutka';
-
 // Download kód pro HolidayInfo API
 const HOLIDAYINFO_DC = import.meta.env.VITE_HOLIDAYINFO_DC || 'c9ixxlejab5d4mrr';
 const IS_DEV = import.meta.env.DEV;
 
-// Fallback camera data if API fails - uses HolidayInfo direct image URLs
-const FALLBACK_CAMERAS = [
+// Fallback camera data if API fails - uses proxy URLs
+const FALLBACK_CAMERAS: Camera[] = [
   {
     id: '2122',
     name: 'Chata Kohútka',
@@ -18,8 +16,8 @@ const FALLBACK_CAMERAS = [
     hasPanorama: true,
     media: {
       last_image: {
-        url: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=2122`,
-        url_preview: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=2122`,
+        url: '/api/holidayinfo-image?camid=2122',
+        url_preview: '/api/holidayinfo-image?camid=2122',
         temp: '',
         date: '',
         time: '',
@@ -34,8 +32,8 @@ const FALLBACK_CAMERAS = [
     source: 'holidayinfo',
     media: {
       last_image: {
-        url: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3122`,
-        url_preview: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3122`,
+        url: '/api/holidayinfo-image?camid=3122',
+        url_preview: '/api/holidayinfo-image?camid=3122',
         temp: '',
         date: '',
         time: '',
@@ -50,8 +48,8 @@ const FALLBACK_CAMERAS = [
     source: 'holidayinfo',
     media: {
       last_image: {
-        url: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3121`,
-        url_preview: `https://exports.holidayinfo.cz/loc_cams_lastimage.php?dc=${HOLIDAYINFO_DC}&camid=3121`,
+        url: '/api/holidayinfo-image?camid=3121',
+        url_preview: '/api/holidayinfo-image?camid=3121',
         temp: '',
         date: '',
         time: '',
@@ -87,15 +85,15 @@ function getXMLNumber(element: Element | null, tagName: string): number {
 
 /**
  * Fetch raw XML data from Holiday Info API
- * V development módu používáme Vite proxy pro obejití CORS problému
+ * V development módu používáme Vite proxy, v produkci server-side proxy
  * (HolidayInfo server vrací duplikovaný Access-Control-Allow-Origin header)
  */
 export async function fetchHolidayInfoXML(): Promise<string> {
   try {
-    // V development módu použijeme Vite proxy pro obejití CORS
+    // V development módu použijeme Vite proxy, v produkci server-side proxy
     const url = IS_DEV
       ? `/holidayinfo-proxy/xml_export.php?dc=${HOLIDAYINFO_DC}&localias=kohutka`
-      : API_URL;
+      : '/api/holidayinfo-xml?localias=kohutka';
 
     const response = await fetch(url, {
       method: 'GET',
@@ -199,7 +197,6 @@ export function parseCameras(xmlDoc: Document): Camera[] {
     if (lastImage) {
       const datetime = lastImage.getAttribute('datetime') || '';
       const temp = getXMLText(lastImage, 'temp');
-      const link = getXMLText(lastImage, 'link');
 
       // Format datetime to readable format
       let time = '';
@@ -267,6 +264,9 @@ export function parseCameras(xmlDoc: Document): Camera[] {
         datetime,
       } : undefined);
 
+      // V produkci používáme proxy pro obrázky (obchází CORS/mixed content)
+      const imageUrl = buildProxyImageUrl(id);
+
       cameras.push({
         id,
         name,
@@ -277,9 +277,8 @@ export function parseCameras(xmlDoc: Document): Camera[] {
         hasPanorama: !!finalPanoramaData,
         media: {
           last_image: {
-            // Používáme přímý odkaz z XML API
-            url: link,
-            url_preview: link,
+            url: imageUrl,
+            url_preview: imageUrl,
             temp,
             date,
             time,
