@@ -26,7 +26,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Loader2, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus, Pencil, Trash2, X, RefreshCw, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
@@ -213,6 +213,9 @@ export default function AdminAutopost() {
   const templateTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isTemplatePlaceholderOpen, setIsTemplatePlaceholderOpen] = useState(false);
 
+  // AI caption generation state
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+
   // Get active cameras merged with holiday info data
   // Filter same as AdminCameras: exclude archive (except kohutka-p0), check is_active
   const activeCameras = (holidayData?.cameras || [])
@@ -283,8 +286,9 @@ export default function AdminAutopost() {
 
   // Automatická aktualizace textu při změně šablony
   // Nyní vkládáme template STRING s placeholdery, ne vygenerovaný text
+  // Pro AI šablonu neděláme nic - uživatel musí kliknout na tlačítko
   useEffect(() => {
-    if (formState.selected_template && formState.selected_template !== 'custom' && templates.length > 0) {
+    if (formState.selected_template && formState.selected_template !== 'custom' && formState.selected_template !== 'ai' && templates.length > 0) {
       const template = templates.find(t => t.id === formState.selected_template);
       if (template) {
         let content = template.content;
@@ -526,6 +530,35 @@ export default function AdminAutopost() {
       const newPosition = start + placeholder.length;
       textarea.setSelectionRange(newPosition, newPosition);
     }, 0);
+  };
+
+  // AI caption generation
+  const generateAiCaption = async () => {
+    setIsGeneratingAi(true);
+    try {
+      const response = await fetch('/api/generate-caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Nepodařilo se vygenerovat text');
+      }
+
+      setFormState((prev) => ({
+        ...prev,
+        custom_caption: data.caption,
+      }));
+
+      toast.success('Text vygenerován!');
+    } catch (error) {
+      toast.error('Chyba: ' + (error as Error).message);
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
 
   // Preview data - use manual if enabled, otherwise API
@@ -876,6 +909,13 @@ export default function AdminAutopost() {
                           </span>
                         </SelectItem>
                       ))}
+                      <SelectItem value="ai">
+                        <span className="flex items-center gap-2">
+                          <span>🤖</span>
+                          <span>Automatický text (AI)</span>
+                          <span className="text-xs text-muted-foreground">- generuje OpenAI</span>
+                        </span>
+                      </SelectItem>
                       <SelectItem value="custom">
                         <span className="flex items-center gap-2">
                           <span>✏️</span>
@@ -885,7 +925,7 @@ export default function AdminAutopost() {
                     </SelectContent>
                   </Select>
                   {/* Edit/Delete buttons for selected template */}
-                  {formState.selected_template && formState.selected_template !== 'custom' && (
+                  {formState.selected_template && formState.selected_template !== 'custom' && formState.selected_template !== 'ai' && (
                     <div className="flex gap-1">
                       <Button
                         variant="outline"
@@ -915,6 +955,48 @@ export default function AdminAutopost() {
                   )}
                 </div>
               </div>
+
+              {/* AI Generation UI */}
+              {formState.selected_template === 'ai' && (
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg space-y-3">
+                  <div className="flex items-center gap-2 text-purple-700">
+                    <Sparkles className="w-5 h-5" />
+                    <span className="font-medium">Automatický text (AI)</span>
+                  </div>
+                  <p className="text-sm text-purple-600">
+                    AI vygeneruje kreativní text na základě aktuálních dat z areálu - počasí, sníh, sjezdovky.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={generateAiCaption}
+                      disabled={isGeneratingAi}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700"
+                    >
+                      {isGeneratingAi ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      {formState.custom_caption && formState.custom_caption !== generateCaption()
+                        ? 'Vygenerovat znovu'
+                        : 'Vygenerovat text'}
+                    </Button>
+                    {formState.custom_caption && formState.custom_caption !== generateCaption() && (
+                      <Button
+                        onClick={generateAiCaption}
+                        disabled={isGeneratingAi}
+                        variant="outline"
+                        className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${isGeneratingAi ? 'animate-spin' : ''}`} />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-purple-500">
+                    Po vygenerování můžete text upravit v poli níže.
+                  </p>
+                </div>
+              )}
 
               {/* Warning: text zmiňuje kameru ale není nastavená */}
               {(formState.custom_caption.includes('📸') || formState.custom_caption.includes('{kamera}')) &&
