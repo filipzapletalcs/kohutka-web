@@ -86,10 +86,15 @@ export default function AdminPricing() {
   const [deleteDiscountItem, setDeleteDiscountItem] = useState<DiscountItem | null>(null);
 
   // Queries
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const { data: allCategories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ['pricing-categories'],
     queryFn: fetchPricingCategories,
   });
+
+  // Filter out 'informace' and 'slevy' categories - they have their own main tabs
+  const categories = allCategories.filter(
+    (cat) => cat.slug !== 'informace' && cat.slug !== 'slevy'
+  );
 
   const { data: allPricingItems = [], isLoading: pricingLoading } = useQuery({
     queryKey: ['pricing-items'],
