@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, ArrowRight, Settings, Database, Camera, Gauge, Cable, Share2, Loader2 } from 'lucide-react';
+import { DollarSign, ArrowRight, Camera, Gauge, Cable, Share2, Loader2 } from 'lucide-react';
 import {
   fetchAllPricingItems,
   fetchCameraSettings,
@@ -192,16 +192,28 @@ export default function AdminDashboard() {
                 </div>
                 <CardTitle className="text-lg">Auto-posting</CardTitle>
               </div>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 {autopostLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                 ) : (
-                  <Badge
-                    variant={autopostSettings?.enabled ? "default" : "secondary"}
-                    className={autopostSettings?.enabled ? "bg-green-500" : ""}
-                  >
-                    {autopostSettings?.enabled ? 'Aktivní' : 'Vypnutý'}
-                  </Badge>
+                  <>
+                    <Badge
+                      variant={autopostSettings?.enabled ? "default" : "secondary"}
+                      className={autopostSettings?.enabled ? "bg-green-500" : ""}
+                    >
+                      {autopostSettings?.enabled ? 'Aktivní' : 'Vypnutý'}
+                    </Badge>
+                    {autopostSettings?.enabled && autopostSettings?.schedule_type !== 'disabled' && (
+                      <span className="text-sm text-gray-600">
+                        {autopostSettings.schedule_type === 'daily' && (
+                          <>v {autopostSettings.morning_time}</>
+                        )}
+                        {autopostSettings.schedule_type === 'twice_daily' && (
+                          <>{autopostSettings.morning_time} a {autopostSettings.afternoon_time}</>
+                        )}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </CardHeader>
@@ -218,36 +230,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Info cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Database className="w-5 h-5 text-blue-500" />
-              <CardTitle className="text-base">Databáze</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              Data jsou ukládána v Supabase databázi. Změny se projeví okamžitě na webu.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-gray-500" />
-              <CardTitle className="text-base">Nápověda</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              Pro úpravu ceníku klikněte na "Správa ceníku" výše. Můžete přidávat, upravovat a mazat položky.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
