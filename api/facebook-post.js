@@ -254,7 +254,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+  const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || process.env.VITE_FACEBOOK_PAGE_ACCESS_TOKEN;
   const pageId = process.env.VITE_FACEBOOK_PAGE_ID || '385566021470850';
 
   if (!accessToken) {
@@ -334,8 +334,13 @@ export default async function handler(req, res) {
       // Use provided cameraImageUrl if available, otherwise fall back to holidayinfo-image API
       let fetchUrl;
       if (cameraImageUrl) {
-        // Direct URL provided - use it directly
-        fetchUrl = cameraImageUrl;
+        // Pokud je URL relativní, přidat base URL
+        if (cameraImageUrl.startsWith('/')) {
+          const baseUrl = process.env.SITE_URL || `http://localhost:${PORT}`;
+          fetchUrl = `${baseUrl}${cameraImageUrl}`;
+        } else {
+          fetchUrl = cameraImageUrl;
+        }
       } else {
         // Fall back to holidayinfo-image API (only works for HolidayInfo cameras)
         fetchUrl = `http://localhost:${PORT}/api/holidayinfo-image?camid=${cameraId}`;

@@ -26,6 +26,13 @@ const supabaseKey =
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
+// Czech day names
+const DAY_NAMES = ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'];
+const MONTH_NAMES = [
+  'ledna', 'února', 'března', 'dubna', 'května', 'června',
+  'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'
+];
+
 /**
  * Fetch holiday info data from cache
  */
@@ -53,18 +60,10 @@ async function fetchHolidayInfoFromCache() {
  * Build context string from holiday data for AI prompt
  */
 function buildDataContext(holidayInfo) {
-  // Use Prague timezone for correct Czech date
   const now = new Date();
-  const pragueFormatter = new Intl.DateTimeFormat('cs-CZ', {
-    timeZone: 'Europe/Prague',
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-  const parts = pragueFormatter.formatToParts(now);
-  const dayName = parts.find(p => p.type === 'weekday')?.value || '';
-  const day = parts.find(p => p.type === 'day')?.value || '';
-  const month = parts.find(p => p.type === 'month')?.value || '';
+  const dayName = DAY_NAMES[now.getDay()];
+  const day = now.getDate();
+  const month = MONTH_NAMES[now.getMonth()];
 
   const lines = [
     `Datum: ${dayName} ${day}. ${month}`,
@@ -117,17 +116,15 @@ async function generateWithOpenAI(dataContext, apiKey) {
 Tvým úkolem je napsat krátký, lákavý příspěvek na Facebook/Instagram.
 
 PRAVIDLA:
-- Piš česky, přátelsky a věcně; buď pozitivní, ale respektuj reálné podmínky
+- Piš česky, přátelsky a pozitivně
 - Délka 150-300 znaků (ideální pro sociální sítě)
 - Začni dnem a datem přirozeně v textu
 - Zahrň klíčové informace (počasí, sníh, sjezdovky)
-- Nepřekrášluj špatné podmínky; pokud je mlha, vítr, déšť nebo málo sněhu, popiš to otevřeně
-- Výrazy jako „ideální podmínky“ používej jen když jsou podle vstupních dat opravdu velmi dobré
-- Motivuj lidi přijet lyžovat nebo využít jiné dostupné aktivity v areálu
+- Motivuj lidi přijet lyžovat
 - Použij 1-3 relevantní emoji
-- NEPŘIDÁVEJ hashtags, ty se přidají automaticky
+- NEPŘIDÁVEJ hashtags - ty se přidají automaticky
 - NEPŘIDÁVEJ URL odkazy
-- Buď originální, každý text by měl být jiný`;
+- Buď originální - každý text by měl být jiný`;
 
   const userPrompt = `Napiš příspěvek na sociální sítě pro SKI CENTRUM KOHÚTKA na základě těchto aktuálních dat:
 
@@ -185,21 +182,6 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
-
-  // === Extended DEBUG for OPENAI_API_KEY ===
-  console.log('[Generate Caption] === API KEY DEBUG ===');
-  console.log('[Generate Caption] OPENAI_API_KEY:', apiKey
-    ? `SET (length: ${apiKey.length}, first 10: "${apiKey.substring(0, 10)}", last 4: "${apiKey.substring(apiKey.length - 4)}")`
-    : 'NOT SET');
-  if (apiKey) {
-    console.log('[Generate Caption] Key has spaces:', apiKey.includes(' '));
-    console.log('[Generate Caption] Key has newlines:', apiKey.includes('\n') || apiKey.includes('\r'));
-    console.log('[Generate Caption] Key starts with sk-:', apiKey.startsWith('sk-'));
-  }
-  console.log('[Generate Caption] All OPENAI vars:', Object.keys(process.env).filter(k => k.includes('OPENAI')));
-  console.log('[Generate Caption] All KEY vars:', Object.keys(process.env).filter(k => k.includes('KEY')));
-  console.log('[Generate Caption] Total env vars:', Object.keys(process.env).length);
-  console.log('[Generate Caption] ===================');
 
   if (!apiKey) {
     return res.status(500).json({
