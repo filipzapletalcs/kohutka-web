@@ -292,22 +292,22 @@ const LEGACY_PREFIXES = [
         return;
       }
 
-      const { morning_time, schedule_type, custom_caption, hashtags, camera_id, camera_image_url } = settings;
+      const { morning_time, caption_mode } = settings;
 
       // Parse times (format: "HH:MM")
       const [morningHour, morningMin] = morning_time.split(':').map(Number);
 
-      // Morning post
+      // Morning post - předáváme celý settings objekt
       const morningCron = `${morningMin} ${morningHour} * * *`;
       const morningJob = cron.schedule(
         morningCron,
         () => {
-          executeAutopost(custom_caption, hashtags, camera_id, camera_image_url);
+          executeAutopost(settings);
         },
         { timezone: 'Europe/Prague' }
       );
       scheduledJobs.push(morningJob);
-      console.log(`[Autopost] Scheduled morning post at ${morning_time} (cron: ${morningCron})${camera_id ? `, camera: ${camera_id}` : ''}`);
+      console.log(`[Autopost] Scheduled morning post at ${morning_time} (cron: ${morningCron}), mode: ${caption_mode || 'custom'}${settings.camera_id ? `, camera: ${settings.camera_id}` : ''}`);
 
       // Note: twice_daily option has been removed
     } catch (error) {
@@ -315,13 +315,78 @@ const LEGACY_PREFIXES = [
     }
   }
 
-  async function executeAutopost(caption, hashtags, cameraId, cameraImageUrl) {
-    console.log(`[Autopost] Executing at ${new Date().toISOString()}${cameraId ? `, camera: ${cameraId}` : ''}`);
+  async function executeAutopost(settings) {
+    const {
+      custom_caption,
+      hashtags,
+      camera_id: cameraId,
+      camera_image_url: cameraImageUrl,
+      image_type: imageType,
+      caption_mode,
+      selected_template_id,
+    } = settings;
+
+    console.log(`[Autopost] Executing at ${new Date().toISOString()}, mode: ${caption_mode || 'custom'}${cameraId ? `, camera: ${cameraId}` : ''}, imageType: ${imageType || 'both'}`);
+
+    let caption = custom_caption;
+
     try {
+      // AI mode - vždy generovat nový popisek
+      if (caption_mode === 'ai') {
+        console.log('[Autopost] Generating AI caption...');
+        try {
+          const aiResponse = await fetch(`http://localhost:${PORT}/api/generate-caption`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          });
+          const aiResult = await aiResponse.json();
+          if (aiResult.success && aiResult.caption) {
+            caption = aiResult.caption;
+            console.log('[Autopost] AI caption generated:', caption.substring(0, 50) + '...');
+          } else {
+            console.error('[Autopost] AI generation failed:', aiResult.error || 'No caption returned');
+            console.log('[Autopost] Using fallback custom_caption');
+          }
+        } catch (aiError) {
+          console.error('[Autopost] AI generation error:', aiError.message);
+          console.log('[Autopost] Using fallback custom_caption');
+        }
+      }
+
+      // Template mode - načíst šablonu z DB
+      if (caption_mode === 'template' && selected_template_id) {
+        console.log('[Autopost] Loading template:', selected_template_id);
+        try {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          const { data: template, error } = await supabase
+            .from('autopost_templates')
+            .select('content')
+            .eq('id', selected_template_id)
+            .single();
+
+          if (template && template.content) {
+            caption = template.content;
+            console.log('[Autopost] Template loaded, content:', caption.substring(0, 50) + '...');
+          } else if (error) {
+            console.error('[Autopost] Template load error:', error.message);
+          }
+        } catch (templateError) {
+          console.error('[Autopost] Template fetch error:', templateError.message);
+        }
+      }
+
+      // Odeslat příspěvek
       const response = await fetch(`http://localhost:${PORT}/api/facebook-post`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ caption, hashtags, cameraId, cameraImageUrl }),
+        body: JSON.stringify({
+          caption,
+          hashtags,
+          cameraId,
+          cameraImageUrl,
+          imageType,
+        }),
       });
       const result = await response.json();
       if (result.success) {

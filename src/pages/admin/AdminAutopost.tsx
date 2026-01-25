@@ -12,6 +12,7 @@ import {
   type AutopostSettings,
   type AutopostScheduleType,
   type AutopostImageType,
+  type AutopostCaptionMode,
   type AutopostTemplate,
 } from '@/lib/supabase';
 import { fetchHolidayInfoData } from '@/services/holidayInfoApi';
@@ -247,6 +248,16 @@ export default function AdminAutopost() {
 
   useEffect(() => {
     if (settings) {
+      // Převést caption_mode a selected_template_id na selected_template pro UI
+      let selected_template: TemplateId = 'custom';
+      if (settings.caption_mode === 'ai') {
+        selected_template = 'ai';
+      } else if (settings.caption_mode === 'template' && settings.selected_template_id) {
+        selected_template = settings.selected_template_id;
+      } else if (settings.caption_mode === 'custom') {
+        selected_template = 'custom';
+      }
+
       setFormState({
         enabled: settings.enabled,
         schedule_type: settings.schedule_type,
@@ -256,8 +267,13 @@ export default function AdminAutopost() {
         hashtags: settings.hashtags,
         camera_id: settings.camera_id,
         image_type: settings.image_type || 'both',
-        selected_template: 'custom' as TemplateId, // Start with custom, will be updated when templates load
+        selected_template,
       });
+
+      // Označit, že jsme načetli z DB (ne defaultní hodnota)
+      if (settings.caption_mode) {
+        hasInitializedTemplate.current = true;
+      }
     }
   }, [settings]);
 
@@ -328,7 +344,21 @@ export default function AdminAutopost() {
       : null;
     const camera_image_url = selectedCamera?.media?.last_image?.url || null;
 
-    // Neukládat selected_template - to je pouze UI stav, ne DB sloupec
+    // Převést selected_template na caption_mode a selected_template_id
+    let caption_mode: AutopostCaptionMode = 'custom';
+    let selected_template_id: string | null = null;
+
+    if (formState.selected_template === 'ai') {
+      caption_mode = 'ai';
+    } else if (formState.selected_template === 'custom') {
+      caption_mode = 'custom';
+    } else if (formState.selected_template) {
+      // Je to UUID šablony
+      caption_mode = 'template';
+      selected_template_id = formState.selected_template;
+    }
+
+    // Odstranit selected_template z ukládaných dat (to je UI stav)
     const { selected_template, ...settingsToSave } = formState;
 
     // Auto-enable based on schedule type
@@ -338,6 +368,8 @@ export default function AdminAutopost() {
       ...settingsToSave,
       enabled,
       camera_image_url,
+      caption_mode,
+      selected_template_id,
     });
   };
 

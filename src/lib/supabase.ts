@@ -408,6 +408,7 @@ export async function updateHolidayInfoCache(
 // Autopost Settings
 export type AutopostScheduleType = 'disabled' | 'daily' | 'twice_daily';
 export type AutopostImageType = 'widget_only' | 'camera_only' | 'both' | 'none';
+export type AutopostCaptionMode = 'template' | 'ai' | 'custom';
 
 export interface AutopostSettings {
   id: string;
@@ -420,6 +421,8 @@ export interface AutopostSettings {
   camera_id: string | null;
   camera_image_url: string | null;
   image_type: AutopostImageType;
+  caption_mode: AutopostCaptionMode;
+  selected_template_id: string | null;
   created_at: string;
   updated_at: string;
 }
