@@ -61,76 +61,99 @@ async function fetchHolidayInfoFromCache() {
  */
 function buildDataContext(holidayInfo) {
   const now = new Date();
-  const dayName = DAY_NAMES[now.getDay()];
-  const day = now.getDate();
-  const month = MONTH_NAMES[now.getMonth()];
+  // Prague timezone
+  const pragueTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Prague' }));
+  const hour = pragueTime.getHours();
+
+  const dayName = DAY_NAMES[pragueTime.getDay()];
+  const day = pragueTime.getDate();
+  const month = MONTH_NAMES[pragueTime.getMonth()];
+
+  // Denní doba pro pozdrav
+  let denniDoba;
+  if (hour >= 5 && hour < 12) denniDoba = 'ráno';
+  else if (hour >= 12 && hour < 18) denniDoba = 'odpoledne';
+  else denniDoba = 'večer';
+
+  // Parse numeric values
+  const snowHeightNum = parseInt(holidayInfo?.snow_height) || 0;
+  const newSnowNum = parseInt(holidayInfo?.new_snow) || 0;
 
   const lines = [
-    `Datum: ${dayName} ${day}. ${month}`,
-    `Stav areálu: ${holidayInfo?.is_open ? 'OTEVŘENO' : 'ZAVŘENO'}`,
+    `- Datum a čas: ${dayName} ${day}. ${month}, ${denniDoba}`,
+    `- Teplota: ${holidayInfo?.temperature || '?'}°C`,
+    `- Počasí: ${holidayInfo?.weather || 'neznámé'}`,
+    `- Výška sněhu na sjezdovkách: ${snowHeightNum} cm`,
+    `- Nový sníh (za posledních 24h): ${newSnowNum} cm`,
+    `- Počet otevřených vleků: ${holidayInfo?.drag_lift_open_count || 0}`,
+    `- Počet otevřených lanovek: ${holidayInfo?.cable_car_open_count || 0}`,
   ];
 
-  if (holidayInfo?.temperature) {
-    lines.push(`Teplota: ${holidayInfo.temperature}°C`);
-  }
-  if (holidayInfo?.weather) {
-    lines.push(`Počasí: ${holidayInfo.weather}`);
-  }
-  if (holidayInfo?.snow_height) {
-    lines.push(`Výška sněhu: ${holidayInfo.snow_height}`);
-  }
-  if (holidayInfo?.snow_type) {
-    lines.push(`Typ sněhu: ${holidayInfo.snow_type}`);
-  }
-  if (holidayInfo?.new_snow) {
-    lines.push(`Nový sníh: ${holidayInfo.new_snow}`);
-  }
-  if (holidayInfo?.opertime) {
-    lines.push(`Provozní doba: ${holidayInfo.opertime}`);
-  }
-
-  // Lifts info
-  const cableCarOpen = holidayInfo?.cable_car_open_count || 0;
-  const dragLiftOpen = holidayInfo?.drag_lift_open_count || 0;
-  lines.push(`Lanovky v provozu: ${cableCarOpen}`);
-  lines.push(`Vleky v provozu: ${dragLiftOpen}`);
-
-  // Slopes info
-  const slopesOpen = holidayInfo?.slopes_open_count || 0;
-  const slopesTotal = holidayInfo?.slopes_total_count || 9;
-  lines.push(`Sjezdovky: ${slopesOpen}/${slopesTotal} otevřených`);
-
-  // Owner's comment if available
   if (holidayInfo?.text_comment) {
-    lines.push(`Poznámka od provozovatele: "${holidayInfo.text_comment}"`);
+    lines.push(`- Poznámka provozovatele: "${holidayInfo.text_comment}"`);
   }
 
   return lines.join('\n');
 }
 
 /**
- * Generate caption using OpenAI GPT-4o-mini
+ * Generate caption using OpenAI GPT-4o
  */
 async function generateWithOpenAI(dataContext, apiKey) {
-  const systemPrompt = `Jsi kreativní copywriter pro lyžařský areál SKI CENTRUM KOHÚTKA v Beskydech.
-Tvým úkolem je napsat krátký, lákavý příspěvek na Facebook/Instagram.
+  const systemPrompt = `Jsi správce sociálních sítí lyžařského střediska SKI CENTRUM KOHÚTKA. Na základě poskytnutých dat vygeneruj přátelský a motivační Facebook příspěvek v češtině.
 
-PRAVIDLA:
-- Piš česky, přátelsky a pozitivně
-- Délka 150-300 znaků (ideální pro sociální sítě)
-- Začni dnem a datem přirozeně v textu
-- Zahrň klíčové informace (počasí, sníh, sjezdovky)
-- Motivuj lidi přijet lyžovat
-- Použij 1-3 relevantní emoji
-- NEPŘIDÁVEJ hashtags - ty se přidají automaticky
-- NEPŘIDÁVEJ URL odkazy
-- Buď originální - každý text by měl být jiný`;
+## Pravidla hodnocení podmínek
+### Kategorie VÝBORNÉ (použij nadšený tón, emoji ⭐🎿❄️):
+- Nový sníh > 15 cm NEBO
+- Výška sněhu > 80 cm A počasí jasno/polojasno A teplota mezi -10°C a -2°C
 
-  const userPrompt = `Napiš příspěvek na sociální sítě pro SKI CENTRUM KOHÚTKA na základě těchto aktuálních dat:
+### Kategorie VELMI DOBRÉ (použij pozitivní tón, emoji 👍🎿):
+- Nový sníh 5-15 cm NEBO
+- Výška sněhu 50-80 cm A počasí bez deště A teplota mezi -15°C a 0°C
+
+### Kategorie DOBRÉ (použij povzbudivý tón, emoji 🎿):
+- Výška sněhu 30-50 cm A počasí bez deště
+- Teplota mezi -20°C a +3°C
+
+### Kategorie PŘIJATELNÉ (buď upřímný, zmiň omezení):
+- Výška sněhu 20-30 cm NEBO
+- Teplota nad 3°C (upozorni na měkký sníh) NEBO
+- Mlha (upozorni na sníženou viditelnost)
+
+### Kategorie NEPŘÍZNIVÉ (odraď zdvořile, navrhni alternativu):
+- Výška sněhu < 20 cm NEBO
+- Déšť NEBO
+- Teplota pod -20°C NEBO
+- Silný vítr
+
+## Struktura příspěvku
+1. Pozdrav podle denní doby (ráno/odpoledne/večer)
+2. Hlavní informace o podmínkách (1-2 věty)
+3. Klíčová data ve formátu:
+   🌡️ Teplota: X°C
+   ❄️ Sníh: X cm (nový: X cm)
+   🚡 Provoz: X lanovek, X vleků
+4. Motivační výzva nebo doporučení
+- NEPŘIDÁVEJ hashtagy - ty se přidají automaticky z nastavení
+
+## Tón komunikace
+- Přátelský, ale profesionální
+- Upřímný o podmínkách (nezkrášluj špatné počasí)
+- Používej emoji střídmě (max 5-7 na příspěvek)
+- Délka: 150-300 znaků bez hashtagů
+
+## Příklady frází podle počasí
+- Jasno: "Slunce svítí, sjezdovky volají!"
+- Sněžení: "Čerstvý prašan je tu pro vás!"
+- Mlha: "Dnes spíše pro odvážné – viditelnost je omezená."
+- Mráz pod -15°C: "Oblečte se do vrstev, mrzne až praští!"
+- Obleva: "Sníh měkne, ideální pro pohodovou jízdu."`;
+
+  const userPrompt = `Vygeneruj příspěvek pro tyto podmínky:
 
 ${dataContext}
 
-Napiš pouze samotný text příspěvku, nic jiného.`;
+Napiš pouze samotný text příspěvku, bez hashtagů.`;
 
   const response = await fetch(OPENAI_API_URL, {
     method: 'POST',
@@ -139,13 +162,13 @@ Napiš pouze samotný text příspěvku, nic jiného.`;
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       max_tokens: 500,
-      temperature: 0.9, // Higher temperature for more variety
+      temperature: 0.8,
     }),
   });
 
