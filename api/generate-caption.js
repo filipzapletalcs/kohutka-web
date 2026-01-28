@@ -134,6 +134,79 @@ const MONTH_NAMES = [
 ];
 
 /**
+ * Parsuje provozní dobu ve formátu "HH:MM-HH:MM"
+ * @returns {{ openHour: number|null, openMinute: number|null, closeHour: number|null, closeMinute: number|null, raw: string }}
+ */
+function parseOpertime(opertime) {
+  const result = { openHour: null, openMinute: null, closeHour: null, closeMinute: null, raw: opertime || '' };
+  if (!opertime || typeof opertime !== 'string') return result;
+
+  const trimmed = opertime.trim();
+  if (!trimmed || trimmed === '00:00-00:00') return result;
+
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+  if (!match) return result;
+
+  result.openHour = parseInt(match[1], 10);
+  result.openMinute = parseInt(match[2], 10);
+  result.closeHour = parseInt(match[3], 10);
+  result.closeMinute = parseInt(match[4], 10);
+  return result;
+}
+
+/**
+ * Určí provozní stav areálu na základě aktuální hodiny, provozní doby a dat o večerním lyžování.
+ * nightskiing_code !== 1 = večerní lyžování aktivní (konvence z HolidayInfo API)
+ */
+function determineOperationalStatus(hour, opertime, slopesDetailed, liftsDetailed) {
+  const parsed = parseOpertime(opertime);
+
+  // Sjezdovky/vleky s aktivním večerním lyžováním (otevřené + nightskiing_code !== 1)
+  const slopesWithNightSkiing = (slopesDetailed || []).filter(s => s.nightskiing_code !== 1 && s.status_code === 2);
+  const liftsWithNightSkiing = (liftsDetailed || []).filter(l => l.nightskiing_code !== 1 && l.status_code === 1);
+  const hasNightSkiing = slopesWithNightSkiing.length > 0 || liftsWithNightSkiing.length > 0;
+
+  if (parsed.closeHour === null) {
+    return { status: 'unknown', statusText: 'Provozní doba neznámá', hasNightSkiing, slopesWithNightSkiing, liftsWithNightSkiing };
+  }
+
+  const isBeforeOpen = hour < parsed.openHour;
+  const isAfterClose = hour >= parsed.closeHour;
+
+  if (!isBeforeOpen && !isAfterClose) {
+    // Rozlišit: běžný provoz (do 16:30) vs. prodloužený provoz (do 18:00 = večerní lyžování)
+    const isEveningHours = hour >= 16 && parsed.closeHour > 16 && hasNightSkiing;
+    if (isEveningHours) {
+      return {
+        status: 'night_skiing',
+        statusText: `VEČERNÍ LYŽOVÁNÍ probíhá (provoz do ${parsed.closeHour}:${String(parsed.closeMinute).padStart(2, '0')})`,
+        hasNightSkiing: true, slopesWithNightSkiing, liftsWithNightSkiing,
+      };
+    }
+    return {
+      status: 'open',
+      statusText: `Areál je OTEVŘEN (provoz ${opertime})`,
+      hasNightSkiing, slopesWithNightSkiing, liftsWithNightSkiing,
+    };
+  }
+
+  if (isAfterClose) {
+    return {
+      status: 'closed',
+      statusText: `Areál je ZAVŘEN – provoz skončil v ${parsed.closeHour}:${String(parsed.closeMinute).padStart(2, '0')}. Večerní lyžování NEPROBÍHÁ.`,
+      hasNightSkiing: false, slopesWithNightSkiing: [], liftsWithNightSkiing: [],
+    };
+  }
+
+  // Před otevřením
+  return {
+    status: 'before_open',
+    statusText: `Areál ještě neotevřel (provoz od ${parsed.openHour}:${String(parsed.openMinute).padStart(2, '0')})`,
+    hasNightSkiing, slopesWithNightSkiing, liftsWithNightSkiing,
+  };
+}
+
+/**
  * Fetch holiday info data from cache
  */
 async function fetchHolidayInfoFromCache() {
@@ -178,6 +251,9 @@ function analyzeSlopesData(slopesDetailed) {
   // Najít sjezdovku s největším převýšením
   const steepest = openSlopes.reduce((max, s) => s.exceed > (max?.exceed || 0) ? s : max, null);
 
+  // Sjezdovky s večerním lyžováním (nightskiing_code !== 1)
+  const nightSkiingSlopes = slopesDetailed.filter(s => s.nightskiing_code !== 1);
+
   return {
     open: openSlopes,
     closed: closedSlopes,
@@ -185,7 +261,9 @@ function analyzeSlopesData(slopesDetailed) {
     longest,
     steepest,
     openNames: openSlopes.map(s => s.name),
-    closedNames: closedSlopes.map(s => s.name)
+    closedNames: closedSlopes.map(s => s.name),
+    nightSkiingSlopes,
+    nightSkiingSlopeNames: nightSkiingSlopes.map(s => s.name),
   };
 }
 
@@ -201,11 +279,16 @@ function analyzeLiftsData(liftsDetailed) {
   const chairlift = openLifts.find(l => l.type_code === 4); // čtyřsedačka
   const sunkid = openLifts.find(l => l.type_code === 7); // dětský pás
 
+  // Vleky s večerním lyžováním (nightskiing_code !== 1)
+  const nightSkiingLifts = liftsDetailed.filter(l => l.nightskiing_code !== 1);
+
   return {
     open: openLifts,
     chairlift,
     sunkid,
-    openNames: openLifts.map(l => l.name)
+    openNames: openLifts.map(l => l.name),
+    nightSkiingLifts,
+    nightSkiingLiftNames: nightSkiingLifts.map(l => l.name),
   };
 }
 
@@ -293,10 +376,15 @@ function buildDataContext(holidayInfo, testHour = null, testDate = null) {
   const slopesAnalysis = analyzeSlopesData(holidayInfo?.slopes_detailed);
   const liftsAnalysis = analyzeLiftsData(holidayInfo?.lifts_detailed);
 
+  // Určení provozního stavu (čas vs. opertime vs. nightskiing data)
+  const opStatus = determineOperationalStatus(
+    hour, holidayInfo?.opertime, holidayInfo?.slopes_detailed, holidayInfo?.lifts_detailed
+  );
+
   // Základní info
   const lines = [
     `ZÁKLADNÍ ÚDAJE:`,
-    `- Datum a čas: ${dayName} ${day}. ${month}, ${denniDoba}`,
+    `- Datum a čas: ${dayName} ${day}. ${month}, ${denniDoba} (${hour}:00)`,
     `- Provozní doba: ${holidayInfo?.opertime || 'neznámá'}`,
     `- Teplota: ${holidayInfo?.temperature || '?'}°C`,
     `- Počasí: ${holidayInfo?.weather || 'neznámé'}`,
@@ -306,6 +394,25 @@ function buildDataContext(holidayInfo, testHour = null, testDate = null) {
 
   if (newSnowNum > 0) {
     lines.push(`- Nový sníh za 24h: ${newSnowNum} cm`);
+  }
+
+  // PROVOZNÍ STAV — klíčová sekce pro správné rozlišení večerního lyžování
+  lines.push('');
+  lines.push('PROVOZNÍ STAV (DŮLEŽITÉ – řiď se tímto):');
+  lines.push(`- ${opStatus.statusText}`);
+  if (opStatus.status === 'closed') {
+    lines.push('- ZÁKAZ: NEPIŠ o večerním lyžování, nočním lyžování ani o tom, že areál je aktuálně otevřen.');
+    lines.push('- Zaměř se na: shrnutí dnešního dne nebo pozvánku na zítra.');
+  } else if (opStatus.status === 'night_skiing') {
+    lines.push('- Večerní lyžování je potvrzeno z dat areálu.');
+    if (opStatus.slopesWithNightSkiing.length > 0) {
+      lines.push(`- Sjezdovky s večerním provozem: ${opStatus.slopesWithNightSkiing.map(s => s.name).join(', ')}`);
+    }
+    if (opStatus.liftsWithNightSkiing.length > 0) {
+      lines.push(`- Vleky s večerním provozem: ${opStatus.liftsWithNightSkiing.map(l => l.name).join(', ')}`);
+    }
+  } else if (opStatus.status === 'before_open') {
+    lines.push('- Areál ještě neotevřel. Piš o přípravě na dnešní den.');
   }
 
   // Info o sjezdovkách
@@ -326,6 +433,11 @@ function buildDataContext(holidayInfo, testHour = null, testDate = null) {
     if (slopesAnalysis.closedNames.length > 0) {
       lines.push(`- Zavřené: ${slopesAnalysis.closedNames.join(', ')}`);
     }
+    if (slopesAnalysis.nightSkiingSlopeNames.length > 0) {
+      lines.push(`- Večerní lyžování: ${slopesAnalysis.nightSkiingSlopeNames.join(', ')}`);
+    } else {
+      lines.push('- Večerní lyžování: žádné sjezdovky nemají večerní provoz');
+    }
   }
 
   // Info o vlecích
@@ -336,6 +448,9 @@ function buildDataContext(holidayInfo, testHour = null, testDate = null) {
     lines.push(`- V provozu: ${liftsAnalysis.openNames.join(', ')}`);
     if (liftsAnalysis.chairlift) {
       lines.push(`- Čtyřsedačka "${liftsAnalysis.chairlift.name}" jede`);
+    }
+    if (liftsAnalysis.nightSkiingLiftNames.length > 0) {
+      lines.push(`- Večerní provoz: ${liftsAnalysis.nightSkiingLiftNames.join(', ')}`);
     }
   }
 
@@ -392,6 +507,13 @@ STRUKTURA PŘÍSPĚVKU:
    - "Sobotní odpoledne plné sněhu!"
 2. HLAVNÍ SDĚLENÍ: 1-2 věty založené na zajímavých datech
 3. TECHNICKÉ ÚDAJE: Vyber relevantní data (teplota, sníh, vleky...) s emoji 🌡️ ❄️ 🚡
+
+DŮLEŽITÁ PRAVIDLA:
+- VEČERNÍ LYŽOVÁNÍ: Pokud je denní doba "večer", MUSÍŠ zkontrolovat sekci "PROVOZNÍ STAV" v datech.
+  - Pokud je napsáno "ZAVŘEN" nebo "Večerní lyžování NEPROBÍHÁ", NESMÍŠ psát o večerním/nočním lyžování ani naznačovat, že se ještě lyžuje.
+  - O večerním lyžování piš POUZE pokud je v PROVOZNÍM STAVU explicitně potvrzeno.
+  - Pokud je areál zavřený, piš o shrnutí dne, poděkování návštěvníkům nebo pozvánce na zítra.
+- NIKDY nevymýšlej informace, které nejsou v datech. Pokud data neobsahují informaci o večerním lyžování, nepiš o něm.
 
 CO MŮŽE BÝT ZAJÍMAVÉ (vyber si):
 - Poznámka provozovatele (text_comment)
