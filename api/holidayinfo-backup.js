@@ -77,6 +77,20 @@ function parseOperationStatus(xmlDoc) {
   // Typ sněhu
   const snowType = getXMLText(locInfoWinter, 'snowtype_text')?.trim() || '';
 
+  // Nová pole pro variabilitu captionů
+  const textComment = getXMLText(locInfoWinter, 'text_comment')?.trim() || '';
+  const newSnowRaw = getXMLText(locInfoWinter, 'snowheight_new')?.trim() || '';
+  const newSnow = newSnowRaw && newSnowRaw !== '0' ? newSnowRaw : '';
+  const weatherCode = getXMLNumber(locInfoWinter, 'weather_0700_code');
+  const tempMorning = tempDefault; // temp_0700
+  const snowOutsideSlopes = getXMLText(locInfoWinter, 'snowheight_outside_slopes')?.trim() || '';
+
+  // Hodnocení areálu
+  const locevalEl = xmlDoc.getElementsByTagName('loceval')[0];
+  const valuesEl = locevalEl?.getElementsByTagName('values')[0];
+  const ratingAvg = valuesEl?.getAttribute('avg') || '';
+  const ratingCount = valuesEl?.getAttribute('numevals') || '';
+
   const isOpen = operationCode === 3 || operationCode === 4;
 
   return {
@@ -87,6 +101,14 @@ function parseOperationStatus(xmlDoc) {
     weather: weather === '-' ? '' : weather,
     snowHeight,
     snowType,
+    // Nová pole
+    textComment,
+    newSnow,
+    weatherCode,
+    tempMorning,
+    snowOutsideSlopes,
+    ratingAvg: ratingAvg ? parseFloat(ratingAvg) : null,
+    ratingCount: ratingCount ? parseInt(ratingCount) : null,
   };
 }
 
@@ -272,6 +294,15 @@ export default async function handler(req, res) {
       weather: operation.weather,
       snow_height: operation.snowHeight,
       snow_type: operation.snowType,
+      new_snow: operation.newSnow,
+      // Nová pole pro variabilitu captionů
+      text_comment: operation.textComment,
+      weather_code: operation.weatherCode,
+      temp_morning: operation.tempMorning,
+      snow_outside_slopes: operation.snowOutsideSlopes,
+      rating_avg: operation.ratingAvg,
+      rating_count: operation.ratingCount,
+      // Existující pole
       lifts_open_count: lifts.openCount,
       lifts_total_count: lifts.totalCount,
       skipark_open: lifts.skiParkOpen,

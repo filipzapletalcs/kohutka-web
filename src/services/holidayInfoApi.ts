@@ -452,6 +452,15 @@ export function parseOperationStatus(xmlDoc: Document): OperationStatus {
   const newSnow = newSnowRaw && newSnowRaw !== '0' ? `${newSnowRaw} cm` : '';
   const weatherCode = getXMLNumber(locInfoWinter, 'weather_0700_code');
 
+  // Dodatečná pole pro variabilitu captionů
+  const tempMorning = getXMLText(locInfoWinter, 'temp_0700')?.trim() || '';
+  const snowOutsideSlopes = getXMLText(locInfoWinter, 'snowheight_outside_slopes')?.trim() || '';
+
+  // Hodnocení areálu
+  const loceval = xmlDoc.querySelector('loc_info_winter > loceval > values');
+  const ratingAvg = loceval?.getAttribute('avg') || '';
+  const ratingCount = loceval?.getAttribute('numevals') || '';
+
   // Operation codes: 1,2 = closed, 3,4 = open
   const isOpen = operationCode === 3 || operationCode === 4;
 
@@ -472,6 +481,11 @@ export function parseOperationStatus(xmlDoc: Document): OperationStatus {
     textComment,
     newSnow,
     weatherCode,
+    // Dodatečná pole pro variabilitu
+    tempMorning,
+    snowOutsideSlopes,
+    ratingAvg: ratingAvg ? parseFloat(ratingAvg) : undefined,
+    ratingCount: ratingCount ? parseInt(ratingCount) : undefined,
   };
 }
 
@@ -722,6 +736,15 @@ async function saveToCache(data: {
       weather: data.operation.weather,
       snow_height: data.operation.snowHeight,
       snow_type: data.operation.snowType,
+      new_snow: data.operation.newSnow,
+      // Nová pole
+      text_comment: data.operation.textComment,
+      weather_code: data.operation.weatherCode,
+      temp_morning: data.operation.tempMorning,
+      snow_outside_slopes: data.operation.snowOutsideSlopes,
+      rating_avg: data.operation.ratingAvg,
+      rating_count: data.operation.ratingCount,
+      // Existující pole
       lifts_open_count: data.lifts.openCount,
       lifts_total_count: data.lifts.totalCount,
       skipark_open: data.lifts.skiParkOpen,

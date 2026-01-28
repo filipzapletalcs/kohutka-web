@@ -102,11 +102,16 @@ export interface OperationStatus {
   temperature: string;
   weather: string;
   snowHeight: string;
-  snowType: string;
+  snowType: string;           // Typ sněhu (technický/přírodní/firn/mokrý)
   // Pro autoposting šablony
-  textComment: string;      // Poznámka majitele z Holiday Info
-  newSnow: string;          // Nový sníh
-  weatherCode: number;      // Kód počasí pro emoji
+  textComment: string;        // Poznámka majitele z Holiday Info
+  newSnow: string;            // Nový sníh za 24h
+  weatherCode: number;        // Kód počasí pro emoji
+  // Dodatečná pole pro variabilitu captionů
+  tempMorning?: string;       // Ranní teplota (temp_0700)
+  snowOutsideSlopes?: string; // Sníh mimo sjezdovky
+  ratingAvg?: number;         // Průměrné hodnocení areálu
+  ratingCount?: number;       // Počet hodnocení
 }
 
 export interface LiftStatus {

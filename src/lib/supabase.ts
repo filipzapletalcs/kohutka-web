@@ -361,6 +361,15 @@ export interface HolidayInfoCache {
   weather: string | null;
   snow_height: string | null;
   snow_type: string | null;
+  new_snow: string | null;
+  // Nová pole pro variabilitu captionů
+  text_comment: string | null;        // Komentář provozovatele
+  weather_code: number | null;        // Kód počasí
+  temp_morning: string | null;        // Ranní teplota
+  snow_outside_slopes: string | null; // Sníh mimo sjezdovky
+  rating_avg: number | null;          // Průměrné hodnocení
+  rating_count: number | null;        // Počet hodnocení
+  // Existující pole
   lifts_open_count: number;
   lifts_total_count: number;
   skipark_open: boolean;

@@ -204,7 +204,7 @@ const Index = () => {
                   },
                   skipark: {
                     icon: GiSnowboard as typeof Mountain,
-                    autoValue: lifts?.skiParkOpen ? "V provozu" : "mimo provoz",
+                    autoValue: lifts?.skiParkOpen ? "v provozu" : "mimo provoz",
                     autoStatus: lifts?.skiParkOpen ? "open" : "closed",
                   },
                   pocasi: {
