@@ -33,6 +33,7 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
  * Načte posledních N captionů z historie pro kontrolu opakování
  */
 async function getRecentCaptions(supabase, limit = 20) {
+  // Try generated_captions first, fall back to autopost_history
   try {
     const { data, error } = await supabase
       .from('generated_captions')
@@ -40,16 +41,43 @@ async function getRecentCaptions(supabase, limit = 20) {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) {
-      console.error('[Generate Caption] Failed to fetch recent captions:', error.message);
-      return [];
+    if (!error && data && data.length > 0) {
+      return data.map(r => r.caption).filter(Boolean);
     }
 
-    return data?.map(r => r.caption) || [];
+    if (error) {
+      console.warn('[Generate Caption] generated_captions table not available:', error.message);
+    }
   } catch (e) {
-    console.error('[Generate Caption] Error fetching recent captions:', e);
-    return [];
+    console.warn('[Generate Caption] Error reading generated_captions:', e);
   }
+
+  // Fallback: read from autopost_history (published posts)
+  try {
+    const { data, error } = await supabase
+      .from('autopost_history')
+      .select('caption')
+      .not('caption', 'is', null)
+      .eq('status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (!error && data) {
+      const captions = data.map(r => r.caption).filter(c => c && c.trim().length > 0);
+      if (captions.length > 0) {
+        console.log(`[Generate Caption] Loaded ${captions.length} captions from autopost_history (fallback)`);
+        return captions;
+      }
+    }
+
+    if (error) {
+      console.error('[Generate Caption] Failed to fetch from autopost_history:', error.message);
+    }
+  } catch (e) {
+    console.error('[Generate Caption] Error reading autopost_history:', e);
+  }
+
+  return [];
 }
 
 /**
@@ -493,7 +521,18 @@ function buildDataContext(holidayInfo, testHour = null, testDate = null) {
 /**
  * Generate caption using OpenAI GPT-4o
  */
-async function generateWithOpenAI(dataContext, apiKey) {
+async function generateWithOpenAI(dataContext, apiKey, recentCaptions = []) {
+  let avoidSection = '';
+  if (recentCaptions.length > 0) {
+    const captionList = recentCaptions.slice(0, 15).map((c, i) => `${i + 1}. "${c}"`).join('\n');
+    avoidSection = `
+
+PŘEDCHOZÍ PŘÍSPĚVKY (NEOPAKUJ JE – použij jiný úvod, jiné formulace, jinou strukturu):
+${captionList}
+
+Tvůj nový příspěvek MUSÍ být výrazně odlišný. Nepoužívej stejné úvodní fráze, nepoužívej stejnou strukturu věty. Zkus jiný styl, úhel pohledu nebo způsob oslovení čtenáře.`;
+  }
+
   const systemPrompt = `Jsi správce Facebooku lyžařského střediska SKI CENTRUM KOHÚTKA.
 
 TVŮJ ÚKOL:
@@ -528,7 +567,7 @@ STYL:
 - Délka: 150-250 znaků
 - Emoji pouze u technických dat
 - BEZ hashtagů
-- Piš věcně a přátelsky`;
+- Piš věcně a přátelsky${avoidSection}`;
 
   const userPrompt = `Vygeneruj příspěvek pro tyto podmínky:
 
@@ -627,8 +666,8 @@ export default async function handler(req, res) {
     const dataContext = buildDataContext(holidayInfo, validTestHour, validTestDate);
     console.log('[Generate Caption] Data context:', dataContext.substring(0, 100) + '...');
 
-    // 3. Generate raw caption with OpenAI (generátor)
-    const rawCaption = await generateWithOpenAI(dataContext, apiKey);
+    // 3. Generate raw caption with OpenAI (generátor) — pass history to avoid repetition
+    const rawCaption = await generateWithOpenAI(dataContext, apiKey, recentCaptions);
     console.log('[Generate Caption] Raw caption:', rawCaption.substring(0, 50) + '...');
 
     // 4. Proofread caption with history context (korektor)
