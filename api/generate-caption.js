@@ -86,22 +86,15 @@ async function proofreadCaption(caption, recentCaptions, apiKey) {
 TVŮJ ÚKOL:
 1. Oprav gramatické a stylistické chyby
 2. Zkontroluj smysluplnost každé věty
-3. Odstraň/přeformuluj ZAKÁZANÉ FRÁZE:
-   - "užij si/užijte si" → přeformuluj jinak
-   - "těšíme se" → smaž úplně
-   - "zimní radovánky" → "lyžování" nebo "sjezdovky"
-   - "ideální/skvělé podmínky" → konkrétnější popis
-   - "přijďte si" → smaž nebo přeformuluj
-   - "vyrazte na svah" → přeformuluj
-4. DŮLEŽITÉ: Text nesmí být příliš podobný nedávným příspěvkům${historyContext ? ' (viz níže)' : ''}
-   - Pokud je podobný, změň úvodní pozdrav a formulace
+3. DŮLEŽITÉ: Text nesmí být příliš podobný nedávným příspěvkům${historyContext ? ' (viz níže)' : ''}
+   - Pokud je podobný, změň úvodní formulace
    - Zachovej faktická data (teplota, sníh, vleky)
 
 PRAVIDLA:
-- Zachovej délku 100-160 znaků
-- Max 2 emoji (pouze u dat: 🌡️ ❄️ 🚡)
+- Zachovej délku 150-250 znaků
+- Max 3 emoji (🌡️ ❄️ 🚡)
 - Žádné hashtagy
-- Vrať POUZE opravený text, nic jiného${historyContext}`;
+- Vrať POUZE opravený text${historyContext}`;
 
   const response = await fetch(OPENAI_API_URL, {
     method: 'POST',
@@ -270,12 +263,17 @@ function generateDailyTip(slopesAnalysis, liftsAnalysis, holidayInfo) {
 /**
  * Build context string from holiday data for AI prompt
  * Rozšířená verze s detailními daty o sjezdovkách a vlecích
+ * @param {object} holidayInfo - Data z HolidayInfo cache
+ * @param {number} [testHour] - Volitelný parametr pro testování (simuluje hodinu)
+ * @param {string} [testDate] - Volitelný ISO datum pro testování (např. "2025-01-15")
  */
-function buildDataContext(holidayInfo) {
-  const now = new Date();
+function buildDataContext(holidayInfo, testHour = null, testDate = null) {
+  // Použij testDate pokud je zadán, jinak aktuální čas
+  const now = testDate ? new Date(testDate) : new Date();
   // Prague timezone
-  const pragueTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Prague' }));
-  const hour = pragueTime.getHours();
+  const pragueTime = testDate ? now : new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Prague' }));
+  // Použij testHour pokud je zadán (pro testování), jinak reálnou hodinu
+  const hour = testHour !== null ? testHour : pragueTime.getHours();
 
   const dayName = DAY_NAMES[pragueTime.getDay()];
   const day = pragueTime.getDate();
@@ -353,11 +351,6 @@ function buildDataContext(holidayInfo) {
     lines.push(`- Sníh mimo sjezdovky: ${holidayInfo.snow_outside_slopes} cm`);
   }
 
-  // Hodnocení areálu
-  if (holidayInfo?.rating_avg && holidayInfo?.rating_count) {
-    lines.push(`- Hodnocení areálu: ${holidayInfo.rating_avg}/10 (${holidayInfo.rating_count} hodnocení)`);
-  }
-
   // Ranní teplota (pokud se liší od aktuální)
   if (holidayInfo?.temp_morning && holidayInfo?.temperature) {
     const tempMorning = parseFloat(holidayInfo.temp_morning);
@@ -386,40 +379,34 @@ function buildDataContext(holidayInfo) {
  * Generate caption using OpenAI GPT-4o
  */
 async function generateWithOpenAI(dataContext, apiKey) {
-  const systemPrompt = `Jsi správce Facebooku lyžařského střediska SKI CENTRUM KOHÚTKA na Valašsku.
+  const systemPrompt = `Jsi správce Facebooku lyžařského střediska SKI CENTRUM KOHÚTKA.
 
 TVŮJ ÚKOL:
 1. Projdi všechna poskytnutá data
-2. VYBER 1-2 NEJZAJÍMAVĚJŠÍ/NEJLÁKAVĚJŠÍ informace pro dnešní příspěvek
+2. VYBER 1-2 NEJZAJÍMAVĚJŠÍ informace pro dnešní příspěvek
 3. Napiš krátký, autentický příspěvek
 
 STRUKTURA PŘÍSPĚVKU:
-- Kreativní úvod (ne "Dobrý den" nebo "X-ní odpoledne na Kohútce")
-- Hlavní sdělení založené na vybraných datech
-- Technické údaje: 🌡️ X°C ❄️ X cm 🚡 X lanovka, X vleky
-- Volitelně krátká výzva
+1. ÚVOD S DNEM (povinný): Vždy začni dnem a denní dobou, např:
+   - "Úterní ráno na Kohútce!"
+   - "Sobotní odpoledne plné sněhu!"
+2. HLAVNÍ SDĚLENÍ: 1-2 věty založené na zajímavých datech
+3. TECHNICKÉ ÚDAJE: Vyber relevantní data (teplota, sníh, vleky...) s emoji 🌡️ ❄️ 🚡
 
 CO MŮŽE BÝT ZAJÍMAVÉ (vyber si):
-- Poznámka provozovatele (text_comment) - často obsahuje vtipné/unikátní info!
+- Poznámka provozovatele (text_comment)
 - Konkrétní sjezdovka jménem (Velká A, Babská, Malá...)
-- Typ sněhu a jak se lyžuje (technický = drží hranu, přírodní = prašan)
+- Typ sněhu (technický = drží hranu, přírodní = prašan)
 - Čtyřsedačka Velká Kohútka
-- Dětský skipark pro rodiny
+- Dětský skipark
 - Nový sníh (pokud napadl)
 - Změna teploty přes den
-- Hodnocení areálu
-- Nejdelší sjezdovka (Babská 1200m)
-- Nejtěžší sjezdovka (Velká A - černá)
-
-ZAKÁZANÉ FRÁZE:
-"užij si", "užijte si", "těšíme se", "skvěle sjedete", "zimní radovánky", "ideální podmínky", "skvělé podmínky", "přijďte si", "vyrazte na svah"
 
 STYL:
-- Valašský humor OK, ale přirozeně
-- Délka: 120-180 znaků
-- Max 2 emoji (jen u technických dat)
+- Délka: 150-250 znaků
+- Emoji pouze u technických dat
 - BEZ hashtagů
-- Piš jako místní, ne jako marketér`;
+- Piš věcně a přátelsky`;
 
   const userPrompt = `Vygeneruj příspěvek pro tyto podmínky:
 
@@ -487,7 +474,15 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Volitelné testovací parametry (simuluje hodinu a datum)
+    const { testHour, testDate } = req.body || {};
+    const validTestHour = typeof testHour === 'number' && testHour >= 0 && testHour <= 23 ? testHour : null;
+    const validTestDate = typeof testDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(testDate) ? testDate : null;
+
     console.log('[Generate Caption] Starting caption generation with proofreader pipeline...');
+    if (validTestHour !== null || validTestDate !== null) {
+      console.log(`[Generate Caption] Test mode: hour=${validTestHour ?? 'now'}, date=${validTestDate ?? 'today'}`);
+    }
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -506,8 +501,8 @@ export default async function handler(req, res) {
     const recentCaptions = await getRecentCaptions(supabase, 20);
     console.log(`[Generate Caption] Loaded ${recentCaptions.length} recent captions for context`);
 
-    // 2. Build context for AI
-    const dataContext = buildDataContext(holidayInfo);
+    // 2. Build context for AI (s volitelnými testovacími parametry)
+    const dataContext = buildDataContext(holidayInfo, validTestHour, validTestDate);
     console.log('[Generate Caption] Data context:', dataContext.substring(0, 100) + '...');
 
     // 3. Generate raw caption with OpenAI (generátor)
