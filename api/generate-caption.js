@@ -423,11 +423,59 @@ function buildDataContext(holidayInfo, testHour = null, testMinute = null, testD
   const day = pragueTime.getDate();
   const month = MONTH_NAMES[pragueTime.getMonth()];
 
-  // Denní doba pro pozdrav
-  let denniDoba;
-  if (hour >= 5 && hour < 12) denniDoba = 'ráno';
-  else if (hour >= 12 && hour < 18) denniDoba = 'odpoledne';
-  else denniDoba = 'večer';
+  // Denní doba a pozdrav podle tabulky as-greeting-period-skiPeriod-skipas-stav-motivation.xlsx
+  let period, greeting, skiPeriod, state;
+  const m = hour * 60 + minute; // minuty od půlnoci
+
+  if (m < 480) { // 00:00-08:00
+    period = 'rané';
+    greeting = 'Dobré ráno! Přemýšlíte kam dnes vyrazit na lyže?';
+    skiPeriod = 'rozhodování';
+    state = 'rané přípravy';
+  } else if (m < 510) { // 08:00-08:30
+    period = 'přípravné';
+    greeting = 'Dobré ráno, lyžaři!';
+    skiPeriod = 'přípravy';
+    state = 'přípravy';
+  } else if (m < 600) { // 08:30-10:00
+    period = 'ráno';
+    greeting = 'Dobré ráno!';
+    skiPeriod = 'celodenní lyžování';
+    state = 'hlavní provoz';
+  } else if (m < 705) { // 10:00-11:45
+    period = 'dopoledne';
+    greeting = 'Dobré dopoledne!';
+    skiPeriod = 'celodenní lyžování';
+    state = 'hlavní provoz';
+  } else if (m < 735) { // 11:45-12:15
+    period = 'polední';
+    greeting = 'Příjemné poledne!';
+    skiPeriod = 'celodenní lyžování';
+    state = 'hlavní provoz';
+  } else if (m < 960) { // 12:15-16:00
+    period = 'odpolední';
+    greeting = 'Hezké odpoledne!';
+    skiPeriod = 'odpolední lyžování';
+    state = 'hlavní provoz';
+  } else if (m < 1140) { // 16:00-19:00
+    period = 'podvečerní';
+    greeting = 'Dobrý podvečer!';
+    skiPeriod = 'údržba svahu';
+    state = 'údržba svahu';
+  } else if (m < 1260) { // 19:00-21:00
+    period = 'večerní';
+    greeting = 'Dobrý večer!';
+    skiPeriod = 'večerní / ukončeno'; // podmíněné
+    state = 'večerní / ukončeno';
+  } else { // 21:00-24:00
+    period = 'noční';
+    greeting = 'Dobrou noc!';
+    skiPeriod = 'ukončeno';
+    state = 'ukončeno';
+  }
+
+  // Pro zpětnou kompatibilitu
+  const denniDoba = period;
 
   // Parse numeric values
   const snowHeightNum = parseInt(holidayInfo?.snow_height) || 0;
@@ -451,8 +499,12 @@ function buildDataContext(holidayInfo, testHour = null, testMinute = null, testD
   // Základní info
   const lines = [
     `ZÁKLADNÍ ÚDAJE:`,
-    `- Datum a čas: ${dayName} ${day}. ${month}, ${denniDoba} (${hour}:00)`,
-    `- Provozní doba: ${holidayInfo?.opertime || 'neznámá'}`,
+    `- Datum: ${dayName} ${day}. ${month}`,
+    `- Aktuální čas: ${hour}:${String(minute).padStart(2, '0')}`,
+    `- Období dne: ${period} (${greeting})`,
+    `- Stav areálu: ${state}`,
+    `- Lyžařské období: ${skiPeriod}`,
+    `- Provozní doba areálu: ${holidayInfo?.opertime || 'neznámá'}`,
     `- Teplota: ${holidayInfo?.temperature || '?'}°C`,
     `- Počasí: ${holidayInfo?.weather || 'neznámé'}`,
     `- Výška sněhu: ${holidayInfo?.snow_height || snowHeightNum + ' cm'}`,
@@ -463,26 +515,43 @@ function buildDataContext(holidayInfo, testHour = null, testMinute = null, testD
     lines.push(`- Nový sníh za 24h: ${newSnowNum} cm`);
   }
 
-  // PROVOZNÍ STAV — klíčová sekce pro správné rozlišení večerního lyžování
+  // PROVOZNÍ STAV — klíčová sekce podle tabulky
   lines.push('');
-  lines.push('PROVOZNÍ STAV (DŮLEŽITÉ – řiď se tímto):');
-  lines.push(`- ${opStatus.statusText}`);
-  if (opStatus.status === 'closed') {
-    lines.push('- ZÁKAZ: NEPIŠ o večerním lyžování, nočním lyžování ani o tom, že areál je aktuálně otevřen.');
-    lines.push('- Zaměř se na: shrnutí dnešního dne nebo pozvánku na zítra.');
-  } else if (opStatus.status === 'night_skiing') {
-    lines.push('- Večerní lyžování je potvrzeno z dat areálu.');
-    if (opStatus.slopesWithNightSkiing.length > 0) {
-      lines.push(`- Sjezdovky s večerním provozem: ${opStatus.slopesWithNightSkiing.map(s => s.name).join(', ')}`);
+  lines.push('POKYNY PRO PSANÍ (řiď se stavem areálu):');
+
+  // Logika podle state a večerního lyžování
+  if (state === 'rané přípravy' || state === 'přípravy') {
+    lines.push('- Stav: PŘED OTEVŘENÍM - areál se připravuje');
+    lines.push('- Piš o očekáváních na dnešní den, pozvánce na lyžování');
+    lines.push('- Můžeš zmínit přípravu sjezdovek, počasí');
+  } else if (state === 'hlavní provoz') {
+    lines.push('- Stav: HLAVNÍ PROVOZ - areál je otevřený, lidé lyžují');
+    lines.push('- Piš o aktuálních podmínkách, sjezdovkách, počasí');
+    lines.push('- Můžeš zvát další návštěvníky');
+  } else if (state === 'údržba svahu') {
+    lines.push('- ⛔ Stav: ÚDRŽBA SVAHU - denní lyžování skončilo!');
+    lines.push('- ⛔ ZAKÁZÁNO: psát o lyžování jako by probíhalo NYNÍ');
+    lines.push('- ✅ Piš o tom, jak PROBĚHL dnešní den (minulý čas)');
+    lines.push('- ✅ Poděkuj návštěvníkům za dnešek');
+    lines.push('- ✅ Pozvi na zítřek');
+  } else if (state === 'večerní / ukončeno') {
+    // Podmíněné - záleží na tom jestli je večerní lyžování
+    if (opStatus.status === 'night_skiing') {
+      lines.push('- Stav: VEČERNÍ LYŽOVÁNÍ PROBÍHÁ');
+      lines.push('- Můžeš psát o večerním lyžování, atmosféře pod světly');
+      if (opStatus.slopesWithNightSkiing.length > 0) {
+        lines.push(`- Sjezdovky: ${opStatus.slopesWithNightSkiing.map(s => s.name).join(', ')}`);
+      }
+    } else {
+      lines.push('- ⛔ Stav: UKONČENO - večerní lyžování NEPROBÍHÁ!');
+      lines.push('- ⛔ ZAKÁZÁNO: "večerní lyžování", "noční lyžování", "pod světly"');
+      lines.push('- ✅ Piš o tom, jak PROBĚHL dnešní den (minulý čas), poděkování');
     }
-    if (opStatus.liftsWithNightSkiing.length > 0) {
-      lines.push(`- Vleky s večerním provozem: ${opStatus.liftsWithNightSkiing.map(l => l.name).join(', ')}`);
-    }
-  } else if (opStatus.status === 'break') {
-    lines.push('- Přestávka mezi denním a večerním provozem.');
-    lines.push('- Piš o tom, že se areál chystá na večerní lyžování.');
-  } else if (opStatus.status === 'before_open') {
-    lines.push('- Areál ještě neotevřel. Piš o přípravě na dnešní den.');
+  } else if (state === 'ukončeno') {
+    lines.push('- ⛔ Stav: UKONČENO - areál je zavřený, nikdo nelyžuje');
+    lines.push('- ⛔ ZAKÁZÁNO: psát o lyžování jako by probíhalo');
+    lines.push('- ✅ Shrň dnešní den, poděkuj, pozvi na ZÍTRA');
+    lines.push('- ✅ Příklad: "Dnešní den na Kohútce byl parádní! Těšíme se na vás zítra."');
   }
 
   // Info o sjezdovkách
@@ -572,18 +641,17 @@ TVŮJ ÚKOL:
 3. Napiš krátký, autentický příspěvek
 
 STRUKTURA PŘÍSPĚVKU:
-1. ÚVOD S DNEM (povinný): Vždy začni dnem a denní dobou, např:
-   - "Úterní ráno na Kohútce!"
-   - "Sobotní odpoledne plné sněhu!"
+1. ÚVOD (povinný): Začni podle období dne a stavu areálu
 2. HLAVNÍ SDĚLENÍ: 1-2 věty založené na zajímavých datech
 3. TECHNICKÉ ÚDAJE: Vyber relevantní data (teplota, sníh, vleky...) s emoji 🌡️ ❄️ 🚡
 
-KRITICKÁ PRAVIDLA (MUSÍŠ DODRŽET):
-- ⛔ ZAKÁZANÁ SLOVA když je areál ZAVŘEN: "večerní lyžování", "noční lyžování", "večerní provoz", "pod reflektory"
-- Zkontroluj sekci "PROVOZNÍ STAV" - pokud obsahuje "ZAVŘEN", areál je UZAVŘEN a nikdo nelyžuje!
-- Když je ZAVŘEN: piš o tom, jak byl krásný den, poděkuj návštěvníkům, pozvi na zítra
-- O večerním lyžování piš POUZE pokud PROVOZNÍ STAV říká "VEČERNÍ LYŽOVÁNÍ probíhá"
+KRITICKÁ PRAVIDLA (řiď se sekcí "POKYNY PRO PSANÍ"):
+- Zkontroluj "Stav areálu" v datech a dodržuj POKYNY PRO PSANÍ
+- Pokud stav obsahuje "UKONČENO" nebo "ÚDRŽBA": piš v MINULÉM ČASE, jak proběhl DEN
+- O večerním lyžování piš POUZE pokud pokyny říkají "VEČERNÍ LYŽOVÁNÍ PROBÍHÁ"
+- Když je areál zavřený: poděkuj návštěvníkům za dnešek, pozvi na zítra
 - NIKDY nevymýšlej informace, které nejsou v datech
+- ZAKÁZANÉ FRÁZE při stavu UKONČENO/ÚDRŽBA: "večerní lyžování", "noční lyžování", "pod světly", "večer přinesl lyžování"
 
 CO MŮŽE BÝT ZAJÍMAVÉ (vyber si):
 - Poznámka provozovatele (text_comment)
