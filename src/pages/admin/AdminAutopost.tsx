@@ -649,11 +649,13 @@ export default function AdminAutopost() {
                   {formState.image_type === 'none' && <><ImageOff className="w-3 h-3 mr-1" /> Bez obrázku</>}
                 </Badge>
               </div>
+              {/* Manual overrides badge - TEMPORARILY HIDDEN
               {manualOverrides.enabled && (
                 <Badge variant="outline" className="w-fit text-orange-600 border-orange-300">
                   <Edit3 className="w-3 h-3 mr-1" /> Manuální hodnoty
                 </Badge>
               )}
+              */}
             </CardHeader>
             <CardContent>
               <div className="bg-white rounded-lg shadow-lg border overflow-hidden max-w-sm mx-auto">
@@ -818,7 +820,7 @@ export default function AdminAutopost() {
             </CardContent>
           </Card>
 
-          {/* Manual Overrides */}
+          {/* Manual Overrides - TEMPORARILY HIDDEN
           <Card className={manualOverrides.enabled ? 'border-orange-300 bg-orange-50/50' : ''}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -830,7 +832,6 @@ export default function AdminAutopost() {
             </CardHeader>
             {manualOverrides.enabled && (
               <CardContent className="space-y-3">
-                {/* Poznámka majitele - KRITICKÉ pro šablony */}
                 <div className="p-3 bg-orange-100 rounded-lg border border-orange-200">
                   <Label className="text-xs font-medium flex items-center gap-2 mb-2">
                     <MessageSquare className="w-4 h-4 text-orange-600" />
@@ -848,7 +849,6 @@ export default function AdminAutopost() {
                   </p>
                 </div>
 
-                {/* Popis - doplňkový text */}
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <Label className="text-xs font-medium flex items-center gap-2 mb-2">
                     <Edit3 className="w-4 h-4 text-blue-600" />
@@ -889,6 +889,7 @@ export default function AdminAutopost() {
               </CardContent>
             )}
           </Card>
+          */}
         </div>
 
         {/* Right - Settings */}
