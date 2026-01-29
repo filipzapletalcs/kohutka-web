@@ -155,54 +155,113 @@ function parseOpertime(opertime) {
 }
 
 /**
- * Určí provozní stav areálu na základě aktuální hodiny, provozní doby a dat o večerním lyžování.
- * nightskiing_code !== 1 = večerní lyžování aktivní (konvence z HolidayInfo API)
+ * Převede hodinu a minutu na minuty od půlnoci pro přesné porovnání časů.
+ * @returns {number|null} Minuty od půlnoci, nebo null pokud hour je null/undefined
  */
-function determineOperationalStatus(hour, opertime, slopesDetailed, liftsDetailed) {
-  const parsed = parseOpertime(opertime);
+function toMinutesSinceMidnight(hour, minute) {
+  if (hour === null || hour === undefined) return null;
+  return hour * 60 + (minute || 0);
+}
 
-  // Sjezdovky/vleky s aktivním večerním lyžováním (otevřené + nightskiing_code !== 1)
+/**
+ * Určí provozní stav areálu na základě aktuálního času a dat z API.
+ * Večerní lyžování je určeno službou type_code=21 z HolidayInfo API.
+ *
+ * @param {number} hour - Aktuální hodina (0-23)
+ * @param {number} minute - Aktuální minuta (0-59)
+ * @param {string} opertime - Denní provozní doba ve formátu "HH:MM-HH:MM"
+ * @param {boolean} nightSkiingActive - Zda je večerní lyžování aktivní (ze služby type_code=21)
+ * @param {string|null} nightSkiingOpertime - Provozní doba večerního lyžování (např. "18:00-21:00")
+ * @param {Array} slopesDetailed - Detailní data o sjezdovkách
+ * @param {Array} liftsDetailed - Detailní data o vlecích
+ */
+function determineOperationalStatus(hour, minute, opertime, nightSkiingActive, nightSkiingOpertime, slopesDetailed, liftsDetailed) {
+  const parsedDay = parseOpertime(opertime);
+  const parsedNight = nightSkiingActive ? parseOpertime(nightSkiingOpertime) : null;
+
+  // Validace večerního lyžování - aktivní pouze pokud máme platné časy
+  const nightSkiingValid = nightSkiingActive &&
+    parsedNight !== null &&
+    parsedNight.openHour !== null &&
+    parsedNight.closeHour !== null;
+
+  // Sjezdovky/vleky s večerním provozem (nightskiing_code !== 1)
   const slopesWithNightSkiing = (slopesDetailed || []).filter(s => s.nightskiing_code !== 1 && s.status_code === 2);
   const liftsWithNightSkiing = (liftsDetailed || []).filter(l => l.nightskiing_code !== 1 && l.status_code === 1);
-  const hasNightSkiing = slopesWithNightSkiing.length > 0 || liftsWithNightSkiing.length > 0;
 
-  if (parsed.closeHour === null) {
-    return { status: 'unknown', statusText: 'Provozní doba neznámá', hasNightSkiing, slopesWithNightSkiing, liftsWithNightSkiing };
+  if (parsedDay.closeHour === null) {
+    return { status: 'unknown', statusText: 'Provozní doba neznámá', nightSkiingActive: nightSkiingValid, slopesWithNightSkiing, liftsWithNightSkiing };
   }
 
-  const isBeforeOpen = hour < parsed.openHour;
-  const isAfterClose = hour >= parsed.closeHour;
+  // Převést časy na minuty od půlnoci
+  const nowMinutes = toMinutesSinceMidnight(hour, minute);
+  const dayOpenMinutes = toMinutesSinceMidnight(parsedDay.openHour, parsedDay.openMinute);
+  const dayCloseMinutes = toMinutesSinceMidnight(parsedDay.closeHour, parsedDay.closeMinute);
 
-  if (!isBeforeOpen && !isAfterClose) {
-    // Rozlišit: běžný provoz (do 16:30) vs. prodloužený provoz (do 18:00 = večerní lyžování)
-    const isEveningHours = hour >= 16 && parsed.closeHour > 16 && hasNightSkiing;
-    if (isEveningHours) {
-      return {
-        status: 'night_skiing',
-        statusText: `VEČERNÍ LYŽOVÁNÍ probíhá (provoz do ${parsed.closeHour}:${String(parsed.closeMinute).padStart(2, '0')})`,
-        hasNightSkiing: true, slopesWithNightSkiing, liftsWithNightSkiing,
-      };
-    }
+  // Večerní lyžování - časy
+  const nightOpenMinutes = parsedNight ? toMinutesSinceMidnight(parsedNight.openHour, parsedNight.openMinute) : null;
+  const nightCloseMinutes = parsedNight ? toMinutesSinceMidnight(parsedNight.closeHour, parsedNight.closeMinute) : null;
+
+  // 1. Před denním otevřením
+  if (nowMinutes < dayOpenMinutes) {
+    return {
+      status: 'before_open',
+      statusText: `Areál ještě neotevřel (provoz od ${parsedDay.openHour}:${String(parsedDay.openMinute).padStart(2, '0')})`,
+      nightSkiingActive: nightSkiingValid, slopesWithNightSkiing, liftsWithNightSkiing,
+    };
+  }
+
+  // 2. Denní provoz
+  if (nowMinutes < dayCloseMinutes) {
     return {
       status: 'open',
       statusText: `Areál je OTEVŘEN (provoz ${opertime})`,
-      hasNightSkiing, slopesWithNightSkiing, liftsWithNightSkiing,
+      nightSkiingActive: nightSkiingValid, slopesWithNightSkiing, liftsWithNightSkiing,
     };
   }
 
-  if (isAfterClose) {
+  // 3. Po denním zavření - zkontrolovat večerní lyžování
+  if (nightSkiingValid && nightOpenMinutes !== null && nightCloseMinutes !== null) {
+    // Večerní lyžování probíhá
+    if (nowMinutes >= nightOpenMinutes && nowMinutes < nightCloseMinutes) {
+      return {
+        status: 'night_skiing',
+        statusText: `VEČERNÍ LYŽOVÁNÍ probíhá (do ${parsedNight.closeHour}:${String(parsedNight.closeMinute).padStart(2, '0')})`,
+        nightSkiingActive: true, slopesWithNightSkiing, liftsWithNightSkiing,
+      };
+    }
+    // Večerní lyžování skončilo
+    if (nowMinutes >= nightCloseMinutes) {
+      return {
+        status: 'closed',
+        statusText: `Areál je ZAVŘEN – večerní lyžování skončilo v ${parsedNight.closeHour}:${String(parsedNight.closeMinute).padStart(2, '0')}.`,
+        nightSkiingActive: false, slopesWithNightSkiing: [], liftsWithNightSkiing: [],
+      };
+    }
+    // Mezi denním a večerním provozem (pokud je mezera)
+    if (nowMinutes >= dayCloseMinutes && nowMinutes < nightOpenMinutes) {
+      return {
+        status: 'break',
+        statusText: `Přestávka před večerním lyžováním (začíná v ${parsedNight.openHour}:${String(parsedNight.openMinute).padStart(2, '0')})`,
+        nightSkiingActive: true, slopesWithNightSkiing, liftsWithNightSkiing,
+      };
+    }
+  }
+
+  // 4. Speciální případ: night_skiing_active=true ale chybí validní časy
+  if (nightSkiingActive && !nightSkiingValid) {
     return {
       status: 'closed',
-      statusText: `Areál je ZAVŘEN – provoz skončil v ${parsed.closeHour}:${String(parsed.closeMinute).padStart(2, '0')}. Večerní lyžování NEPROBÍHÁ.`,
-      hasNightSkiing: false, slopesWithNightSkiing: [], liftsWithNightSkiing: [],
+      statusText: `Areál je ZAVŘEN – provoz skončil v ${parsedDay.closeHour}:${String(parsedDay.closeMinute).padStart(2, '0')}. Data o večerním lyžování nejsou k dispozici.`,
+      nightSkiingActive: false, slopesWithNightSkiing: [], liftsWithNightSkiing: [],
     };
   }
 
-  // Před otevřením
+  // 5. Zavřeno (bez večerního lyžování nebo po něm)
   return {
-    status: 'before_open',
-    statusText: `Areál ještě neotevřel (provoz od ${parsed.openHour}:${String(parsed.openMinute).padStart(2, '0')})`,
-    hasNightSkiing, slopesWithNightSkiing, liftsWithNightSkiing,
+    status: 'closed',
+    statusText: `Areál je ZAVŘEN – provoz skončil v ${parsedDay.closeHour}:${String(parsedDay.closeMinute).padStart(2, '0')}. Večerní lyžování NEPROBÍHÁ.`,
+    nightSkiingActive: false, slopesWithNightSkiing: [], liftsWithNightSkiing: [],
   };
 }
 
@@ -348,15 +407,17 @@ function generateDailyTip(slopesAnalysis, liftsAnalysis, holidayInfo) {
  * Rozšířená verze s detailními daty o sjezdovkách a vlecích
  * @param {object} holidayInfo - Data z HolidayInfo cache
  * @param {number} [testHour] - Volitelný parametr pro testování (simuluje hodinu)
+ * @param {number} [testMinute] - Volitelný parametr pro testování (simuluje minutu)
  * @param {string} [testDate] - Volitelný ISO datum pro testování (např. "2025-01-15")
  */
-function buildDataContext(holidayInfo, testHour = null, testDate = null) {
+function buildDataContext(holidayInfo, testHour = null, testMinute = null, testDate = null) {
   // Použij testDate pokud je zadán, jinak aktuální čas
   const now = testDate ? new Date(testDate) : new Date();
   // Prague timezone
   const pragueTime = testDate ? now : new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Prague' }));
-  // Použij testHour pokud je zadán (pro testování), jinak reálnou hodinu
+  // Použij testHour/testMinute pokud jsou zadány (pro testování), jinak reálný čas
   const hour = testHour !== null ? testHour : pragueTime.getHours();
+  const minute = testMinute !== null ? testMinute : pragueTime.getMinutes();
 
   const dayName = DAY_NAMES[pragueTime.getDay()];
   const day = pragueTime.getDate();
@@ -376,9 +437,15 @@ function buildDataContext(holidayInfo, testHour = null, testDate = null) {
   const slopesAnalysis = analyzeSlopesData(holidayInfo?.slopes_detailed);
   const liftsAnalysis = analyzeLiftsData(holidayInfo?.lifts_detailed);
 
-  // Určení provozního stavu (čas vs. opertime vs. nightskiing data)
+  // Určení provozního stavu (čas + opertime + večerní lyžování z API)
   const opStatus = determineOperationalStatus(
-    hour, holidayInfo?.opertime, holidayInfo?.slopes_detailed, holidayInfo?.lifts_detailed
+    hour,
+    minute,
+    holidayInfo?.opertime,
+    holidayInfo?.night_skiing_active || false,
+    holidayInfo?.night_skiing_opertime || null,
+    holidayInfo?.slopes_detailed,
+    holidayInfo?.lifts_detailed
   );
 
   // Základní info
@@ -411,6 +478,9 @@ function buildDataContext(holidayInfo, testHour = null, testDate = null) {
     if (opStatus.liftsWithNightSkiing.length > 0) {
       lines.push(`- Vleky s večerním provozem: ${opStatus.liftsWithNightSkiing.map(l => l.name).join(', ')}`);
     }
+  } else if (opStatus.status === 'break') {
+    lines.push('- Přestávka mezi denním a večerním provozem.');
+    lines.push('- Piš o tom, že se areál chystá na večerní lyžování.');
   } else if (opStatus.status === 'before_open') {
     lines.push('- Areál ještě neotevřel. Piš o přípravě na dnešní den.');
   }
@@ -596,14 +666,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Volitelné testovací parametry (simuluje hodinu a datum)
-    const { testHour, testDate } = req.body || {};
+    // Volitelné testovací parametry (simuluje hodinu, minutu a datum)
+    const { testHour, testMinute, testDate } = req.body || {};
     const validTestHour = typeof testHour === 'number' && testHour >= 0 && testHour <= 23 ? testHour : null;
+    const validTestMinute = typeof testMinute === 'number' && testMinute >= 0 && testMinute <= 59 ? testMinute : null;
     const validTestDate = typeof testDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(testDate) ? testDate : null;
 
     console.log('[Generate Caption] Starting caption generation with proofreader pipeline...');
-    if (validTestHour !== null || validTestDate !== null) {
-      console.log(`[Generate Caption] Test mode: hour=${validTestHour ?? 'now'}, date=${validTestDate ?? 'today'}`);
+    if (validTestHour !== null || validTestMinute !== null || validTestDate !== null) {
+      console.log(`[Generate Caption] Test mode: hour=${validTestHour ?? 'now'}, minute=${validTestMinute ?? 'now'}, date=${validTestDate ?? 'today'}`);
     }
 
     // Initialize Supabase client
@@ -624,7 +695,7 @@ export default async function handler(req, res) {
     console.log(`[Generate Caption] Loaded ${recentCaptions.length} recent captions for context`);
 
     // 2. Build context for AI (s volitelnými testovacími parametry)
-    const dataContext = buildDataContext(holidayInfo, validTestHour, validTestDate);
+    const dataContext = buildDataContext(holidayInfo, validTestHour, validTestMinute, validTestDate);
     console.log('[Generate Caption] Data context:', dataContext.substring(0, 100) + '...');
 
     // 3. Generate raw caption with OpenAI (generátor)
