@@ -503,10 +503,9 @@ function buildDataContext(holidayInfo, testHour = null, testMinute = null, testD
     if (slopesAnalysis.closedNames.length > 0) {
       lines.push(`- Zavřené: ${slopesAnalysis.closedNames.join(', ')}`);
     }
-    if (slopesAnalysis.nightSkiingSlopeNames.length > 0) {
+    // Večerní lyžování zmiňovat POUZE pokud je aktivní (ne když je closed)
+    if (opStatus.status === 'night_skiing' && slopesAnalysis.nightSkiingSlopeNames.length > 0) {
       lines.push(`- Večerní lyžování: ${slopesAnalysis.nightSkiingSlopeNames.join(', ')}`);
-    } else {
-      lines.push('- Večerní lyžování: žádné sjezdovky nemají večerní provoz');
     }
   }
 
@@ -519,7 +518,8 @@ function buildDataContext(holidayInfo, testHour = null, testMinute = null, testD
     if (liftsAnalysis.chairlift) {
       lines.push(`- Čtyřsedačka "${liftsAnalysis.chairlift.name}" jede`);
     }
-    if (liftsAnalysis.nightSkiingLiftNames.length > 0) {
+    // Večerní provoz vleků zmiňovat POUZE pokud večerní lyžování probíhá
+    if (opStatus.status === 'night_skiing' && liftsAnalysis.nightSkiingLiftNames.length > 0) {
       lines.push(`- Večerní provoz: ${liftsAnalysis.nightSkiingLiftNames.join(', ')}`);
     }
   }
@@ -578,12 +578,12 @@ STRUKTURA PŘÍSPĚVKU:
 2. HLAVNÍ SDĚLENÍ: 1-2 věty založené na zajímavých datech
 3. TECHNICKÉ ÚDAJE: Vyber relevantní data (teplota, sníh, vleky...) s emoji 🌡️ ❄️ 🚡
 
-DŮLEŽITÁ PRAVIDLA:
-- VEČERNÍ LYŽOVÁNÍ: Pokud je denní doba "večer", MUSÍŠ zkontrolovat sekci "PROVOZNÍ STAV" v datech.
-  - Pokud je napsáno "ZAVŘEN" nebo "Večerní lyžování NEPROBÍHÁ", NESMÍŠ psát o večerním/nočním lyžování ani naznačovat, že se ještě lyžuje.
-  - O večerním lyžování piš POUZE pokud je v PROVOZNÍM STAVU explicitně potvrzeno.
-  - Pokud je areál zavřený, piš o shrnutí dne, poděkování návštěvníkům nebo pozvánce na zítra.
-- NIKDY nevymýšlej informace, které nejsou v datech. Pokud data neobsahují informaci o večerním lyžování, nepiš o něm.
+KRITICKÁ PRAVIDLA (MUSÍŠ DODRŽET):
+- ⛔ ZAKÁZANÁ SLOVA když je areál ZAVŘEN: "večerní lyžování", "noční lyžování", "večerní provoz", "pod reflektory"
+- Zkontroluj sekci "PROVOZNÍ STAV" - pokud obsahuje "ZAVŘEN", areál je UZAVŘEN a nikdo nelyžuje!
+- Když je ZAVŘEN: piš o tom, jak byl krásný den, poděkuj návštěvníkům, pozvi na zítra
+- O večerním lyžování piš POUZE pokud PROVOZNÍ STAV říká "VEČERNÍ LYŽOVÁNÍ probíhá"
+- NIKDY nevymýšlej informace, které nejsou v datech
 
 CO MŮŽE BÝT ZAJÍMAVÉ (vyber si):
 - Poznámka provozovatele (text_comment)
