@@ -2,6 +2,8 @@
  * API Endpoint pro generování status obrázků pro sociální sítě
  * Používá Puppeteer pro screenshot React komponenty - 100% identické s admin náhledem
  *
+ * Data source: DB-first (cache + manual overrides), fallback na přímý HolidayInfo API call
+ *
  * GET /api/status-image
  * Query params:
  *   - format: 'png' (default)
@@ -10,10 +12,18 @@
  */
 
 import puppeteer from 'puppeteer';
+import { createClient } from '@supabase/supabase-js';
 
-// Holiday Info API config
+// Holiday Info API config (fallback)
 const HOLIDAYINFO_API = 'https://exports.holidayinfo.cz/xml_export.php';
 const HOLIDAYINFO_DC = process.env.HOLIDAYINFO_DC || 'c9ixxlejab5d4mrr';
+
+// Supabase config
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://qtnchzadjrmgfvhfzpzh.supabase.co';
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_KEY ||
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0bmNoemFkanJtZ2Z2aGZ6cHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NzYyNDAsImV4cCI6MjA4MDQ1MjI0MH0.gaCkl1hs_RKpbtHbSOMGbkAa4dCPgh6erEq524lSDk0';
 
 // Browser instance cache (pro rychlejší generování)
 let browserInstance = null;
@@ -61,9 +71,170 @@ function getXMLText(element, tagName) {
 }
 
 /**
- * Získá aktuální data z Holiday Info API
+ * Merge DB manual overrides with HolidayInfo API cache data
+ * Priority: DB manual values > API data
+ * (Same logic as in generate-caption.js and facebook-post.js)
  */
-async function fetchStatusData() {
+function mergeDataSources(holidayInfoCache, widgetSettings, slopesLiftsOverrides) {
+  const merged = { ...holidayInfoCache };
+
+  // Apply widget overrides
+  widgetSettings.forEach(widget => {
+    if (widget.mode !== 'manual' || !widget.manual_value) return;
+
+    switch (widget.widget_key) {
+      case 'skiareal':
+        if (widget.manual_status === 'open') merged.is_open = true;
+        else if (widget.manual_status === 'closed') merged.is_open = false;
+        if (widget.manual_value) merged.opertime = widget.manual_value;
+        break;
+      case 'pocasi':
+        if (widget.manual_value) merged.temperature = widget.manual_value;
+        break;
+      case 'snih':
+        if (widget.manual_value) merged.snow_height = widget.manual_value;
+        break;
+      case 'skipark':
+        if (widget.manual_status === 'open') merged.skipark_open = true;
+        else if (widget.manual_status === 'closed') merged.skipark_open = false;
+        break;
+      case 'vleky':
+        if (widget.manual_value) {
+          const match = widget.manual_value.match(/^(\d+)(?:\/(\d+))?$/);
+          if (match) {
+            merged.lifts_open_count = parseInt(match[1], 10);
+            if (match[2]) merged.lifts_total_count = parseInt(match[2], 10);
+          }
+        }
+        break;
+      case 'sjezdovky':
+        if (widget.manual_value) {
+          const match = widget.manual_value.match(/^(\d+)(?:\/(\d+))?$/);
+          if (match) {
+            merged.slopes_open_count = parseInt(match[1], 10);
+            if (match[2]) merged.slopes_total_count = parseInt(match[2], 10);
+          }
+        }
+        break;
+    }
+  });
+
+  // Apply slopes/lifts individual overrides
+  if (slopesLiftsOverrides.length > 0) {
+    const overrideMap = new Map();
+    slopesLiftsOverrides.forEach(override => {
+      if (override.mode === 'manual') {
+        overrideMap.set(`${override.type}_${override.name}`, override.is_open);
+      }
+    });
+
+    // Apply to slopes_detailed
+    if (Array.isArray(merged.slopes_detailed)) {
+      let manualSlopesOpenCount = 0;
+      merged.slopes_detailed = merged.slopes_detailed.map(slope => {
+        const key = `slope_${slope.name}`;
+        if (overrideMap.has(key)) {
+          const isOpen = overrideMap.get(key);
+          if (isOpen) manualSlopesOpenCount++;
+          return { ...slope, status_code: isOpen ? 2 : 3 };
+        }
+        if (slope.status_code === 2) manualSlopesOpenCount++;
+        return slope;
+      });
+      merged.slopes_open_count = manualSlopesOpenCount;
+    }
+
+    // Apply to lifts_detailed
+    if (Array.isArray(merged.lifts_detailed)) {
+      let manualLiftsOpenCount = 0;
+      let manualCableCarOpenCount = 0;
+      let manualDragLiftOpenCount = 0;
+
+      merged.lifts_detailed = merged.lifts_detailed.map(lift => {
+        const key = `lift_${lift.name}`;
+        if (overrideMap.has(key)) {
+          const isOpen = overrideMap.get(key);
+          if (isOpen) {
+            manualLiftsOpenCount++;
+            if (lift.type_code === 1 || lift.type_code === 2 || lift.type_code === 4) {
+              manualCableCarOpenCount++;
+            } else if (lift.type_code === 3 || lift.type_code === 5 || lift.type_code === 6 || lift.type_code === 7) {
+              manualDragLiftOpenCount++;
+            }
+          }
+          return { ...lift, status_code: isOpen ? 1 : 2 };
+        }
+        if (lift.status_code === 1) {
+          manualLiftsOpenCount++;
+          if (lift.type_code === 1 || lift.type_code === 2 || lift.type_code === 4) {
+            manualCableCarOpenCount++;
+          } else if (lift.type_code === 3 || lift.type_code === 5 || lift.type_code === 6 || lift.type_code === 7) {
+            manualDragLiftOpenCount++;
+          }
+        }
+        return lift;
+      });
+
+      merged.lifts_open_count = manualLiftsOpenCount;
+      merged.cable_car_open_count = manualCableCarOpenCount;
+      merged.drag_lift_open_count = manualDragLiftOpenCount;
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * DB-first: Načte data z cache + aplikuje manuální přepisy z widget_settings a slopes_lifts_overrides
+ * Vrací data ve formátu pro StatusImagePage, nebo null pokud cache není dostupná
+ */
+async function fetchStatusDataFromDB() {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const [cacheResult, widgetResult, overridesResult] = await Promise.all([
+      supabase.from('holidayinfo_cache').select('*').eq('id', 'main').single(),
+      supabase.from('widget_settings').select('*').order('sort_order'),
+      supabase.from('slopes_lifts_overrides').select('*').order('type').order('name'),
+    ]);
+
+    if (cacheResult.error || !cacheResult.data) {
+      console.error('[Status Image] DB cache not available:', cacheResult.error?.message);
+      return null;
+    }
+
+    const cache = cacheResult.data;
+    const widgets = widgetResult.data || [];
+    const overrides = overridesResult.data || [];
+
+    console.log(`[Status Image] DB-first: cache loaded, ${widgets.length} widgets, ${overrides.length} overrides`);
+
+    // Merge manual overrides with cache data
+    const merged = mergeDataSources(cache, widgets, overrides);
+
+    // Map to StatusImageData format
+    return {
+      isOpen: merged.is_open || false,
+      liftsOpen: merged.cable_car_open_count || 0,
+      liftsTotal: merged.drag_lift_open_count || 0,
+      slopesOpen: merged.slopes_open_count || 0,
+      slopesTotal: merged.slopes_total_count || 0,
+      temperature: merged.temperature ? `${merged.temperature}°C` : 'N/A',
+      weather: merged.weather && merged.weather !== '-' ? merged.weather : '',
+      snowHeight: merged.snow_height || 'N/A',
+      snowType: merged.snow_type || '',
+      operatingHours: merged.opertime || '',
+    };
+  } catch (e) {
+    console.error('[Status Image] DB fetch failed:', e.message);
+    return null;
+  }
+}
+
+/**
+ * Fallback: Získá aktuální data přímo z Holiday Info API
+ */
+async function fetchStatusDataFromAPI() {
   const response = await fetch(`${HOLIDAYINFO_API}?dc=${HOLIDAYINFO_DC}&localias=kohutka`);
   const xmlText = await response.text();
 
@@ -176,8 +347,12 @@ export default async function handler(req, res) {
     const width = parseInt(req.query.width) || DEFAULT_WIDTH;
     const height = parseInt(req.query.height) || DEFAULT_HEIGHT;
 
-    // Fetch current data
-    const statusData = await fetchStatusData();
+    // DB-first: cache + manual overrides, fallback na přímý API call
+    let statusData = await fetchStatusDataFromDB();
+    if (!statusData) {
+      console.warn('[Status Image] Falling back to direct API call');
+      statusData = await fetchStatusDataFromAPI();
+    }
 
     // Build URL s query params
     // V produkci použij SITE_URL env variable, jinak localhost
