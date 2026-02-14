@@ -180,6 +180,33 @@ function parseSlopeStatus(xmlDoc) {
 }
 
 /**
+ * Parsuje status večerního lyžování ze služeb (service type_code=21)
+ * @returns {{ active: boolean, opertime: string|null }}
+ */
+function parseNightSkiingService(xmlDoc) {
+  const services = xmlDoc.getElementsByTagName('service');
+
+  for (let i = 0; i < services.length; i++) {
+    const typeCode = getXMLNumber(services[i], 'type_code');
+
+    // type_code 21 = Večerní lyžování
+    if (typeCode === 21) {
+      const statusCode = getXMLNumber(services[i], 'status_code');
+      const opertime = getXMLText(services[i], 'opertime');
+
+      // status_code 1 = aktivní, 2 = mimo provoz
+      return {
+        active: statusCode === 1,
+        opertime: opertime && opertime !== '00:00-00:00' ? opertime : null,
+      };
+    }
+  }
+
+  // Služba nenalezena = večerní lyžování není k dispozici
+  return { active: false, opertime: null };
+}
+
+/**
  * Parsuje detailní data sjezdovek z XML
  */
 function parseSlopesDetailed(xmlDoc) {
@@ -280,6 +307,7 @@ export default async function handler(req, res) {
     const slopes = parseSlopeStatus(xmlDoc);
     const slopesDetailed = parseSlopesDetailed(xmlDoc);
     const liftsDetailed = parseLiftsDetailed(xmlDoc);
+    const nightSkiing = parseNightSkiingService(xmlDoc);
 
     // 4. Save to Supabase
     console.log('[HolidayInfo Backup] Saving to database...');
@@ -314,6 +342,9 @@ export default async function handler(req, res) {
       slopes_total_count: slopes.totalCount,
       slopes_detailed: slopesDetailed,
       lifts_detailed: liftsDetailed,
+      // Večerní lyžování (ze služby type_code=21)
+      night_skiing_active: nightSkiing.active,
+      night_skiing_opertime: nightSkiing.opertime,
       updated_at: new Date().toISOString(),
       last_successful_fetch: new Date().toISOString(),
       fetch_source: 'cronjob',

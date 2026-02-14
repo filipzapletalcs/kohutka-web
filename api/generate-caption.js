@@ -289,6 +289,222 @@ async function fetchHolidayInfoFromCache() {
 }
 
 /**
+ * Fetch widget settings from DB
+ */
+async function fetchWidgetSettings() {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+      .from('widget_settings')
+      .select('*')
+      .order('sort_order');
+
+    if (error) {
+      console.error('[Generate Caption] Failed to fetch widget settings:', error);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.error('[Generate Caption] Error fetching widget settings:', e);
+    return [];
+  }
+}
+
+/**
+ * Fetch slopes and lifts overrides from DB
+ */
+async function fetchSlopesLiftsOverrides() {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+      .from('slopes_lifts_overrides')
+      .select('*')
+      .order('type')
+      .order('name');
+
+    if (error) {
+      console.error('[Generate Caption] Failed to fetch slopes/lifts overrides:', error);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.error('[Generate Caption] Error fetching slopes/lifts overrides:', e);
+    return [];
+  }
+}
+
+/**
+ * Merge DB manual overrides with HolidayInfo API cache data
+ * Priority: DB manual values > API data
+ */
+function mergeDataSources(holidayInfoCache, widgetSettings, slopesLiftsOverrides) {
+  // Start with API cache data as baseline
+  const merged = { ...holidayInfoCache };
+
+  console.log('[Generate Caption] Merging DB overrides with API cache data...');
+
+  // Apply widget overrides
+  widgetSettings.forEach(widget => {
+    if (widget.mode !== 'manual' || !widget.manual_value) {
+      return; // Skip auto mode or empty manual values
+    }
+
+    console.log(`[Generate Caption] Applying widget override: ${widget.widget_key} = ${widget.manual_value} (status: ${widget.manual_status})`);
+
+    switch (widget.widget_key) {
+      case 'skiareal':
+        // Override is_open based on manual_status
+        if (widget.manual_status === 'open') {
+          merged.is_open = true;
+        } else if (widget.manual_status === 'closed') {
+          merged.is_open = false;
+        }
+        // Override opertime if manual_value is set
+        if (widget.manual_value) {
+          merged.opertime = widget.manual_value;
+        }
+        break;
+
+      case 'pocasi':
+        // Override temperature
+        if (widget.manual_value) {
+          merged.temperature = widget.manual_value;
+        }
+        break;
+
+      case 'snih':
+        // Override snow_height
+        if (widget.manual_value) {
+          merged.snow_height = widget.manual_value;
+        }
+        break;
+
+      case 'skipark':
+        // Override skipark_open based on manual_status
+        if (widget.manual_status === 'open') {
+          merged.skipark_open = true;
+        } else if (widget.manual_status === 'closed') {
+          merged.skipark_open = false;
+        }
+        break;
+
+      case 'vleky':
+        // Override lift counts (format: "3/5" or "3")
+        if (widget.manual_value) {
+          const match = widget.manual_value.match(/^(\d+)(?:\/(\d+))?$/);
+          if (match) {
+            merged.lifts_open_count = parseInt(match[1], 10);
+            if (match[2]) {
+              merged.lifts_total_count = parseInt(match[2], 10);
+            }
+          }
+        }
+        break;
+
+      case 'sjezdovky':
+        // Override slope counts (format: "5/8" or "5")
+        if (widget.manual_value) {
+          const match = widget.manual_value.match(/^(\d+)(?:\/(\d+))?$/);
+          if (match) {
+            merged.slopes_open_count = parseInt(match[1], 10);
+            if (match[2]) {
+              merged.slopes_total_count = parseInt(match[2], 10);
+            }
+          }
+        }
+        break;
+
+      case 'vozovka':
+        // Add road status to manual_extra (no direct cache field)
+        if (!merged.manual_extra) {
+          merged.manual_extra = {};
+        }
+        merged.manual_extra.road_status = widget.manual_value;
+        merged.manual_extra.road_status_mode = widget.manual_status;
+        break;
+    }
+  });
+
+  // Apply slopes/lifts individual overrides
+  if (slopesLiftsOverrides.length > 0) {
+    console.log(`[Generate Caption] Applying ${slopesLiftsOverrides.length} slope/lift overrides...`);
+
+    // Create a map of overrides
+    const overrideMap = new Map();
+    slopesLiftsOverrides.forEach(override => {
+      if (override.mode === 'manual') {
+        overrideMap.set(`${override.type}_${override.name}`, override.is_open);
+      }
+    });
+
+    // Apply to slopes_detailed
+    if (Array.isArray(merged.slopes_detailed)) {
+      let manualSlopesOpenCount = 0;
+      merged.slopes_detailed = merged.slopes_detailed.map(slope => {
+        const key = `slope_${slope.name}`;
+        if (overrideMap.has(key)) {
+          const isOpen = overrideMap.get(key);
+          const newSlope = { ...slope, status_code: isOpen ? 2 : 3 }; // 2=open, 3=closed
+          if (isOpen) manualSlopesOpenCount++;
+          return newSlope;
+        }
+        // Count original open slopes if no override
+        if (slope.status_code === 2) manualSlopesOpenCount++;
+        return slope;
+      });
+
+      // Update slopes_open_count based on manual overrides
+      merged.slopes_open_count = manualSlopesOpenCount;
+    }
+
+    // Apply to lifts_detailed
+    if (Array.isArray(merged.lifts_detailed)) {
+      let manualLiftsOpenCount = 0;
+      let manualCableCarOpenCount = 0;
+      let manualDragLiftOpenCount = 0;
+
+      merged.lifts_detailed = merged.lifts_detailed.map(lift => {
+        const key = `lift_${lift.name}`;
+        if (overrideMap.has(key)) {
+          const isOpen = overrideMap.get(key);
+          const newLift = { ...lift, status_code: isOpen ? 1 : 2 }; // 1=open, 2=closed
+
+          if (isOpen) {
+            manualLiftsOpenCount++;
+            // Categorize by type (same logic as holidayinfo-backup.js)
+            if (lift.type_code === 1 || lift.type_code === 2 || lift.type_code === 4) {
+              manualCableCarOpenCount++;
+            } else if (lift.type_code === 3 || lift.type_code === 5 || lift.type_code === 6 || lift.type_code === 7) {
+              manualDragLiftOpenCount++;
+            }
+          }
+          return newLift;
+        }
+
+        // Count original open lifts if no override
+        if (lift.status_code === 1) {
+          manualLiftsOpenCount++;
+          if (lift.type_code === 1 || lift.type_code === 2 || lift.type_code === 4) {
+            manualCableCarOpenCount++;
+          } else if (lift.type_code === 3 || lift.type_code === 5 || lift.type_code === 6 || lift.type_code === 7) {
+            manualDragLiftOpenCount++;
+          }
+        }
+        return lift;
+      });
+
+      // Update lift counts based on manual overrides
+      merged.lifts_open_count = manualLiftsOpenCount;
+      merged.cable_car_open_count = manualCableCarOpenCount;
+      merged.drag_lift_open_count = manualDragLiftOpenCount;
+    }
+  }
+
+  console.log('[Generate Caption] Data merge complete');
+  return merged;
+}
+
+/**
  * Analyzuje detailní data o sjezdovkách
  */
 function analyzeSlopesData(slopesDetailed) {
@@ -748,15 +964,25 @@ export default async function handler(req, res) {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch holiday data from cache (ignore any provided data for security)
-    const holidayInfo = await fetchHolidayInfoFromCache();
+    // Fetch all data sources (DB-first approach)
+    console.log('[Generate Caption] Fetching data sources...');
+    const [holidayInfoCache, widgetSettings, slopesLiftsOverrides] = await Promise.all([
+      fetchHolidayInfoFromCache(),
+      fetchWidgetSettings(),
+      fetchSlopesLiftsOverrides(),
+    ]);
 
-    if (!holidayInfo) {
+    if (!holidayInfoCache) {
       return res.status(500).json({
         success: false,
-        error: 'Could not fetch resort data',
+        error: 'Could not fetch resort data from cache',
       });
     }
+
+    console.log(`[Generate Caption] Fetched: cache data, ${widgetSettings.length} widgets, ${slopesLiftsOverrides.length} overrides`);
+
+    // Merge DB manual overrides with API cache data (DB takes priority)
+    const holidayInfo = mergeDataSources(holidayInfoCache, widgetSettings, slopesLiftsOverrides);
 
     // 1. Načti historii pro kontrolu opakování
     const recentCaptions = await getRecentCaptions(supabase, 20);

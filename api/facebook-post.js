@@ -52,6 +52,165 @@ async function fetchHolidayInfoFromCache() {
 }
 
 /**
+ * Fetch widget settings from DB
+ */
+async function fetchWidgetSettings() {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+      .from('widget_settings')
+      .select('*')
+      .order('sort_order');
+
+    if (error) {
+      console.error('[Facebook Post] Failed to fetch widget settings:', error);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.error('[Facebook Post] Error fetching widget settings:', e);
+    return [];
+  }
+}
+
+/**
+ * Fetch slopes and lifts overrides from DB
+ */
+async function fetchSlopesLiftsOverrides() {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+      .from('slopes_lifts_overrides')
+      .select('*')
+      .order('type')
+      .order('name');
+
+    if (error) {
+      console.error('[Facebook Post] Failed to fetch slopes/lifts overrides:', error);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.error('[Facebook Post] Error fetching slopes/lifts overrides:', e);
+    return [];
+  }
+}
+
+/**
+ * Merge DB manual overrides with HolidayInfo API cache data
+ * Priority: DB manual values > API data
+ * (Same logic as in generate-caption.js)
+ */
+function mergeDataSources(holidayInfoCache, widgetSettings, slopesLiftsOverrides) {
+  const merged = { ...holidayInfoCache };
+
+  // Apply widget overrides
+  widgetSettings.forEach(widget => {
+    if (widget.mode !== 'manual' || !widget.manual_value) return;
+
+    switch (widget.widget_key) {
+      case 'skiareal':
+        if (widget.manual_status === 'open') merged.is_open = true;
+        else if (widget.manual_status === 'closed') merged.is_open = false;
+        if (widget.manual_value) merged.opertime = widget.manual_value;
+        break;
+      case 'pocasi':
+        if (widget.manual_value) merged.temperature = widget.manual_value;
+        break;
+      case 'snih':
+        if (widget.manual_value) merged.snow_height = widget.manual_value;
+        break;
+      case 'skipark':
+        if (widget.manual_status === 'open') merged.skipark_open = true;
+        else if (widget.manual_status === 'closed') merged.skipark_open = false;
+        break;
+      case 'vleky':
+        if (widget.manual_value) {
+          const match = widget.manual_value.match(/^(\d+)(?:\/(\d+))?$/);
+          if (match) {
+            merged.lifts_open_count = parseInt(match[1], 10);
+            if (match[2]) merged.lifts_total_count = parseInt(match[2], 10);
+          }
+        }
+        break;
+      case 'sjezdovky':
+        if (widget.manual_value) {
+          const match = widget.manual_value.match(/^(\d+)(?:\/(\d+))?$/);
+          if (match) {
+            merged.slopes_open_count = parseInt(match[1], 10);
+            if (match[2]) merged.slopes_total_count = parseInt(match[2], 10);
+          }
+        }
+        break;
+    }
+  });
+
+  // Apply slopes/lifts individual overrides
+  if (slopesLiftsOverrides.length > 0) {
+    const overrideMap = new Map();
+    slopesLiftsOverrides.forEach(override => {
+      if (override.mode === 'manual') {
+        overrideMap.set(`${override.type}_${override.name}`, override.is_open);
+      }
+    });
+
+    // Apply to slopes_detailed
+    if (Array.isArray(merged.slopes_detailed)) {
+      let manualSlopesOpenCount = 0;
+      merged.slopes_detailed = merged.slopes_detailed.map(slope => {
+        const key = `slope_${slope.name}`;
+        if (overrideMap.has(key)) {
+          const isOpen = overrideMap.get(key);
+          if (isOpen) manualSlopesOpenCount++;
+          return { ...slope, status_code: isOpen ? 2 : 3 };
+        }
+        if (slope.status_code === 2) manualSlopesOpenCount++;
+        return slope;
+      });
+      merged.slopes_open_count = manualSlopesOpenCount;
+    }
+
+    // Apply to lifts_detailed
+    if (Array.isArray(merged.lifts_detailed)) {
+      let manualLiftsOpenCount = 0;
+      let manualCableCarOpenCount = 0;
+      let manualDragLiftOpenCount = 0;
+
+      merged.lifts_detailed = merged.lifts_detailed.map(lift => {
+        const key = `lift_${lift.name}`;
+        if (overrideMap.has(key)) {
+          const isOpen = overrideMap.get(key);
+          if (isOpen) {
+            manualLiftsOpenCount++;
+            if (lift.type_code === 1 || lift.type_code === 2 || lift.type_code === 4) {
+              manualCableCarOpenCount++;
+            } else if (lift.type_code === 3 || lift.type_code === 5 || lift.type_code === 6 || lift.type_code === 7) {
+              manualDragLiftOpenCount++;
+            }
+          }
+          return { ...lift, status_code: isOpen ? 1 : 2 };
+        }
+        if (lift.status_code === 1) {
+          manualLiftsOpenCount++;
+          if (lift.type_code === 1 || lift.type_code === 2 || lift.type_code === 4) {
+            manualCableCarOpenCount++;
+          } else if (lift.type_code === 3 || lift.type_code === 5 || lift.type_code === 6 || lift.type_code === 7) {
+            manualDragLiftOpenCount++;
+          }
+        }
+        return lift;
+      });
+
+      merged.lifts_open_count = manualLiftsOpenCount;
+      merged.cable_car_open_count = manualCableCarOpenCount;
+      merged.drag_lift_open_count = manualDragLiftOpenCount;
+    }
+  }
+
+  return merged;
+}
+
+/**
  * Replace placeholders in caption with actual values from holiday info
  */
 function replacePlaceholders(caption, holidayInfo, cameraName = '') {
@@ -272,11 +431,25 @@ export default async function handler(req, res) {
       'Aktuální podmínky na SKI CENTRUM KOHÚTKA! Přijďte si zalyžovat do srdce Beskyd.';
     const defaultHashtags = '#kohutka #lyze #skiing #beskydy #zima #ski #sneh #hory';
 
-    // Fetch holiday info for placeholder replacement
-    const holidayInfo = await fetchHolidayInfoFromCache();
+    // Fetch all data sources (DB-first approach)
+    console.log('[Facebook Post] Fetching data sources...');
+    const [holidayInfoCache, widgetSettings, slopesLiftsOverrides, cameraName] = await Promise.all([
+      fetchHolidayInfoFromCache(),
+      fetchWidgetSettings(),
+      fetchSlopesLiftsOverrides(),
+      getCameraName(cameraId),
+    ]);
 
-    // Fetch camera name for {kamera} placeholder
-    const cameraName = await getCameraName(cameraId);
+    if (!holidayInfoCache) {
+      console.warn('[Facebook Post] No holiday info cache data available');
+    }
+
+    // Merge DB manual overrides with API cache data (DB takes priority)
+    const holidayInfo = holidayInfoCache
+      ? mergeDataSources(holidayInfoCache, widgetSettings, slopesLiftsOverrides)
+      : null;
+
+    console.log(`[Facebook Post] Data merged: ${widgetSettings.length} widgets, ${slopesLiftsOverrides.length} overrides`);
 
     // Build caption and replace placeholders with actual values
     let processedCaption = caption || defaultCaption;

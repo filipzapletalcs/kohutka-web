@@ -27,7 +27,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus, Pencil, Trash2, X, RefreshCw, Sparkles } from 'lucide-react';
+import { Loader2, Save, Clock, Globe, ThumbsUp, MessageCircle, Share2, Calendar, Thermometer, Mountain, Cable, Snowflake, Edit3, Send, Eye, ExternalLink, Camera, ChevronLeft, ChevronRight, Image, ImageOff, Images, MessageSquare, Plus, Pencil, Trash2, X, RefreshCw, Sparkles, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
@@ -216,6 +216,7 @@ export default function AdminAutopost() {
 
   // AI caption generation state
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [showDataInfoModal, setShowDataInfoModal] = useState(false);
 
   // Get active cameras merged with holiday info data
   // Filter same as AdminCameras: exclude archive (except kohutka-p0), check is_active
@@ -779,6 +780,13 @@ export default function AdminAutopost() {
               <CardTitle className="text-lg flex items-center gap-2">
                 Aktuální API data
                 {holidayData?.fromCache && <Badge variant="outline" className="text-yellow-600">Cache</Badge>}
+                <button
+                  onClick={() => setShowDataInfoModal(true)}
+                  className="ml-auto p-1 rounded-full hover:bg-gray-100 transition-colors"
+                  title="Jak fungují data pro autoposting"
+                >
+                  <Info className="w-4 h-4 text-gray-400" />
+                </button>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1439,6 +1447,72 @@ Více info 👉 kohutka.ski"
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Data Source Info Modal */}
+      <Dialog open={showDataInfoModal} onOpenChange={setShowDataInfoModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-blue-500" />
+              Odkud autoposting bere data?
+            </DialogTitle>
+            <DialogDescription>
+              Jak funguje priorita datových zdrojů pro generování příspěvků.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="font-medium text-blue-800 mb-1">Automatický režim (výchozí)</p>
+              <p className="text-blue-700">
+                Data se načítají z HolidayInfo API (aktualizace každých 20 minut). Teplota, sníh, sjezdovky, vleky a provozní doba se berou přímo z API.
+              </p>
+            </div>
+
+            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <p className="font-medium text-orange-800 mb-1">Manuální přepis (priorita)</p>
+              <p className="text-orange-700 mb-2">
+                Pokud v administraci přepnete widget nebo sjezdovku/vlek do <strong>manuálního režimu</strong>, autoposting použije vaši hodnotu místo dat z API.
+              </p>
+              <div className="space-y-1.5 text-orange-700">
+                <div className="flex items-start gap-2">
+                  <span className="font-medium shrink-0">Widgety</span>
+                  <span className="text-orange-500">&#8594;</span>
+                  <span>
+                    <a href="/admin/widget" className="underline hover:text-orange-900">Správa widgetů</a>
+                    {' '}&mdash; přepište teplotu, sníh, provozní dobu, stav areálu, skipark
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-medium shrink-0">Sjezdovky/Vleky</span>
+                  <span className="text-orange-500">&#8594;</span>
+                  <span>
+                    <a href="/admin/sjezdovky" className="underline hover:text-orange-900">Správa sjezdovek</a>
+                    {' '}&mdash; přepište stav jednotlivých sjezdovek a vleků (otevřeno/zavřeno)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="font-medium text-gray-700 mb-1">Pořadí priority</p>
+              <ol className="list-decimal list-inside space-y-1 text-gray-600">
+                <li><strong>Manuální hodnoty z widgetů</strong> &mdash; nejvyšší priorita</li>
+                <li><strong>Manuální stavy sjezdovek/vleků</strong> &mdash; přepočítá počty</li>
+                <li><strong>HolidayInfo API</strong> &mdash; fallback, pokud není manuální přepis</li>
+              </ol>
+            </div>
+
+            <p className="text-xs text-gray-400">
+              Manuální hodnoty se projeví jak v AI generovaných popiscích, tak v šablonách s proměnnými.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDataInfoModal(false)}>
+              Rozumím
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
